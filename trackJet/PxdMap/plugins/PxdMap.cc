@@ -171,9 +171,9 @@ class PxdMap : public edm::one::EDProducer<edm::one::SharedResources>  {
 
   Basic3DVector<float> findIntersection(const GlobalVector & , const reco::Candidate::Point & ,const GeomDet*);
 
-  void fillPixelMatrix(const SiPixelCluster &, int);
+  void fillPixelMatrix(const SiPixelCluster &, int, auto);
 
-  void fillPixelTrackMap(int, const SiPixelCluster &, int);
+  void fillPixelTrackMap(int, const SiPixelCluster &, int, auto);
 
   void fillPixelTrackMatrix();
 
@@ -321,6 +321,8 @@ void PxdMap::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   for (unsigned int ji = 0; ji < cores->size(); ji++) {
 
     if ((*cores)[ji].pt() > ptMin_) {
+      std::cout << " __________________________________________________________" <<std::endl;
+      std::cout << "|____________________NEW JET_______________________________|" <<std::endl;
 
       std::cout << "jet number " << jetnum << std::endl;
       const reco::Candidate& jet = (*cores)[ji];
@@ -348,26 +350,32 @@ void PxdMap::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
           auto localInter = det->specificSurface().toLocal((GlobalVector)inter);
 
           //if(abs(aCluster.x()/pitchX-localInter.x())<=jetDimX && abs(aCluster.y()/pitchY-localInter.y())<=jetDimY) // per ora preso baricentro, da migliorare
+          std::cout << "REF frame DEB: cluser x =" << aCluster.x() << std::endl;
+          std::cout << "REF frame DEB: localinter x =" << localInter.x() << std::endl;
+          std::cout << "REF frame DEB: inter x =" << inter.x() << std::endl;
           if(abs(aCluster.x()-localInter.x())<=jetDimX/2 && abs(aCluster.y()-localInter.y())<=jetDimY/2){ // per ora preso baricentro, da migliorare
             //---------------debug lines------------------------------------//
-            if(jetnum==10 && lay==2){
-              std::cout << "---------------------" <<std::endl;
+            //if(jetnum==10 && lay==2){
+            if(1){
+              std::cout << "--------new cluster----------" <<std::endl;
+              std::cout << "layer=" << lay << std::endl;
               for(int i=0; i<=aCluster.size();i++){
                 SiPixelCluster::Pixel pix = cluster->pixel(i);
-                int nx = pix.x;//pitchX;
-                int ny = pix.y;//pitchY;
+                int nx = pix.x-localInter.x() ;//pitchX;
+                int ny = pix.y-localInter.y();//pitchY;
                 std::cout << "x position pixel " << nx <<std::endl;
                 std::cout << "y position pixel " << ny <<std::endl;
               }
             }
 
-            fillPixelMatrix(aCluster,lay); //da sistemare forse il pitch
+            fillPixelMatrix(aCluster,lay,localInter); //da sistemare forse il pitch
             //std::unique_ptr<edmNew::DetSetVector<SiPixelCluster> > newPixelClusters( splitClusters( siPixelDetsWithClusters, vertices->front() ) ); //qualcosa del genere
             std::map<int,SiPixelCluster> splittedCluster = splitClusterInTracks(aCluster,aClusterID); //accesso/assegnazione splittedClister[id]=cluser
             for(std::map<int,SiPixelCluster>::iterator track_iter= splittedCluster.begin(); track_iter!=splittedCluster.end(); track_iter++){
-              fillPixelTrackMap(track_iter->first, track_iter->second,lay);
+              fillPixelTrackMap(track_iter->first, track_iter->second,lay,localInter);
               fillPixelTrackMatrix();
               //aggiungere salvataggio info traccia (pt eta ecc) usando trackID
+
             }
           }
         }
@@ -397,27 +405,29 @@ void PxdMap::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
      return pos.second;
   }
 
-  void PxdMap::fillPixelMatrix(const SiPixelCluster & cluster, int layer){
+  void PxdMap::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter){
+    std::cout << "----- cluster filled-------" << std::endl;
+    std::cout << "cluser layer" << layer << std::endl;
     for(int i=0; i<=cluster.size();i++){
       SiPixelCluster::Pixel pix = cluster.pixel(i);
-      int nx = pix.x;//pitchX;
-      int ny = pix.y;//pitchY;
-
-      if(nx<jetDimX && ny<jetDimY){
-
-
+      int nx = pix.x-inter.x() ;//pitchX;
+      int ny = pix.y-inter.y();//pitchY;
+      std::cout << "x position pixel " << nx <<std::endl;
+      std::cout << "y position pixel " << ny <<std::endl;
+      if(abs(nx)<jetDimX/2 && abs(ny)<jetDimY/2){
+        nx = nx+jetDimX/2;
+        ny = ny+jetDimY/2;
         clusterMeas[layer][nx][ny] = pix.adc;
       }
     }
   }
 
-  void PxdMap::fillPixelTrackMap(int trackID, const SiPixelCluster & cluster, int layer){
+  void PxdMap::fillPixelTrackMap(int trackID, const SiPixelCluster & cluster, int layer, auto inter){
     for(int i=0; i<=cluster.size();i++){
       SiPixelCluster::Pixel pix = cluster.pixel(i);
-      int nx = pix.x;///pitchX;
-      int ny = pix.y;///pitchY;
-
-      if(nx<30 && ny<30){
+      int nx = pix.x-inter.x() ;//pitchX;
+      int ny = pix.y-inter.y();//pitchY;
+      if(abs(nx)<jetDimX/2 && abs(ny)<jetDimY/2){
         // std::map<int, double [Nlayer][jetDimX][jetDimY]>::iterator finder = trackMap.find(trackID);
         // if(finder !=trackMap.end()){
         //   // double temp_track[Nlayer][jetDimX][jetDimY] = trackMap[trackID];
@@ -431,6 +441,8 @@ void PxdMap::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
         //   // trackMap[trackID] = temp_track;
         //   trackMap[trackID][layer][nx][ny] = pix.adc;
         // }
+        nx = nx+jetDimX/2;
+        ny = ny+jetDimY/2;
         trackMap[trackID][layer][nx][ny] = pix.adc;
 
         //trackMap[trackID][layer][nx][ny] = pix.adc;
