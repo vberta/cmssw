@@ -25,7 +25,7 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 from Configuration.AlCa.autoCond import autoCond
 process.GlobalTag.globaltag = autoCond['run2_mc']
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) ) #-1 = tutti
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1) ) #-1 = tutti
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
