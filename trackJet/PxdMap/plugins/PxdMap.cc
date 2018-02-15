@@ -112,8 +112,8 @@ class PxdMap : public edm::one::EDProducer<edm::one::SharedResources>  {
 
   TFile* pxdMap_out;
   TTree* PxdMapTree;
-  static const int jetDimX =30;
-  static const int jetDimY =30;
+  static const int jetDimX =60;
+  static const int jetDimY =60;
   static const int Nlayer =4;
   static const int Ntrack = 100;
   double clusterMeas[Nlayer][jetDimX][jetDimY];
@@ -227,14 +227,17 @@ PxdMap::PxdMap(const edm::ParameterSet& iConfig) :
    //pxdMap_out =new TFile("pxdMap_out.root", "RECREATE");
   // PxdMapTree= new TTree("PxdMapTree","PxdMapTree");
    PxdMapTree= fileService->make<TTree>("PxdMapTree","PxdMapTree");
-   PxdMapTree->Branch("cluster_measured",clusterMeas,"cluster_measured[4][30][30]/f");
-   PxdMapTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][30][30]/f");
+   PxdMapTree->Branch("cluster_measured",clusterMeas,"cluster_measured[4][60][60]/f");
+   PxdMapTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][60][60]/f");
+  //  PxdMapTree->Branch("cluster_measured",clusterMeas,"cluster_measured[4][4][4]/f");
+  //  PxdMapTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][4][4]/f");
+
    PxdMapTree->Branch("jet_eta",&jet_eta);
    PxdMapTree->Branch("jet_pt",&jet_pt);
    PxdMapTree->Branch("jet_phi",&jet_phi);
-//   PxdMapTree->Branch("track_eta",&track_eta);
-//   PxdMapTree->Branch("track_pt",&track_pt);
-//   PxdMapTree->Branch("track_phi",&track_phi);
+  PxdMapTree->Branch("track_eta",&track_eta);
+  PxdMapTree->Branch("track_pt",&track_pt);
+  PxdMapTree->Branch("track_phi",&track_phi);
 
    // //sto usando fileservice quindi non servono in fondo
    // //pxdMap_out->cd();
@@ -331,7 +334,8 @@ void PxdMap::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   auto output = std::make_unique<edmNew::DetSetVector<SiPixelCluster>>();
 
-print = true;
+print = false;
+  std::cout << "jet tot number =" << cores->size() << std::endl;
   for (unsigned int ji = 0; ji < cores->size(); ji++) {
 
     if ((*cores)[ji].pt() > ptMin_) {
@@ -368,13 +372,20 @@ print = true;
           Basic3DVector<float> inter = interPair.second;
           auto localInter = det->specificSurface().toLocal((GlobalVector)inter);
 
+          auto deltaR_loc = Geom::deltaR(jetDir, localInter);
+          auto deltaR_glob = Geom::deltaR(jetDir, inter);
+          // if(print){std::cout<< "DELTA R WITH INTERSECTION local: " << deltaR_loc << std::endl;
+          // std::cout<< "DELTA R WITH INTERSECTION global: " << deltaR_glob << std::endl;}
+
+
+
           //if(abs(aCluster.x()/pitchX-localInter.x())<=jetDimX && abs(aCluster.y()/pitchY-localInter.y())<=jetDimY) // per ora preso baricentro, da migliorare
           // if(print) {std::cout << "REF frame DEB: cluser x =" << aCluster.x() << std::endl;
           // std::cout << "REF frame DEB: localinter x =" << localInter.x() << std::endl;
           // std::cout << "REF frame DEB: inter x =" << inter.x() << std::endl;}
           if(abs(aCluster.x()-localInter.x())<=jetDimX/2 && abs(aCluster.y()-localInter.y())<=jetDimY/2){ // per ora preso baricentro, da migliorare
             //---------------debug lines------------------------------------//
-            //if(jetnum==10 && lay==2){
+            //if(jetnum==10 && lay==2)
             // if(1){
             //   if(print){std::cout << "--------new cluster----------" <<std::endl;
             //   std::cout << "layer=" << lay << std::endl;}
@@ -393,7 +404,6 @@ print = true;
             std::map<int,SiPixelCluster> splittedCluster = splitClusterInTracks(aCluster,aClusterID); //accesso/assegnazione splittedClister[id]=cluser
             for(std::map<int,SiPixelCluster>::iterator track_iter= splittedCluster.begin(); track_iter!=splittedCluster.end(); track_iter++){
               fillPixelTrackMap(track_iter->first, track_iter->second,lay,localInter);
-              fillPixelTrackMatrix();
               //aggiungere salvataggio info traccia (pt eta ecc) usando trackID
 
             }
@@ -401,7 +411,33 @@ print = true;
         }
       }
     //  jetnum++;
+    fillPixelTrackMatrix();
     PxdMapTree->Fill();
+
+    if(print){
+      for(int i=0; i<Nlayer; i++){
+        for(int j=0; j<jetDimX; j++){
+          for(int k=0; k<jetDimY; k++){
+            if(clusterMeas[i][j][k]!=0){
+              std::cout << Form("element %d,%d,%d = ",i,j-jetDimX/2,k-jetDimY/2)  << clusterMeas[i][j][k] << std::endl;
+            }
+          }
+        }
+      }
+    }
+
+    for(int i=0; i<Nlayer; i++){
+      for(int j=0; j<jetDimX; j++){
+        for(int k=0; k<jetDimY; k++){
+          clusterMeas[i][j][k] = 0.0;
+          for(int h=0; h<Ntrack; h++){
+            clusterSplit[h][i][j][k] = 0.0;
+          }
+        }
+      }
+    }
+
+
 
     }
 
@@ -451,6 +487,11 @@ print = true;
         std::cout << "charge " << pix.adc <<std::endl;}
       }
     }
+    // for(int aa=0; aa<4; aa++ ){
+    //   for(int bb=0; bb<4; bb++){
+    //     clusterMeas[layer-1][aa][bb]=aa*bb+1;
+    //   }
+    // }
   }
 
   void PxdMap::fillPixelTrackMap(int trackID, const SiPixelCluster & cluster, int layer, auto inter){
@@ -486,10 +527,12 @@ print = true;
     int trk = 0;
     for(std::map<int, double [Nlayer][jetDimX][jetDimY]>::iterator it=trackMap.begin(); it!=trackMap.end(); it++){
     //for(int trk =0; trk<=std::min(trackMap.size(),NTrack); trk++)
+      std::cout << "trk="<< trk << std::endl;
       if(trk>=100) continue;
       for(int lay =0; lay<Nlayer; lay++){
         for(int dimx =0; dimx<jetDimX; dimx++){
           for(int dimy =0; dimy<jetDimY; dimy++){
+            std::cout << "iterator="<< it->first << std::endl;
             clusterSplit[trk][lay][dimx][dimy] = trackMap[it->first][lay][dimx][dimy];
           }
         }
