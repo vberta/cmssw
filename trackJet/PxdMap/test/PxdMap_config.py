@@ -40,6 +40,7 @@ process.demo = cms.EDProducer('PxdMap' ,#demo = nome libero
  vertices = cms.InputTag("offlinePrimaryVertices"),
  cores = cms.InputTag("ak4PFJetsCHS"),
  ptMin = cms.double(800), #800
+ simTracks= cms.InputTag("g4SimHits")
 )
 
 process.TFileService = cms.Service("TFileService",
