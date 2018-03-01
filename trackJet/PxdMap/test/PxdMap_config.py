@@ -38,9 +38,11 @@ process.source = cms.Source("PoolSource",
 process.demo = cms.EDProducer('PxdMap' ,#demo = nome libero
  pixelClusters=cms.InputTag("siPixelClusters"),
  vertices = cms.InputTag("offlinePrimaryVertices"),
- cores = cms.InputTag("ak4PFJetsCHS"),
+ cores = cms.InputTag("ak4CaloJets"),
+ #cores =cms.InputTag("ak4PFJetsCHS"),
  ptMin = cms.double(800), #800
- simTracks= cms.InputTag("g4SimHits")
+ simTracks= cms.InputTag("g4SimHits"),
+ pixelCPE = cms.string( "PixelCPEGeneric" )
 )
 
 process.TFileService = cms.Service("TFileService",

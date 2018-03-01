@@ -50,6 +50,7 @@
 
 
 #include "RecoLocalTracker/ClusterParameterEstimator/interface/PixelClusterParameterEstimator.h"
+#include "RecoLocalTracker/Records/interface/TkPixelCPERecord.h"
 
 #include "SimDataFormats/TrackerDigiSimLink/interface/PixelDigiSimLink.h"
 
@@ -71,6 +72,9 @@
 
 #include "SimG4Core/Application/interface/G4SimTrack.h"
 #include "SimDataFormats/Track/interface/SimTrack.h"
+
+
+#include "Geometry/TrackerGeometryBuilder/interface/PixelGeomDetUnit.h"
 
 
 
@@ -132,17 +136,15 @@ class PxdMap : public edm::one::EDProducer<edm::one::SharedResources>  {
   double jet_phi;
   double jet_Ntrack = 0;
 
+  // int minLayer = 1;
+  // int maxLayer = 4;
 
-  int minLayer = 1;
-  int maxLayer = 4;
-
-  // double pitchX = 0.01; //A CASO
-  // double pitchY = 0.015; //A CASO
+  double pitchX = 0.01;
+  double pitchY = 0.015;
 
   int jetnum =0;
 
   bool print = false;
-
 
 
   // int eventNum;
@@ -179,16 +181,20 @@ class PxdMap : public edm::one::EDProducer<edm::one::SharedResources>  {
 
   double ptMin_;
   // double deltaR_;
+  std::string pixelCPE_;
+
 
   std::pair<bool, Basic3DVector<float>> findIntersection(const GlobalVector & , const reco::Candidate::Point & ,const GeomDet*);
 
-  void fillPixelMatrix(const SiPixelCluster &, int, auto);
+  void fillPixelMatrix(const SiPixelCluster &, int, auto, const GeomDet*);
 
-  void fillPixelTrackMap(int, const SiPixelCluster &, int, auto);
+  void fillPixelTrackMap(int, const SiPixelCluster &, int, auto, const GeomDet*);
 
   void fillPixelTrackMatrix(const std::vector<SimTrack>* const &);
 
   std::map<int,SiPixelCluster> splitClusterInTracks(const SiPixelCluster &, const DetId &);
+
+  std::pair<int,int> local2Pixel(double, double, const GeomDet*);
 
 
   // template<typename Cluster>
@@ -221,7 +227,8 @@ PxdMap::PxdMap(const edm::ParameterSet& iConfig) :
       pixeldigisimlinkToken(consumes< edm::DetSetVector<PixelDigiSimLink> >(edm::InputTag("simSiPixelDigis"))),
       cores_(consumes<edm::View<reco::Candidate> >(iConfig.getParameter<edm::InputTag>("cores"))),
       simtracksToken(consumes<std::vector<SimTrack> >(iConfig.getParameter<edm::InputTag>("simTracks"))),
-      ptMin_(iConfig.getParameter<double>("ptMin"))
+      ptMin_(iConfig.getParameter<double>("ptMin")),
+      pixelCPE_(iConfig.getParameter<std::string>("pixelCPE"))
 
       //cores_(consumes<edm::View<reco::Candidate> >(iConfig.getParameter<edm::InputTag>("cores")))
 
@@ -350,6 +357,13 @@ void PxdMap::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   // iSetup.get<TkPixelCPERecord>().get(pixelCPE_, pe);
   // pp = pe.product();
 
+  //--------------------------debuging lines ---------------------//
+  edm::ESHandle<PixelClusterParameterEstimator> pe;
+  const PixelClusterParameterEstimator* pp;
+  iSetup.get<TkPixelCPERecord>().get(pixelCPE_, pe);
+  pp = pe.product();
+  //--------------------------end ---------------------//
+
   auto output = std::make_unique<edmNew::DetSetVector<SiPixelCluster>>();
 
 print = false;
@@ -371,34 +385,93 @@ print = false;
       jet_phi = jet.phi();
       GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
       //GlobalVector jetVertex(jet.vertex());
-      reco::Candidate::Point jetVertex = jet.vertex();
+
+      //reco::Candidate::Point jetVertex = jet.vertex(); //probably equivalent
+      const reco::Vertex& jetVertex = (*vertices)[0];
       edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt = inputPixelClusters->begin();
 
       for (; detIt != inputPixelClusters->end(); detIt++) { //loop deset
         //edmNew::DetSetVector<SiPixelCluster>::FastFiller filler(*output,detIt->id()); //A CHE SERVE?
         const edmNew::DetSet<SiPixelCluster>& detset = *detIt;
         const GeomDet* det = geometry_->idToDet(detset.id()); //lui sa il layer con cast a  PXBDetId (vedi dentro il layer function)
-
+        //std::cout << "detset size = " << detset.size() << std::endl;
         for (auto cluster = detset.begin(); cluster != detset.end(); cluster++) { //loop cluster
 
           const SiPixelCluster& aCluster = *cluster;
           det_id_type aClusterID= detset.id();
           PXBDetId detPX = (PXBDetId)detset.id();
           int lay = detPX.layer();
-          std::pair<bool, Basic3DVector<float>> interPair = findIntersection(jetDir,jetVertex, det);
-          if(interPair.first==0) continue;
+          std::pair<bool, Basic3DVector<float>> interPair = findIntersection(jetDir,(reco::Candidate::Point)jetVertex.position(), det);
+          if(interPair.first==false) continue;
           Basic3DVector<float> inter = interPair.second;
-          auto localInter = det->specificSurface().toLocal((GlobalVector)inter);
+          // std::cout <<"INTER GLOBAL="<< inter << std::endl;
+          // std::cout <<"INTER CASTED GLOBAL="<< (GlobalPoint)inter << std::endl;
 
-          auto deltaR_loc = Geom::deltaR(jetDir, localInter);
-          auto deltaR_glob = Geom::deltaR(jetDir, inter);
-          if(print){std::cout<< "DELTA R WITH INTERSECTION local: " << deltaR_loc << std::endl;
-        //  std::cout<< "DELTA R WITH INTERSECTION global: " << deltaR_glob << std::endl;}
-          std::cout<< "local inter X " << localInter.x() << std::endl;
-            std::cout<< "local inter y " << localInter.y() << std::endl;
-              std::cout<< "cluser X " << aCluster.x() << std::endl;
-                std::cout<< "cluster Y " << aCluster.y() << std::endl;
+          auto localInter = det->specificSurface().toLocal((GlobalPoint)inter);
+          // std::cout <<"INTER LOCAL="<< localInter << std::endl;
+          // auto localInterBIS = det->specificSurface().toLocal(inter);
+          // std::cout <<"INTER LOCAL DIOBESTIA="<< localInterBIS << std::endl;
+
+
+           GlobalPoint pointVertex(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
+
+           //--------------------------debuging lines ---------------------//
+           GlobalVector intersectionDir = (GlobalPoint) inter - pointVertex;
+          //auto deltaR_loc = Geom::deltaR(jetDir, localInter);
+        //  auto deltaR_glob = Geom::deltaR(jetDir, inter);
+          auto deltaR_glob = Geom::deltaR(jetDir, intersectionDir);
+          GlobalPoint cPos = det->surface().toGlobal(pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first);
+          LocalPoint cPos_local = pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first;
+          GlobalVector clusterDir = cPos - pointVertex;
+          auto deltaR_clust = Geom::deltaR(jetDir, clusterDir);
+
+          //--------------------------end---------------------//
+
+          if(print){
+            // std::cout<< "DELTA R local: " << deltaR_loc;
+          std::cout<< "------------ DELTA R global: " << deltaR_glob << std::endl;
+          std::cout<< "local inter X=" << localInter.x();
+          std::cout<< "      local inter y=" << localInter.y();
+          std::cout<< "     cluser X=" << aCluster.x();
+          std::cout<< "     cluster Y=" << aCluster.y() << std::endl;
         }
+
+          if((int)detPX==302122764 && 0){
+            std::cout << "----FOUND 302122764---" << std::endl;
+            std::cout << "layer =" << lay << std::endl;
+            std::cout << "deltaR global=" << deltaR_glob << std::endl;
+            std::cout<< "local inter X=" << localInter.x();
+            std::cout<< "        local inter Y=" << localInter.y() << std::endl;
+            std::cout<< "clusterX -interX =" << aCluster.x()-localInter.x();
+            std::cout<< "            clusterY -interY =" << aCluster.y()-localInter.y()<< std::endl;
+            std::cout << "____________________________________________________" << std::endl;
+          }
+
+          //if(abs(aCluster.x()-localInter.x())<=jetDimX/2 && abs(aCluster.y()-localInter.y())<=jetDimY/2){ // per ora preso baricentro, da migliorare
+          if(deltaR_clust<0.05 && 0){
+            std::cout << " " << std::endl;
+           std::cout << "pixel x=" << std::abs(cPos_local.x()-localInter.x())/pitchX ;
+           std::cout << "       cPos_local x=" << cPos_local.x() ;
+           std::cout << "       localInter x=" << localInter.x() ;
+           std::cout << "       inter x=" << inter.x() << std::endl ;
+
+           std::cout << "pixel y=" << std::abs(cPos_local.y()-localInter.y())/pitchY;
+           std::cout << "       cPos_local y=" << cPos_local.y() ;
+           std::cout << "       localInter y =" << localInter.y();
+           std::cout << "       inter y=" << inter.y()  << std::endl;
+
+           std::cout << "pixel z=" << std::abs(cPos_local.z()-localInter.z())/pitchY;
+           std::cout << "       cPos_local z=" << cPos_local.z() ;
+           std::cout << "       localInter z =" << localInter.z();
+           std::cout << "       inter z=" << inter.z() << std::endl;
+
+           std::cout << "jet vertex=" << jetVertex.position() << std::endl;
+           std::cout << "layer=" << lay << std::endl;
+
+         }
+          //std::cout << "diff" << abs(cPos_local.x()-localInter.x()) << std::endl;
+
+          if(std::abs(cPos_local.x()-localInter.x())/pitchX<=jetDimX/2 && std::abs(cPos_local.y()-localInter.y())/pitchY<=jetDimY/2){ // per ora preso baricentro, da migliorare
 
 
 
@@ -406,7 +479,6 @@ print = false;
           // if(print) {std::cout << "REF frame DEB: cluser x =" << aCluster.x() << std::endl;
           // std::cout << "REF frame DEB: localinter x =" << localInter.x() << std::endl;
           // std::cout << "REF frame DEB: inter x =" << inter.x() << std::endl;}
-          if(abs(aCluster.x()-localInter.x())<=jetDimX/2 && abs(aCluster.y()-localInter.y())<=jetDimY/2){ // per ora preso baricentro, da migliorare
             //---------------debug lines------------------------------------//
             //if(jetnum==10 && lay==2)
             // if(1){
@@ -421,15 +493,40 @@ print = false;
             //     std::cout << "charge " << pix.adc <<std::endl;}
             //   }
             // }
+            if((int)detPX==302122764 && 0){std::cout << "INSIDE WINDOW" << std::endl;}
 
-            fillPixelMatrix(aCluster,lay,localInter); //da sistemare forse il pitch
+            std::cout << "-------------- New Cluster -------------"<< std::endl;
+            std::cout << "clusterID=" << (int)detPX;
+            std::cout << "        layer=" << detPX.layer();
+            std::cout << "        ladder=" << detPX.ladder();
+            std::cout << "        module=" << detPX.module()<< std::endl;
+            // std::cout << "        vertex_x=" << jetVertex.x();
+            // std::cout << "        vertex_y=" << jetVertex.y();
+            // std::cout << "        vertex_z=" << jetVertex.z() << std::endl;
+            // std::cout << "        deltaR_global=" << deltaR_glob;
+            // std::cout << "        deltaR_cluster: " << deltaR_clust;
+            // std::cout << "        pp_clust_X=" << pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first.x();
+            // std::cout << "        pp_clust_Y=" << pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first.y();
+            // std::cout << "        pos cluster=" << cPos_local;
+            // std::cout << "        pos cluster x/pitch=" << cPos_local.x()/pitchX;
+            // std::cout << "        pos cluster y/pitch=" << cPos_local.y()/pitchY;
+            // std::cout << "        intersection_X=" << localInter.x();
+            // std::cout << "        intersection_Y=" << localInter.y() << std::endl;
+
+
+
+
+            fillPixelMatrix(aCluster,lay,localInter, det);
             //std::unique_ptr<edmNew::DetSetVector<SiPixelCluster> > newPixelClusters( splitClusters( siPixelDetsWithClusters, vertices->front() ) ); //qualcosa del genere
-            std::cout << "-------------- New Cluster -------------" << std::endl;
+
+
+
+
             std::map<int,SiPixelCluster> splittedCluster = splitClusterInTracks(aCluster,aClusterID); //accesso/assegnazione splittedClister[id]=cluser
             for(std::map<int,SiPixelCluster>::iterator track_iter= splittedCluster.begin(); track_iter!=splittedCluster.end(); track_iter++){
               std::cout << "trackID=" << track_iter->first;
-              std::cout << " --- layer=" << lay << std::endl;
-              fillPixelTrackMap(track_iter->first, track_iter->second,lay,localInter);
+               std::cout << " --- layer=" << lay << std::endl;
+              fillPixelTrackMap(track_iter->first, track_iter->second,lay,localInter, det);
               //aggiungere salvataggio info traccia (pt eta ecc) usando trackID
 
             }//tracks in cluster
@@ -492,13 +589,54 @@ print = false;
 
   std::pair<bool, Basic3DVector<float>> PxdMap::findIntersection(const GlobalVector & dir,const  reco::Candidate::Point & vertex, const GeomDet* det){
      StraightLinePlaneCrossing vertexPlane(Basic3DVector<float>(vertex.x(),vertex.y(),vertex.z()), Basic3DVector<float>(dir.x(),dir.y(),dir.z()));
+// std::cout << "dir=" << dir << std::endl;
+// std::cout << "vertex=" << vertex << std::endl;
      std::pair<bool, Basic3DVector<float>> pos = vertexPlane.position(det->specificSurface());
+      // auto localized = det->specificSurface().toLocal((GlobalPoint)pos.second);
+      // auto globalized = det->specificSurface().toGlobal(localized);
+    //  std::cout << "global intersez= "<< pos.second << std::endl;
+    //  std::cout << "local intersez=" << localized << std::endl;
+    //  std::cout << "ariglobal intersez=" << globalized << std::endl;
      return pos;
   }
+
+  // std::pair<bool, GlobalPoint> PxdMap::findIntersection(const GlobalVector & dir,const  reco::Candidate::Point & vertex, const GeomDet* det){
+  //    StraightLinePlaneCrossing vertexPlane(Basic3DVector<float>(vertex.x(),vertex.y(),vertex.z()), Basic3DVector<float>(dir.x(),dir.y(),dir.z()));
+
+    //  std::pair<bool, Basic3DVector<float>> pos = vertexPlane.position(det->specificSurface());
+    //  return pos;
+
+  //  std::pair<bool,double> propResult = vertexPlane.pathLength(det->specificSurface());
+  // //  if ( !propResult.first )  return false;
+  //  double s = propResult.second;
+  //  // point (reconverted to GlobalPoint)
+  // //  std::cout << "path len =" << s;
+  //  //std::pair<bool, Basic3DVector<float>> out(propResult.first, (Basic3DVector<float>)GlobalPoint(vertexPlane.position(s)));
+  //  std::pair<bool, GlobalPoint> out(propResult.first, (Basic3DVector<float>)GlobalPoint(vertexPlane.position(s)));
+  //  auto localized = det->specificSurface().toLocal(GlobalPoint(vertexPlane.position(s)));
+  //  auto globalized = det->specificSurface().toGlobal(localized);
+  //  std::cout << "global intersez= "<< GlobalPoint(vertexPlane.position(s)) << std::endl;
+  //  std::cout << "local intersez=" << localized << std::endl;
+  //  std::cout << "ariglobal intersez=" << globalized << std::endl;
+  //
+  //  return out;
+  // //  GlobalPoint x = GlobalPoint(vertexPlane.position(s));
+  // //  return (Basic3DVector<float>)x;
+  //  //
+  // }
+
   //std::cout << "intersection BOOL= " << pos.first << std::endl;
   // return pos.second;
 
-  void PxdMap::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter){
+  std::pair<int,int> PxdMap::local2Pixel(double locX, double locY, const GeomDet* det){
+    LocalPoint locXY(locX,locY);
+    float pixX=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().pixel(locXY).first;
+    float pixY=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().pixel(locXY).second;
+    std::pair<int, int> out(pixX,pixY);
+    return out;
+  }
+
+  void PxdMap::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det){
     // if(print){std::cout << "----- cluster filled-------" << std::endl;
     // std::cout << "cluser layer" << layer << std::endl;}
     if(print){std::cout << "--------new cluster----------" <<std::endl;
@@ -506,8 +644,11 @@ print = false;
 
     for(int i=0; i<=cluster.size();i++){
       SiPixelCluster::Pixel pix = cluster.pixel(i);
-      int nx = pix.x-inter.x() ;//pitchX;
-      int ny = pix.y-inter.y();//pitchY;
+      std::pair<int,int> pixInter = local2Pixel(inter.x(),inter.y(),det);
+      int nx = pix.x-pixInter.first;
+      int ny = pix.y-pixInter.second;
+      // int nx = pix.x-inter.x()/pitchX ;//pitchX;
+      // int ny = pix.y-inter.y()/pitchY;//pitchY;
 
 
       if(abs(nx)<jetDimX/2 && abs(ny)<jetDimY/2){
@@ -527,11 +668,38 @@ print = false;
     // }
   }
 
-  void PxdMap::fillPixelTrackMap(int trackID, const SiPixelCluster & cluster, int layer, auto inter){
+  void PxdMap::fillPixelTrackMap(int trackID, const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det){
     for(int i=0; i<=cluster.size();i++){
       SiPixelCluster::Pixel pix = cluster.pixel(i);
-      int nx = pix.x-inter.x() ;//pitchX;
-      int ny = pix.y-inter.y();//pitchY;
+
+
+      // std::cout << "pix x ="<<pix.x;
+      // std::cout << "     inter x ="<<inter.x();
+      // std::cout << "     inter x/pitchX ="<<inter.x()/pitchX << std::endl;
+      //
+      // std::cout << "pix y ="<<pix.y;
+      // std::cout << "     inter y ="<<inter.y();
+      // std::cout << "     inter y/pitchY ="<<inter.y()/pitchY << std::endl;
+
+      // //-----debug lines ------//
+      // LocalPoint xytrack(0, 0);
+      // float topixelX=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().pixel(xytrack).first;
+      // float topixelY=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().pixel(xytrack).second;
+      // std::cout << "converted pixel x=" << topixelX;
+      // std::cout << "       converted pixel y=" << topixelY << std::endl;
+      //
+      // LocalPoint xyinter(inter.x(), inter.y());
+      // float pixelinterx=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().pixel(xyinter).first;
+      // float pixelintery=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().pixel(xyinter).second;
+      // std::cout << "converted inter x=" << pixelinterx;
+      // std::cout << "       converted inter y" << pixelintery << std::endl;
+
+
+      std::pair<int,int> pixInter = local2Pixel(inter.x(),inter.y(),det);
+      int nx = pix.x-pixInter.first;
+      int ny = pix.y-pixInter.second;
+      // int nx = pix.x-inter.x()/pitchX ;//pitchX;
+      // int ny = pix.y-inter.y()/pitchY;//pitchY;
       if(abs(nx)<jetDimX/2 && abs(ny)<jetDimY/2){
         // std::map<int, double [Nlayer][jetDimX][jetDimY]>::iterator finder = trackMap.find(trackID);
         // if(finder !=trackMap.end()){
@@ -549,7 +717,7 @@ print = false;
         nx = nx+jetDimX/2;
         ny = ny+jetDimY/2;
         //std::cout << "MAP track ID=" << trackID << std::endl;
-        trackMap[trackID][layer-1][nx][ny] = pix.adc;
+        trackMap[trackID][layer-1][nx][ny] = trackMap[trackID][layer-1][nx][ny]+pix.adc;
 
         //trackMap[trackID][layer][nx][ny] = pix.adc;
 
@@ -570,10 +738,13 @@ print = false;
         for(int dimx =0; dimx<jetDimX; dimx++){
           for(int dimy =0; dimy<jetDimY; dimy++){
             clusterSplit[trk][lay][dimx][dimy] = trackMap[it->first][lay][dimx][dimy];
-            if(trackMap[it->first][lay][dimx][dimy]>100){std::cout << "filled hit in track, " << trk;
-            std::cout << " -- filled lay=" << lay;
-            std::cout << " -- filled dimx=" << dimx;
-            std::cout << " -- filled dimy=" << dimy <<std::endl;
+
+            if(trackMap[it->first][lay][dimx][dimy]>100){
+              std::cout << "filled hit in track (trk), " << trk;
+              std::cout << " -- filled lay=" << lay;
+              std::cout << " -- filled dimx=" << dimx;
+              std::cout << " -- filled dimy=" << dimy <<std::endl;
+            }
           }
         }
       }
@@ -605,8 +776,8 @@ print = false;
       //else std::cout <<"traccia in stock <-------------" << std::endl;
 
       trk++;
+      std::cout << "------------------------------" << std::endl;
     }
-    std::cout << "------------------------------" << std::endl;}
     trackMap.clear();
   }
 
