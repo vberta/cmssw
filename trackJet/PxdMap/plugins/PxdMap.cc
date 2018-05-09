@@ -123,8 +123,8 @@ class PxdMap : public edm::one::EDProducer<edm::one::SharedResources>  {
 
   TFile* pxdMap_out;
   TTree* PxdMapTree;
-  static const int jetDimX =60;
-  static const int jetDimY =60;
+  static const int jetDimX =100;
+  static const int jetDimY =100;
   static const int Nlayer =4;
   static const int Ntrack = 100;
   double clusterMeas[Nlayer][jetDimX][jetDimY];
@@ -204,6 +204,8 @@ class PxdMap : public edm::one::EDProducer<edm::one::SharedResources>  {
 
   int pixelFlipper(const GeomDet*);
 
+  GlobalVector recenter(const reco::Candidate&, GlobalVector, const reco::Vertex&, const TrackerTopology* const, const PixelClusterParameterEstimator*);
+
   // template<typename Cluster>
   // std::unique_ptr<edmNew::DetSetVector<Cluster> >
   // splitClusters(const std::map<uint32_t,
@@ -253,8 +255,8 @@ PxdMap::PxdMap(const edm::ParameterSet& iConfig) :
    //pxdMap_out =new TFile("pxdMap_out.root", "RECREATE");
   // PxdMapTree= new TTree("PxdMapTree","PxdMapTree");
    PxdMapTree= fileService->make<TTree>("PxdMapTree","PxdMapTree");
-   PxdMapTree->Branch("cluster_measured",clusterMeas,"cluster_measured[4][60][60]/D");
-   PxdMapTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][60][60]/D");
+   PxdMapTree->Branch("cluster_measured",clusterMeas,"cluster_measured[4][100][100]/D");
+   PxdMapTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][100][100]/D");
   // PxdMapTree->Branch("cluster_measured",clusterMeas,"cluster_measured[4][500][500]/D");
   // PxdMapTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][500][500]/D");
   //  PxdMapTree->Branch("cluster_measured",clusterMeas,"cluster_measured[4][4][4]/f");
@@ -398,8 +400,16 @@ print = false;
       GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
       //GlobalVector jetVertex(jet.vertex());
 
-      //reco::Candidate::Point jetVertex = jet.vertex(); //probably equivalent
       const reco::Vertex& jetVertex = (*vertices)[0];
+
+      std::cout << "jetdirection=" << jetDir << std::endl;
+
+      jetDir=recenter(jet, jetDir, jetVertex, tTopo, pp);
+
+      std::cout << "jetdirection corrected=" << jetDir << std::endl;
+
+
+      //reco::Candidate::Point jetVertex = jet.vertex(); //probably equivalent
       edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt = inputPixelClusters->begin();
 
       for (; detIt != inputPixelClusters->end(); detIt++) { //loop deset
@@ -408,6 +418,7 @@ print = false;
         const GeomDet* det = geometry_->idToDet(detset.id()); //lui sa il layer con cast a  PXBDetId (vedi dentro il layer function)
         //std::cout << "detset size = " << detset.size() << std::endl;
         for (auto cluster = detset.begin(); cluster != detset.end(); cluster++) { //loop cluster
+          std::cout << " ---- new cluster ----" << std::endl;
 
           const SiPixelCluster& aCluster = *cluster;
           det_id_type aClusterID= detset.id();
@@ -423,22 +434,36 @@ print = false;
           // std::cout <<"INTER CASTED GLOBAL="<< (GlobalPoint)inter << std::endl;
 
           auto localInter = det->specificSurface().toLocal((GlobalPoint)inter);
-          // std::cout <<"INTER LOCAL="<< localInter << std::endl;
+          std::cout <<"INTER LOCAL="<< localInter << std::endl;
           // auto localInterBIS = det->specificSurface().toLocal(inter);
           // std::cout <<"INTER LOCAL db="<< localInterBIS << std::endl;
+
+          //----------------debug recenter --------------//
+          if(1){
+            GlobalVector olddir(jet.px(), jet.py(), jet.pz());
+            std::pair<bool, Basic3DVector<float>> interPair2 = findIntersection(olddir,(reco::Candidate::Point)jetVertex.position(), det);
+            if(interPair2.first==false) continue;
+            Basic3DVector<float> inter2 = interPair2.second;
+            auto localInter2 = det->specificSurface().toLocal((GlobalPoint)inter2);
+            std::cout <<"INTER LOCAL OLD="<< localInter2 << std::endl;
+          }
 
 
            GlobalPoint pointVertex(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
 
            //--------------------------debuging lines ---------------------//
-           GlobalVector intersectionDir = (GlobalPoint) inter - pointVertex;
+
           //auto deltaR_loc = Geom::deltaR(jetDir, localInter);
         //  auto deltaR_glob = Geom::deltaR(jetDir, inter);
-          auto deltaR_glob = Geom::deltaR(jetDir, intersectionDir);
           GlobalPoint cPos = det->surface().toGlobal(pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first);
           LocalPoint cPos_local = pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first;
-          GlobalVector clusterDir = cPos - pointVertex;
-          auto deltaR_clust = Geom::deltaR(jetDir, clusterDir);
+
+          //useful lines only if print =.=
+            GlobalVector intersectionDir = (GlobalPoint) inter - pointVertex;
+            auto deltaR_glob = Geom::deltaR(jetDir, intersectionDir);
+            GlobalVector clusterDir = cPos - pointVertex;
+            auto deltaR_clust = Geom::deltaR(jetDir, clusterDir);
+        //end of =.=
 
           //--------------------------end---------------------//
 
@@ -451,7 +476,7 @@ print = false;
           std::cout<< "     cluster Y=" << aCluster.y() << std::endl;
         }
 
-          if((int)detPX==306368532){
+          if((int)detPX==306368532 && 0){
             std::cout << "----FOUND 306368532---" << std::endl;
             std::cout << "layer =" << lay << std::endl;
             // std::cout << "deltaR global=" << deltaR_glob << std::endl;
@@ -508,7 +533,7 @@ print = false;
             //     std::cout << "charge " << pix.adc <<std::endl;}
             //   }
             // }
-            if((int)detPX==306368532){std::cout << "INSIDE WINDOW" << std::endl;}
+            if((int)detPX==306368532 && 0){std::cout << "INSIDE WINDOW" << std::endl;}
 
             if(print2){std::cout << "-------------- New Cluster -------------"<< std::endl;
             std::cout << "clusterID=" << (int)detPX;
@@ -587,7 +612,7 @@ print = false;
   } //jet > pt
  } //jet
 //  print = false;
-std::cout << "DEB final=" << evt_counter<< std::endl;
+std::cout << "event number=" << evt_counter<< std::endl;
 }
 
 
@@ -662,6 +687,115 @@ std::cout << "DEB final=" << evt_counter<< std::endl;
     return out;
    }
 
+
+  GlobalVector PxdMap::recenter(const reco::Candidate& jet, GlobalVector dir, const reco::Vertex& jetVertex, const TrackerTopology* const tTopo, const PixelClusterParameterEstimator* pp){
+
+    int layNum=4;
+    int jetCore = 40;
+    // std::vector<std::pair<double,double>> baricenter;
+    double baricenter_x[layNum]={0.0};
+    double baricenter_y[layNum]={0.0};
+    double charge[layNum]={0.0};
+    GlobalPoint baricenter_global;
+
+    // std::cout<<"deb1="<<baricenter_y[0] <<std::endl;
+
+
+
+    for(int llay=0; llay<layNum;llay++){
+      baricenter_x[llay]=0.0;
+      baricenter_y[llay]=0.0;
+      // std::cout<<"deb1="<<baricenter_y[0] <<std::endl;
+
+      edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt = inputPixelClusters->begin(); //forse non lo ha !!!!!
+
+      for (; detIt != inputPixelClusters->end(); detIt++) { //loop deset
+
+        edmNew::DetSetVector<SiPixelCluster>::const_iterator detfound;
+
+        const edmNew::DetSet<SiPixelCluster>& detset = *detIt;
+        const GeomDet* det = geometry_->idToDet(detset.id());
+
+        for (auto cluster = detset.begin(); cluster != detset.end(); cluster++) { //loop cluster
+
+          const SiPixelCluster& aCluster = *cluster;
+          auto aClusterID= detset.id();
+          if(DetId(aClusterID).subdetId()!=1) continue;
+
+          int lay = tTopo->layer(det->geographicalId());
+          // if(lay==0)std::cout<<"layer 0????"<< std::endl;
+          if(lay!=llay+1) continue;
+
+          std::pair<bool, Basic3DVector<float>> interPair = findIntersection(dir,(reco::Candidate::Point)jetVertex.position(), det);
+          if(interPair.first==false) continue;
+          Basic3DVector<float> inter = interPair.second;
+          auto localInter = det->specificSurface().toLocal((GlobalPoint)inter);
+          //GlobalPoint pointVertex(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
+          //GlobalPoint cPos = det->surface().toGlobal(pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first);
+          LocalPoint cPos_local = pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first;
+
+          if(std::abs(cPos_local.x()-localInter.x())/pitchX<=jetCore/2 && std::abs(cPos_local.y()-localInter.y())/pitchY<=jetCore/2){ // per ora preso baricentro, da migliorare
+
+          // else       std::cout<<"layer ok"<< std::endl;
+          // if(lay==1){std::cout<<"layer 0"<< std::endl;}
+
+          // GlobalPoint pointVertex(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
+          // GlobalPoint cPos = det->surface().toGlobal(pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first);
+          // LocalPoint cPos_local = pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt->id())))[0].first;
+          // GlobalVector clusterDir = cPos - pointVertex;
+          // auto deltaR_clust = Geom::deltaR(dir, clusterDir);
+
+
+
+          // if(deltaR_clust<0.05){
+          //  std::cout<<"inside delta R"<< std::endl;
+            // double posx = cPos_local.x();
+            // double posy = cPos_local.y();
+            // double q = aCluster.charge();
+            // std::cout<<"        before="<<baricenter_y[llay] ;
+            // std::cout<< "         llay=" << llay ;
+            baricenter_x[llay] += (cPos_local.x())*(aCluster.charge());
+            baricenter_y[llay] += (cPos_local.y())*(aCluster.charge());
+            // baricenter_x[llay]= baricenter_x[llay]+q*posx;
+            // baricenter_y[llay]= baricenter_y[llay]+q*posy;
+            charge[llay] += aCluster.charge();
+            // std::cout<<"      cposloc="<<cPos_local.x() ;
+            // std::cout<<"      qposx="<<q*posx ;
+
+
+          //  std::cout<<"        after="<<baricenter_y[llay] ;
+          //  std::cout<<"       charge="<<charge[llay]<<std::endl;
+           detfound=detIt;
+
+
+          } //cluster in ROI
+      } //cluster
+      // std::cout<<"charge"<<charge[0] << std::endl;
+
+      if(detfound==detIt){
+        const edmNew::DetSet<SiPixelCluster>& detset = *detIt;
+        std::cout << "enter in det==" << detset.id();
+        std::cout << "     with lay = " << llay << std::endl;
+        baricenter_x[llay] /= charge[llay];
+        baricenter_y[llay] /= charge[llay];
+      // std::cout<<"divided="<<baricenter_y[llay] ;
+      // std::cout << "    layeer=" << llay << std::endl;
+      LocalPoint baricenter_local(baricenter_x[0],baricenter_y[0], 0.0);
+      std::cout<<"baricenter_local="<<baricenter_local << std::endl;
+      baricenter_global = det->surface().toGlobal(baricenter_local);
+      }
+    } //detset
+
+  } //layer
+  //std::cout<<"baricenter_global="<<baricenter_global << std::endl;
+  GlobalPoint pointv(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
+  //GlobalPoint nothing(0,0,0);
+  GlobalVector out = baricenter_global - pointv;
+  return out;
+
+}
+
+
   void PxdMap::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det){
     // if(print){std::cout << "----- cluster filled-------" << std::endl;
     // std::cout << "cluser layer" << layer << std::endl;}
@@ -687,7 +821,7 @@ std::cout << "DEB final=" << evt_counter<< std::endl;
       if(abs(nx)<jetDimX/2 && abs(ny)<jetDimY/2){
         nx = nx+jetDimX/2;
         ny = ny+jetDimY/2;
-        clusterMeas[layer-1][nx][ny] = clusterMeas[layer-1][nx][ny]+pix.adc;
+        clusterMeas[layer-1][nx][ny] += pix.adc;
 
         if(print){std::cout << "x position pixel " << nx-jetDimX/2 <<std::endl;
         std::cout << "y position pixel " << ny-jetDimY/2 <<std::endl;
@@ -758,7 +892,7 @@ std::cout << "DEB final=" << evt_counter<< std::endl;
         //std::cout << "MAP track ID=" << trackID << std::endl;
 
 
-        trackMap[trackID][layer-1][nx][ny] = trackMap[trackID][layer-1][nx][ny]+pix.adc;
+        trackMap[trackID][layer-1][nx][ny] += pix.adc;
 
         //trackMap[trackID][layer][nx][ny] = pix.adc;
 
@@ -957,375 +1091,6 @@ std::cout << "DEB final=" << evt_counter<< std::endl;
 
     return output;
   }
-
-
-
-
-
-
-
-//   edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt = inputPixelClusters->begin();
-//   for (; detIt != inputPixelClusters->end(); detIt++) {
-//     edmNew::DetSetVector<SiPixelCluster>::FastFiller filler(*output,detIt->id());
-//     const edmNew::DetSet<SiPixelCluster>& detset = *detIt;
-//     const GeomDet* det = geometry->idToDet(detset.id()); //lui sa il layer con cast a  PXBDetId (vedi dentro il layer function)
-//     for (auto cluster = detset.begin();
-//          cluster != detset.end(); cluster++) {
-//       const SiPixelCluster& aCluster = *cluster;
-//       bool hasBeenSplit = false;
-//       bool shouldBeSplit = false;
-//       GlobalPoint cPos = det->surface().toGlobal(
-//           pp->localParametersV(aCluster,
-//                                (*geometry->idToDetUnit(detIt->id())))[0].first);
-//       GlobalPoint ppv(pv.position().x(), pv.position().y(), pv.position().z());
-//       GlobalVector clusterDir = cPos - ppv;
-//       for (unsigned int ji = 0; ji < cores->size(); ji++) { //fallo diventare loop più esterno
-//         if ((*cores)[ji].pt() > ptMin_) {
-//           const reco::Candidate& jet = (*cores)[ji];
-//           GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
-//           if (Geom::deltaR(jetDir, clusterDir) < deltaR_) {
-//             // check if the cluster has to be splitted
-//             //PRINT DEL CLUSTER SU MAPPA
-//             //SPLITTER USANDO tracks
-//             bool isEndCap =
-//                 (std::abs(cPos.z()) > 30.f);  // FIXME: check detID instead!
-//             float jetZOverRho = jet.momentum().Z() / jet.momentum().Rho();
-//             if (isEndCap)
-//               jetZOverRho = jet.momentum().Rho() / jet.momentum().Z();
-//             float expSizeY =
-//                 std::sqrt((1.3f*1.3f) + (1.9f*1.9f) * jetZOverRho*jetZOverRho);
-//             if (expSizeY < 1.f) expSizeY = 1.f;
-//             float expSizeX = 1.5f;
-//             if (isEndCap) {
-//               expSizeX = expSizeY;
-//               expSizeY = 1.5f;
-//             }  // in endcap col/rows are switched
-//             float expCharge =
-//                 std::sqrt(1.08f + jetZOverRho * jetZOverRho) * centralMIPCharge_;
-//
-//             if (aCluster.charge() > expCharge * chargeFracMin_ &&
-//                 (aCluster.sizeX() > expSizeX + 1 ||
-//                  aCluster.sizeY() > expSizeY + 1)) {
-//               shouldBeSplit = true;
-//               if (split(aCluster, filler, expCharge, expSizeY, expSizeX,
-//                         jetZOverRho)) {
-//                 hasBeenSplit = true;
-//               }
-//             }
-//           }
-//         }
-//       }
-//       if (!hasBeenSplit) {
-//         SiPixelCluster c = aCluster;
-//         if (shouldBeSplit) {
-//           // blowup the error if we failed to split a splittable cluster (does
-//           // it ever happen)
-//           c.setSplitClusterErrorX(c.sizeX() * (100.f/3.f));  // this is not really blowing up .. TODO: tune
-//           c.setSplitClusterErrorY(c.sizeY() * (150.f/3.f));
-//         }
-//         filler.push_back(c);
-//         std::push_heap(filler.begin(),filler.end(),
-//           [](SiPixelCluster const & cl1,SiPixelCluster const & cl2) { return cl1.minPixelRow() < cl2.minPixelRow();});
-//
-//       }
-//     }// loop over clusters
-//     std::sort_heap(filler.begin(),filler.end(),
-//           [](SiPixelCluster const & cl1,SiPixelCluster const & cl2) { return cl1.minPixelRow() < cl2.minPixelRow();});
-//
-//   }  // loop over det
-//   iEvent.put(std::move(output));
-// }
-//
-//
-//
-//
-//
-//
-//
-// void
-// PxdMap::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
-// {
-//
-//    using namespace edm;
-//    //allSiPixelClusters.clear(); siPixelDetsWithClusters.clear();
-//
-//    iSetup.get<GlobalTrackingGeometryRecord>().get(geometry_);
-//    iSetup.get<IdealMagneticFieldRecord>().get( magfield_ );
-//    iSetup.get<TrackingComponentsRecord>().get( "AnalyticalPropagator", propagator_ );
-//
-//
-//    iEvent.getByToken(pixelClusters_, inputPixelClusters);
-//    allSiPixelClusters.clear(); siPixelDetsWithClusters.clear();
-//    allSiPixelClusters.reserve(inputPixelClusters->dataSize()); // this is important, otherwise push_back invalidates the iterators
-//
-//     //  pixelClusters_ = consumes<edmNew::DetSetVector<SiPixelCluster> >(iConfig.getParameter<edm::InputTag>("pixelClusters"));
-//     //  produces< edmNew::DetSetVector<SiPixelCluster> >();
-//
-//
-//
-//    foreach(const edmNew::DetSet<SiPixelCluster> &ds, *inputPixelClusters)
-//   {
-//     std::vector<SiPixelClusterWithTracks>::iterator start = allSiPixelClusters.end();
-//     allSiPixelClusters.insert(start, ds.begin(), ds.end());
-//
-//     std::vector<SiPixelClusterWithTracks>::iterator end   = allSiPixelClusters.end();
-//     siPixelDetsWithClusters[ds.detId()] = SiPixelClustersWithTracks(start,end);
-//   }
-//
-//   //  const SiPixelClusterWithTracks * clustWT = allSiPixelClusters; //SIAMO SICURI??
-//   //   //const GlobalVector &vtx
-//   //   edmNew::DetSetVector<SiPixelCluster>::FastFiller &output; //CHE CI METTO?
-//   //   //DetId detId; //da aggiungere
-//   Handle<std::vector<reco::Vertex> > vertices;
-//   iEvent.getByToken(vertices_, vertices);
-//   const reco::Vertex& pv = (*vertices)[0];
-//
-//   Handle<edm::View<reco::Candidate> > cores;
-//   // iEvent.getByToken(cores_, cores);
-//
-//   iEvent.getByToken(pixeldigisimlinkToken, pixeldigisimlink);
-//
-//   // GlobalPoint cPos = det->surface().toGlobal(
-//   //           pp->localParametersV(aCluster,
-//   //                                (*geometry->idToDetUnit(detIt->id())))[0].first);
-//   //       GlobalPoint ppv(pv.position().x(), pv.position().y(), pv.position().z());
-//   //       GlobalVector clusterDir = cPos - ppv;
-//   // for (unsigned int ji = 0; ji < cores->size(); ji++) {
-//   // if ((*cores)[ji].pt() > ptMin_) {
-//   //   const reco::Candidate& jet = (*cores)[ji];
-//   //   GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
-//   //   if (Geom::deltaR(jetDir, clusterDir) < deltaR_) {
-//   //
-//   //   }
-//
-//   std::unique_ptr<edmNew::DetSetVector<SiPixelCluster> > newPixelClusters( splitClusters( siPixelDetsWithClusters, vertices->front() ) );
-//   iEvent.put(std::move(newPixelClusters));
-//   allSiPixelClusters.clear(); siPixelDetsWithClusters.clear();
-//
-//   // loop su elementi di oggettoprodotto da newPixelCluser
-//   //pixelRow=px->riga;
-//   //pixelCol=px->colonna;
-//   //pixelSign=px->segnale;
-//   //EventNum=iEvent_numero;
-//   //layerNum->px->layer;
-//   //PxdMapTree->Fill();
-//
-//
-//
-// }
-//
-
-//
-// template<typename Cluster>
-// std::unique_ptr<edmNew::DetSetVector<Cluster> >
-// PxdMap::splitClusters(const std::map<uint32_t, boost::sub_range<std::vector<ClusterWithTracks<Cluster> > > > &input,
-// 				    const reco::Vertex &vtx) const
-// {
-//   auto output = std::make_unique<edmNew::DetSetVector<Cluster>>();
-//   typedef std::pair<uint32_t, boost::sub_range<std::vector<ClusterWithTracks<Cluster> > > > pair;
-//
-//   foreach(const pair &p, input)
-//     {
-//       const GeomDet* det = geometry_->idToDet( DetId(p.first) );
-//
-//       if ( det == nullptr )
-//       	{
-//       	  edm::LogError("MissingDetId") << "DetIDs " << p.first << " is not in geometry.\n";
-// 	         continue;
-// 	      }
-//
-//       // gavril: Pass the PV instead of direction
-//       // GlobalVector dir(det->position().x() - vtx.x(), det->position().y() - vtx.y(), det->position().z() - vtx.z());
-//       GlobalVector primary_vtx( vtx.x(), vtx.y(), vtx.z() );
-//
-//       // Create output collection
-//       typename edmNew::DetSetVector<Cluster>::FastFiller detset(*output, p.first);
-//
-//       // fill it
-//       foreach(const ClusterWithTracks<Cluster> &clustWT, p.second)
-// 	     {
-// 	        // splitCluster(c, primary_vtx, detset, DetId(p.first) );
-//           splitCluster(clustWT, detset );
-//        }
-//     }
-//
-//   return output;
-// }
-//
-//
-//
-//
-//
-// template<>
-// void PxdMap::splitCluster<SiPixelCluster> (const SiPixelClusterWithTracks &clustWT,
-// 							 //const GlobalVector &vtx,
-// 							 edmNew::DetSetVector<SiPixelCluster>::FastFiller &output
-// 							 //DetId detId
-// 							 ) const
-//   {
-//     // cout << "Cluster splitting using simhits " << endl;
-//
-//     int minPixelRow = (*clustWT.cluster).minPixelRow();
-//     int maxPixelRow = (*clustWT.cluster).maxPixelRow();
-//     int minPixelCol = (*clustWT.cluster).minPixelCol();
-//     int maxPixelCol = (*clustWT.cluster).maxPixelCol();
-//     int dsl = 0; // number of digisimlinks
-//
-//     edm::DetSetVector<PixelDigiSimLink>::const_iterator isearch = pixeldigisimlink->find(output.id());
-//     if (isearch != pixeldigisimlink->end()){
-//        edm::DetSet<PixelDigiSimLink> digiLink = (*isearch);
-//
-//        edm::DetSet<PixelDigiSimLink>::const_iterator linkiter = digiLink.data.begin();
-//         //create a vector for the track ids in the digisimlinks
-//        std::vector<int> simTrackIdV;
-//        simTrackIdV.clear();
-//        //create a vector for the new splittedClusters
-//        std::vector<SiPixelCluster> splittedCluster;
-//        splittedCluster.clear();
-//
-//       for ( ; linkiter != digiLink.data.end(); linkiter++)
-//        { // loop over all digisimlinks
-//           dsl++;
-//           std::pair<int,int> pixel_coord = PixelDigi::channelToPixel(linkiter->channel());
-//
-//            // is the digisimlink inside the cluster boundaries?
-//           if ( pixel_coord.first  <= maxPixelRow &&
-//               pixel_coord.first  >= minPixelRow &&
-//               pixel_coord.second <= maxPixelCol &&
-//               pixel_coord.second >= minPixelCol )
-//           {
-//               bool inStock(false); // did we see this simTrackId before?
-//
-//               SiPixelCluster::PixelPos newPixelPos(pixel_coord.first, pixel_coord.second); // coordinates to the pixel
-//
-//               //loop over the pixels from the cluster to get the charge in this pixel
-//               int newPixelCharge(0); //fraction times charge in the original cluster pixel
-//
-//              const std::vector<SiPixelCluster::Pixel>& pixvector = (*clustWT.cluster).pixels();
-//
-//              for(std::vector<SiPixelCluster::Pixel>::const_iterator itPix = pixvector.begin(); itPix != pixvector.end(); itPix++)
-//                {
-//                    if (((int) itPix->x) == ((int) pixel_coord.first)&&(((int) itPix->y) == ((int) pixel_coord.second)))
-//                      {
-//                           newPixelCharge = (int) (linkiter->fraction()*itPix->adc);
-//                      }
-//                }
-//
-//               if ( newPixelCharge < 2500 )
-//                 continue;
-//
-//               //add the pixel to an already existing cluster if the charge is above the threshold
-//               int clusVecPos = 0;
-//               std::vector<int>::const_iterator sTIter =  simTrackIdV.begin();
-//
-//               for ( ; sTIter < simTrackIdV.end(); sTIter++)
-//                 {
-//                     if (((*sTIter)== (int) linkiter->SimTrackId()))
-//                       {
-//                           inStock=true; // now we saw this id before
-//                             // 	  //		  std::cout << " adding a pixel to the cluster " << (int) (clusVecPos) <<std::endl;;
-//                             // 	  //		    std::cout << "newPixelCharge " << newPixelCharge << std::endl;;
-//                           splittedCluster.at(clusVecPos).add(newPixelPos,newPixelCharge); // add the pixel to the cluster
-//                      }
-//                     clusVecPos++;
-//                 }
-//
-//             //look if the splitted cluster was already made before, if not create one
-//
-//             if ( !inStock )
-//               {
-//                   //		std::cout << "creating a new cluster " << std::endl;;
-//                 simTrackIdV.push_back(linkiter->SimTrackId()); // add the track id to the vector
-//                 splittedCluster.push_back(SiPixelCluster(newPixelPos,newPixelCharge)); // add the cluster to the vector
-//               }
-//         }
-//       }
-//
-//   //    std::cout << "will add clusters : simTrackIdV.size() " << simTrackIdV.size() << std::endl;;
-//
-//      if ( ( ( (int)simTrackIdV.size() ) == 1 ) || ( *clustWT.cluster).size()==1 )
-//       {
-//          //	    cout << "putting in this cluster" << endl;
-//           output.push_back(*clustWT.cluster );
-//         //      std::cout << "cluster added " << output.size() << std::endl;;
-//       }
-//     else
-//      {
-//         for (std::vector<SiPixelCluster>::const_iterator cIter = splittedCluster.begin(); cIter != splittedCluster.end(); cIter++ )
-//          {
-//             output.push_back( (*cIter) );
-//          }
-//     }
-//
-//      simTrackIdV.clear();
-//     splittedCluster.clear();
-//   }//if (isearch != pixeldigisimlink->end())
-// }
-
-
-
-
-
-//Handle<std::vector<reco::Track> > tracks;
- //     iEvent.getByToken(tracks_, tracks);
-      //TrajectoryStateTransform transform;
-/*      foreach (const reco::Track &track, *tracks)
-	{
-	  FreeTrajectoryState atVtx   =  trajectoryStateTransform::innerFreeState(track, &*magfield_);
-	  trackingRecHit_iterator it_hit = track.recHitsBegin(), ed_hit = track.recHitsEnd();
-	  for (; it_hit != ed_hit; ++it_hit)
-	    {
-	      const TrackingRecHit *hit = *it_hit;
-	      if ( hit == nullptr || !hit->isValid() )
-		continue;
-
-	      int subdet = hit->geographicalId().subdetId();
-
-	      if ( subdet == 0 )
-		continue;
-
-	      const GeomDet *det = geometry_->idToDet( hit->geographicalId() );
-
-	      if ( det == nullptr )
-		{
-		  edm::LogError("MissingDetId") << "DetIDs " << (int)(hit->geographicalId()) << " is not in geometry.\n";
-		  continue;
-                }
-
-	      TrajectoryStateOnSurface prop = propagator_->propagate(atVtx, det->surface());
-	      if ( subdet >= 3 )
-		{ // strip
-		  markClusters<SiStripCluster>(siStripDetsWithClusters, hit, &track, prop);
-                }
-	      else if (subdet >= 1)
-		{ // pixel
-		  markClusters<SiPixelCluster>(siPixelDetsWithClusters, hit, &track, prop);
-                }
-	      else
-		{
-		  edm::LogWarning("HitNotFound") << "Hit of type " << typeid(*hit).name() << ",  detid "
-						 << hit->geographicalId().rawId() << ", subdet " << subdet;
-		}
-            }
-        }
-    }*/
-
-    // Handle<std::vector<reco::Vertex> > vertices;
-    //   iEvent.getByToken(vertices_, vertices);
-    //
-    //   // Needed in case of simsplit
-    //   if ( simSplitPixel_ )
-    //     iEvent.getByToken(pixeldigisimlinkToken, pixeldigisimlink);
-    //
-    //   // gavril : to do: choose the best vertex here instead of just choosing the first one ?
-    //   std::unique_ptr<edmNew::DetSetVector<SiPixelCluster> > newPixelClusters( splitClusters( siPixelDetsWithClusters, vertices->front() ) );
-    //   iEvent.put(std::move(newPixelClusters));
-    //   allSiPixelClusters.clear(); siPixelDetsWithClusters.clear();
-    //
-    // }
-
-
-
 
 
 
