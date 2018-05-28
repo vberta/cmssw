@@ -29,7 +29,7 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 
 process.GlobalTag.globaltag="94X_mc2017_realistic_v10"
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(50) ) #-1 = tutti
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) ) #-1 = tutti
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use

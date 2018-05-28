@@ -129,7 +129,7 @@ class NNPixSeedInput : public edm::one::EDProducer<edm::one::SharedResources>  {
   static const int jetDimY =200;
   static const int Nlayer =4;
   static const int Ntrack = 100;
-  static const int Npar = 4;
+  static const int Npar = 6;
   static const int Nover = 3;
   double clusterMeas[jetDimX][jetDimY][Nlayer];
   double trackPar[jetDimX][jetDimY][Nover][Npar];
@@ -217,7 +217,7 @@ class NNPixSeedInput : public edm::one::EDProducer<edm::one::SharedResources>  {
 
   GlobalVector recenter(const reco::Candidate&, GlobalVector, const reco::Vertex&, const TrackerTopology* const, const PixelClusterParameterEstimator*);
 
-  void fillTrackInfo(const std::set<int>, const auto &,  const auto &, auto, auto, auto, const GeomDet*, std::vector<std::map<int,SiPixelCluster>>, const PixelClusterParameterEstimator*, const GeomDetUnit*);
+  void fillTrackInfo(const reco::Candidate&, const std::set<int>, const auto &,  const auto &, auto, auto, auto, const GeomDet*, std::vector<std::map<int,SiPixelCluster>>, const PixelClusterParameterEstimator*, const GeomDetUnit*);
 
   const GeomDet* DetectorSelector(int ,const reco::Candidate& jet, GlobalVector,  const reco::Vertex& jetVertex, const TrackerTopology* const, const PixelClusterParameterEstimator*, const auto &);
 
@@ -273,7 +273,7 @@ NNPixSeedInput::NNPixSeedInput(const edm::ParameterSet& iConfig) :
   // NNPixSeedInputTree= new TTree("NNPixSeedInputTree","NNPixSeedInputTree");
    NNPixSeedInputTree= fileService->make<TTree>("NNPixSeedInputTree","NNPixSeedInputTree");
    NNPixSeedInputTree->Branch("cluster_measured",clusterMeas,"cluster_measured[200][200][4]/D");
-   NNPixSeedInputTree->Branch("trackPar", trackPar, "trackPar[200][200][3][4]/D");
+   NNPixSeedInputTree->Branch("trackPar", trackPar, "trackPar[200][200][3][6]/D");
    NNPixSeedInputTree->Branch("trackProb", trackProb, "trackProb[200][200][3]/D");
   //  NNPixSeedInputTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][100][100]/D");
    NNPixSeedInputTree->Branch("jet_eta",&jet_eta);
@@ -293,7 +293,7 @@ NNPixSeedInput::NNPixSeedInput(const edm::ParameterSet& iConfig) :
 
    /// dichiarare cosa produce  produces<asd
 
-   for(int i=0; i<Nlayer; i++){
+   for(int i=0; i<Npar; i++){
      for(int j=0; j<jetDimX; j++){
        for(int k=0; k<jetDimY; k++){
          if(j<jetDimX && k<jetDimY && i< Nlayer) clusterMeas[j][k][i] = 0.0;
@@ -525,12 +525,12 @@ print = false;
     // int lay = tTopo->layer(globDet->geographicalId());
     // std::cout << "layer filled=" << lay << std::endl;
     // if(globDet == 0) continue;
-    fillTrackInfo(trkIDset, simtracksVector, simvertexVector, jetInter, jetDir, jetVert, globDet, clusterMapVector, pp, detUnit);
+    fillTrackInfo(jet, trkIDset, simtracksVector, simvertexVector, jetInter, jetDir, jetVert, globDet, clusterMapVector, pp, detUnit);
     clusterMapVector.clear();
     NNPixSeedInputTree->Fill();
     std::cout << "FILL!" << std::endl;
 
-    for(int i=0; i<Nlayer; i++){
+    for(int i=0; i<Npar; i++){
       for(int j=0; j<jetDimX; j++){
         for(int k=0; k<jetDimY; k++){
           if(j<jetDimX && k<jetDimY && i< Nlayer) clusterMeas[j][k][i] = 0.0;
@@ -807,7 +807,7 @@ std::cout << "event number=" << evt_counter<< std::endl;
 
 
 
-  void NNPixSeedInput::fillTrackInfo(const std::set<int> setTrkID, const auto & stVector,  const auto & svVector, auto jti, auto jetDir, auto jVert, const GeomDet* det, std::vector<std::map<int,SiPixelCluster>> clusterVector, const PixelClusterParameterEstimator* cpe, const GeomDetUnit* detUnit){
+  void NNPixSeedInput::fillTrackInfo(const reco::Candidate& jet, const std::set<int> setTrkID, const auto & stVector,  const auto & svVector, auto jti, auto jetDir, auto jVert, const GeomDet* det, std::vector<std::map<int,SiPixelCluster>> clusterVector, const PixelClusterParameterEstimator* cpe, const GeomDetUnit* detUnit){
 
     struct trkInfoObj
     {
@@ -817,16 +817,20 @@ std::cout << "event number=" << evt_counter<< std::endl;
       double ypos;
       double xangle;
       double yangle;
+      double jEta;
+      double jPt;
       // double xdist;
       // double ydist;
       // double trknum;
-      trkInfoObj(int pp, double dd, double xx, double yy, double tx, double ty) : // double xd, double yd, double n) :
+      trkInfoObj(int pp, double dd, double xx, double yy, double tx, double ty, double jeta, double jpt) : // double xd, double yd, double n) :
         prob(pp),
         dist(dd),
         xpos(xx),
         ypos(yy),
         xangle(tx),
-        yangle(ty) {}
+        yangle(ty),
+        jEta(jeta),
+        jPt(jpt) {}
         // xdist(xd),
         // ydist(yd),
         // trknum(n) {}
@@ -1002,7 +1006,7 @@ std::cout << "event number=" << evt_counter<< std::endl;
           pixY = pixY+jetDimY/2;
 
           // double info[9] = {0,0,0,0,0,0,0,0,-1};
-          double info[6] = {0,0,0,0,0,0};
+          double info[8] = {0,0,0,0,0,0,0,0};
 
           if (x==pixX && y==pixY) {
             // if(flagOver[x][y] < Nover){
@@ -1060,11 +1064,17 @@ std::cout << "event number=" << evt_counter<< std::endl;
             //----debug lines ----END
 
 
-            auto localJetDir = det->specificSurface().toLocal((GlobalVector)jetDir);
-            auto localTrkDir = det->specificSurface().toLocal(trkMom);
+            // auto localJetDir = det->specificSurface().toLocal((GlobalVector)jetDir);
+            // auto localTrkDir = det->specificSurface().toLocal(trkMom);
+            //
+            // info[4] = atan(localJetDir.x()/localJetDir.z())-atan(localTrkDir.x()/localTrkDir.z());
+            // info[5] = atan(localJetDir.y()/localJetDir.z())-atan(localTrkDir.y()/localTrkDir.z());
+            info[4] = st.momentum().Eta()-jet.eta();
+            info[5] = st.momentum().Phi()-jet.phi();
+            info[6] = jet.eta();
+            info[7] = jet.pt();
 
-            info[4] = atan(localJetDir.x()/localJetDir.z())-atan(localTrkDir.x()/localTrkDir.z());
-            info[5] = atan(localJetDir.y()/localJetDir.z())-atan(localTrkDir.y()/localTrkDir.z());
+
           }
           else{
           if(info[0]== 1) {
@@ -1075,7 +1085,7 @@ std::cout << "event number=" << evt_counter<< std::endl;
             info[3] = 99999999;
           }
           // info[8]=j;
-          tracksInfo.push_back(trkInfoObj(info[0],info[1],info[2],info[3],info[4],info[5]));//info[6],info[7],info[8]));
+          tracksInfo.push_back(trkInfoObj(info[0],info[1],info[2],info[3],info[4],info[5],info[6],info[7]));//info[6],info[7],info[8]));
           // if(info[0]== 1) std::cout << tracksInfo.at(tracksInfo.size()-1).prob << std::endl;
 
           //---debug lines
@@ -1131,7 +1141,10 @@ std::cout << "event number=" << evt_counter<< std::endl;
           if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][1]=tracksInfo.at(trk).ypos;
           if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][2]=tracksInfo.at(trk).xangle;
           if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][3]=tracksInfo.at(trk).yangle;
+          if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][4]=tracksInfo.at(trk).jEta;
+          if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][5]=tracksInfo.at(trk).jPt;
           if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackProb[x][y][trk]=tracksInfo.at(trk).prob;
+
 
           //----debug lines ----
           if(tracksInfo.at(trk).prob==1 && 0 ){
