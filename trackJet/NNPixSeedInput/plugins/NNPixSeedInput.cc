@@ -817,20 +817,20 @@ std::cout << "event number=" << evt_counter<< std::endl;
       double ypos;
       double xangle;
       double yangle;
-      double jEta;
-      double jPt;
+      // double jEta;
+      // double jPt;
       // double xdist;
       // double ydist;
       // double trknum;
-      trkInfoObj(int pp, double dd, double xx, double yy, double tx, double ty, double jeta, double jpt) : // double xd, double yd, double n) :
+      trkInfoObj(int pp, double dd, double xx, double yy, double tx, double ty) : //, double jeta, double jpt) : // double xd, double yd, double n) :
         prob(pp),
         dist(dd),
         xpos(xx),
         ypos(yy),
         xangle(tx),
-        yangle(ty),
-        jEta(jeta),
-        jPt(jpt) {}
+        yangle(ty) {}
+        // jEta(jeta),
+        // jPt(jpt) {}
         // xdist(xd),
         // ydist(yd),
         // trknum(n) {}
@@ -1006,7 +1006,7 @@ std::cout << "event number=" << evt_counter<< std::endl;
           pixY = pixY+jetDimY/2;
 
           // double info[9] = {0,0,0,0,0,0,0,0,-1};
-          double info[8] = {0,0,0,0,0,0,0,0};
+          double info[6] = {0,0,0,0,0,0};
 
           if (x==pixX && y==pixY) {
             // if(flagOver[x][y] < Nover){
@@ -1071,8 +1071,8 @@ std::cout << "event number=" << evt_counter<< std::endl;
             // info[5] = atan(localJetDir.y()/localJetDir.z())-atan(localTrkDir.y()/localTrkDir.z());
             info[4] = st.momentum().Eta()-jet.eta();
             info[5] = st.momentum().Phi()-jet.phi();
-            info[6] = jet.eta();
-            info[7] = jet.pt();
+            // info[6] = jet.eta();
+            // info[7] = jet.pt();
 
 
           }
@@ -1085,7 +1085,7 @@ std::cout << "event number=" << evt_counter<< std::endl;
             info[3] = 99999999;
           }
           // info[8]=j;
-          tracksInfo.push_back(trkInfoObj(info[0],info[1],info[2],info[3],info[4],info[5],info[6],info[7]));//info[6],info[7],info[8]));
+          tracksInfo.push_back(trkInfoObj(info[0],info[1],info[2],info[3],info[4],info[5]));//,info[6],info[7]));//info[6],info[7],info[8]));
           // if(info[0]== 1) std::cout << tracksInfo.at(tracksInfo.size()-1).prob << std::endl;
 
           //---debug lines
@@ -1141,8 +1141,8 @@ std::cout << "event number=" << evt_counter<< std::endl;
           if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][1]=tracksInfo.at(trk).ypos;
           if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][2]=tracksInfo.at(trk).xangle;
           if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][3]=tracksInfo.at(trk).yangle;
-          if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][4]=tracksInfo.at(trk).jEta;
-          if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][5]=tracksInfo.at(trk).jPt;
+          // if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][4]=tracksInfo.at(trk).jEta;
+          // if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackPar[x][y][trk][5]=tracksInfo.at(trk).jPt;
           if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) trackProb[x][y][trk]=tracksInfo.at(trk).prob;
 
 
