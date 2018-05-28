@@ -129,7 +129,7 @@ class NNPixSeedInput : public edm::one::EDProducer<edm::one::SharedResources>  {
   static const int jetDimY =200;
   static const int Nlayer =4;
   static const int Ntrack = 100;
-  static const int Npar = 6;
+  static const int Npar = 4;
   static const int Nover = 3;
   double clusterMeas[jetDimX][jetDimY][Nlayer];
   double trackPar[jetDimX][jetDimY][Nover][Npar];
@@ -273,7 +273,7 @@ NNPixSeedInput::NNPixSeedInput(const edm::ParameterSet& iConfig) :
   // NNPixSeedInputTree= new TTree("NNPixSeedInputTree","NNPixSeedInputTree");
    NNPixSeedInputTree= fileService->make<TTree>("NNPixSeedInputTree","NNPixSeedInputTree");
    NNPixSeedInputTree->Branch("cluster_measured",clusterMeas,"cluster_measured[200][200][4]/D");
-   NNPixSeedInputTree->Branch("trackPar", trackPar, "trackPar[200][200][3][6]/D");
+   NNPixSeedInputTree->Branch("trackPar", trackPar, "trackPar[200][200][3][4]/D");
    NNPixSeedInputTree->Branch("trackProb", trackProb, "trackProb[200][200][3]/D");
   //  NNPixSeedInputTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][100][100]/D");
    NNPixSeedInputTree->Branch("jet_eta",&jet_eta);
