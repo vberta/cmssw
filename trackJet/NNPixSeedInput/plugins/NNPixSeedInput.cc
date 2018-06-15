@@ -1035,11 +1035,11 @@ std::cout << "event number=" << evt_counter<< std::endl;
           double distY =  localTrkInter.y()-pix2loc.y()-0.5*pitchY;
 
            if(distX<0.000001 && distX> -0.000001) {
-             std::cout << "distX="<< distX << std::endl;
+            //  std::cout << "distX="<< distX << std::endl;
              distX = 0.0;
            }
            if(distY<0.000001 && distY> - 0.000001){
-             std::cout << "distY="<< distY << std::endl;
+            //  std::cout << "distY="<< distY << std::endl;
              distY = 0.0;
            }
 
