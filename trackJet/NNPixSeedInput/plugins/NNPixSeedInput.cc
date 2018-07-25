@@ -132,7 +132,7 @@ class NNPixSeedInput : public edm::one::EDProducer<edm::one::SharedResources>  {
   static const int Npar = 4;
   static const int Nover = 3;
   double clusterMeas[jetDimX][jetDimY][Nlayer];
-  double trackPar[jetDimX][jetDimY][Nover][Npar];
+  double trackPar[jetDimX][jetDimY][Nover][Npar+1];
   double trackProb[jetDimX][jetDimY][Nover];
   double clusterSplit[Ntrack][Nlayer][jetDimX][jetDimY];
   double track_pt[Ntrack] = {0.0};
@@ -149,7 +149,7 @@ class NNPixSeedInput : public edm::one::EDProducer<edm::one::SharedResources>  {
 
   double pitchX = 0.01;
   double pitchY = 0.015;
-  static const int distThr = 4;
+  static const int distThr = 2;//4
 
 
   int jetnum =0;
@@ -272,8 +272,9 @@ NNPixSeedInput::NNPixSeedInput(const edm::ParameterSet& iConfig) :
    //pxdMap_out =new TFile("pxdMap_out.root", "RECREATE");
   // NNPixSeedInputTree= new TTree("NNPixSeedInputTree","NNPixSeedInputTree");
    NNPixSeedInputTree= fileService->make<TTree>("NNPixSeedInputTree","NNPixSeedInputTree");
+  //  NNPixSeedInputTree->SetAutoFlush(10000);
    NNPixSeedInputTree->Branch("cluster_measured",clusterMeas,"cluster_measured[200][200][4]/D");
-   NNPixSeedInputTree->Branch("trackPar", trackPar, "trackPar[200][200][3][4]/D");
+   NNPixSeedInputTree->Branch("trackPar", trackPar, "trackPar[200][200][3][5]/D");
    NNPixSeedInputTree->Branch("trackProb", trackProb, "trackProb[200][200][3]/D");
   //  NNPixSeedInputTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][100][100]/D");
    NNPixSeedInputTree->Branch("jet_eta",&jet_eta);
@@ -293,7 +294,7 @@ NNPixSeedInput::NNPixSeedInput(const edm::ParameterSet& iConfig) :
 
    /// dichiarare cosa produce  produces<asd
 
-   for(int i=0; i<Npar; i++){
+   for(int i=0; i<Npar+1; i++){
      for(int j=0; j<jetDimX; j++){
        for(int k=0; k<jetDimY; k++){
          if(j<jetDimX && k<jetDimY && i< Nlayer) clusterMeas[j][k][i] = 0.0;
@@ -530,12 +531,12 @@ print = false;
     NNPixSeedInputTree->Fill();
     std::cout << "FILL!" << std::endl;
 
-    for(int i=0; i<Npar; i++){
+    for(int i=0; i<Npar+1; i++){
       for(int j=0; j<jetDimX; j++){
         for(int k=0; k<jetDimY; k++){
           if(j<jetDimX && k<jetDimY && i< Nlayer) clusterMeas[j][k][i] = 0.0;
           for(int m=0; m<Nover; m++){
-            if(trackPar[j][k][m][i]!=0 && j<jetDimX && k<jetDimY && i< Npar && m<Nover) trackPar[j][k][m][i] =0.0;
+            if(trackPar[j][k][m][i]!=0 && j<jetDimX && k<jetDimY && i< Npar+1 && m<Nover) trackPar[j][k][m][i] =0.0;
             if(trackProb[j][k][m]!=0 && j<jetDimX && k<jetDimY && m<Nover) trackProb[j][k][m] =0.0;
           }
           for(int h=0; h<Ntrack; h++){
@@ -552,6 +553,7 @@ print = false;
  } //jet
 //  print = false;
 std::cout << "event number=" << evt_counter<< std::endl;
+trackMap.clear();
 }
 
 
@@ -817,18 +819,20 @@ std::cout << "event number=" << evt_counter<< std::endl;
       double ypos;
       double xangle;
       double yangle;
+      double zero_flag; //useful for CNN training only: 0 if x,y,eta,phi==0
       // double jEta;
       // double jPt;
       // double xdist;
       // double ydist;
       // double trknum;
-      trkInfoObj(int pp, double dd, double xx, double yy, double tx, double ty) : //, double jeta, double jpt) : // double xd, double yd, double n) :
+      trkInfoObj(int pp, double dd, double xx, double yy, double tx, double ty, int zf) : //, double jeta, double jpt) : // double xd, double yd, double n) :
         prob(pp),
         dist(dd),
         xpos(xx),
         ypos(yy),
         xangle(tx),
-        yangle(ty) {}
+        yangle(ty),
+        zero_flag(zf) {}
         // jEta(jeta),
         // jPt(jpt) {}
         // xdist(xd),
@@ -1006,7 +1010,7 @@ std::cout << "event number=" << evt_counter<< std::endl;
           pixY = pixY+jetDimY/2;
 
           // double info[9] = {0,0,0,0,0,0,0,0,-1};
-          double info[6] = {0.0,0.0,0.0,0.0,0.0,0.0};
+          double info[7] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 
           if (x==pixX && y==pixY) {
             // if(flagOver[x][y] < Nover){
@@ -1097,7 +1101,22 @@ std::cout << "event number=" << evt_counter<< std::endl;
           }
           // info[8]=j;
           if(info[0]==1 && 0) std::cout << "inside=" << info[0] << "," << info[1] << "," << info[2] << "," <<info[3] << "," <<info[4] << "," << info[5] << "," << std::endl;
-          tracksInfo.push_back(trkInfoObj(info[0],info[1],info[2],info[3],info[4],info[5]));//,info[6],info[7]));//info[6],info[7],info[8]));
+
+          if(info[0]==0 && info[2]==0.0 && info[3]==0.0 && info[4]==0.0 && info[5]==0.0) {
+            info[6] = 0;
+            // std::cout << "0-flag=" << info[0] << "," << info[1] << "," << info[2] << "," <<info[3] << "," <<info[4] << "," << info[5] << "," << std::endl;
+          }
+          else if(info[2] > 9999999 && info[3] > 9999999) {
+            info[6] = 0;
+            // std::cout << "0-flag=" << info[0] << "," << info[1] << "," << info[2] << "," <<info[3] << "," <<info[4] << "," << info[5] << "," << std::endl;
+
+          }
+          else{
+             info[6]=1;
+            // std::cout << "1-flag=" << "x="<< x << ", y=" << y<< ", " << info[0] << "," << info[1] << "," << info[2] << "," <<info[3] << "," <<info[4] << "," << info[5] << "," << std::endl;
+           }
+
+          tracksInfo.push_back(trkInfoObj(info[0],info[1],info[2],info[3],info[4],info[5],info[6]));//,info[6],info[7]));//info[6],info[7],info[8]));
           // if(info[0]== 1) std::cout << tracksInfo.at(tracksInfo.size()-1).prob << std::endl;
 
           //---debug lines
@@ -1108,7 +1127,7 @@ std::cout << "event number=" << evt_counter<< std::endl;
           // }
           // //end of debug
 
-        }
+        }//good tracks
         // std::cout << "prob0=" << tracksInfo.at(0).prob << ", prob1=" << tracksInfo.at(1).prob << ", prob2="<<tracksInfo.at(2).prob << std::endl;
         int fl=0;
         for(uint k=0; k<tracksInfo.size(); k++){
@@ -1116,13 +1135,14 @@ std::cout << "event number=" << evt_counter<< std::endl;
             fl=1;
           }
         }
-        if(fl==1 && 0) {
+        if(fl==1) {
           //---debug lines
           for(uint k=0; k<tracksInfo.size(); k++){
             //std::cout << "track info vector, OUT, prob:"<<tracksInfo.at(k).prob << ",    dist:"<<tracksInfo.at(k).dist   <<std::endl;
 
 
-            if(tracksInfo.at(trk).prob==1) std::cout << "track info vector, OUT, prob:"<<tracksInfo.at(k).prob << ",    dist:"<<tracksInfo.at(k).dist  << ", distX="<<tracksInfo.at(k).xpos << ", distY="<< tracksInfo.at(k).ypos<<std::endl; //<< ", pixX="<<  local2Pixel(tracksInfo.at(k).xpos,tracksInfo.at(k).ypos,det).first << ", pixY="<< local2Pixel(tracksInfo.at(k).xpos,tracksInfo.at(k).ypos,det).second<< std::endl;//<< "tracknumber="<<tracksInfo.at(k).trknum<< std::endl;
+            //if(tracksInfo.at(trk).prob==1) std::cout << "track info vector, OUT, prob:"<<tracksInfo.at(k).prob << ",    dist:"<<tracksInfo.at(k).dist  << ", distX="<<tracksInfo.at(k).xpos << ", distY="<< tracksInfo.at(k).ypos<<std::endl; //<< ", pixX="<<  local2Pixel(tracksInfo.at(k).xpos,tracksInfo.at(k).ypos,det).first << ", pixY="<< local2Pixel(tracksInfo.at(k).xpos,tracksInfo.at(k).ypos,det).second<< std::endl;//<< "tracknumber="<<tracksInfo.at(k).trknum<< std::endl;
+            if(tracksInfo.size()>1 && 0) std::cout << "track info vector, OUT, prob:"<<tracksInfo.at(k).prob << ",    dist:"<<tracksInfo.at(k).dist  << ", distX="<<tracksInfo.at(k).xpos << ", distY="<< tracksInfo.at(k).ypos<<std::endl; //<< ", pixX="<<  local2Pixel(tracksInfo.at(k).xpos,tracksInfo.at(k).ypos,det).first << ", pixY="<< local2Pixel(tracksInfo.at(k).xpos,tracksInfo.at(k).ypos,det).second<< std::endl;//<< "tracknumber="<<tracksInfo.at(k).trknum<< std::endl;
 
           }
         }
@@ -1133,13 +1153,14 @@ std::cout << "event number=" << evt_counter<< std::endl;
 
         std::sort(tracksInfo.begin(), tracksInfo.end());
 
-        if(fl==1 && 0) {
+        if(fl==1) {
           //---debug lines
           for(uint k=0; k<tracksInfo.size(); k++){
             // std::cout << "track info vector, SORT, prob:"<<tracksInfo.at(k).prob << ",    dist:"<<tracksInfo.at(k).dist   <<std::endl;
 
 
-            if(tracksInfo.at(trk).prob==1) std::cout << "track info vector, SORT, prob:"<<tracksInfo.at(k).prob << ",    dist:"<<tracksInfo.at(k).dist  << ", distX="<<tracksInfo.at(k).xpos << ", distY="<< tracksInfo.at(k).ypos <<std::endl;//", pixX="<<  local2Pixel(tracksInfo.at(k).xpos,tracksInfo.at(k).ypos,det).first << ", pixY="<< local2Pixel(tracksInfo.at(k).xpos,tracksInfo.at(k).ypos,det).second<< std::endl;//<< "tracknumber="<<tracksInfo.at(k).trknum<< std::endl;
+            //if(tracksInfo.at(trk).prob==1)
+            if(tracksInfo.size()>1 && 0)  std::cout << "track info vector, SORT, prob:"<<tracksInfo.at(k).prob << ",    dist:"<<tracksInfo.at(k).dist  << ", distX="<<tracksInfo.at(k).xpos << ", distY="<< tracksInfo.at(k).ypos <<std::endl;//", pixX="<<  local2Pixel(tracksInfo.at(k).xpos,tracksInfo.at(k).ypos,det).first << ", pixY="<< local2Pixel(tracksInfo.at(k).xpos,tracksInfo.at(k).ypos,det).second<< std::endl;//<< "tracknumber="<<tracksInfo.at(k).trknum<< std::endl;
 
           }
         }
@@ -1147,8 +1168,8 @@ std::cout << "event number=" << evt_counter<< std::endl;
         // if(tracksInfo.at(0).prob== 1)  std::cout << "size trackinfo postsort="  << tracksInfo.size() << std::endl;
         if (tracksInfo.size()<3) trkLim = tracksInfo.size();
 
+        if(trackPar[x][y][2][4]!=0 && 0) std::cout << "out!!!!!!!!!-----------------------------------------------" << std::endl;
         for(trk=0; trk<trkLim; trk++){
-
           if(x<jetDimX && y<jetDimY && trk<Nover && x>=0 && y>=0) {
             if(tracksInfo.at(trk).xpos!=99999999) trackPar[x][y][trk][0]=tracksInfo.at(trk).xpos;
             else trackPar[x][y][trk][0]=0.0;
@@ -1156,16 +1177,22 @@ std::cout << "event number=" << evt_counter<< std::endl;
             else trackPar[x][y][trk][1]=0.0;
             trackPar[x][y][trk][2]=tracksInfo.at(trk).xangle;
             trackPar[x][y][trk][3]=tracksInfo.at(trk).yangle;
+            trackPar[x][y][trk][4]=tracksInfo.at(trk).zero_flag;
             //  trackPar[x][y][trk][4]=tracksInfo.at(trk).jEta;
             //  trackPar[x][y][trk][5]=tracksInfo.at(trk).jPt;
             trackProb[x][y][trk]=tracksInfo.at(trk).prob;
 
             //-----------debug lines ---------------//
+
+            if(tracksInfo.at(trk).zero_flag!=0 && 0){
+              std::cout <<"Filling trakck=" << trk << ", prob="<<tracksInfo.at(trk).prob<< ", x="<< x << ", y=" << y<< ", "<<  "xpos=" << tracksInfo.at(trk).xpos << " ypos=" << tracksInfo.at(trk).ypos << std::endl;
+            }
+
             if(tracksInfo.at(trk).prob==1 && 0){
               std::cout << "xpos=" << tracksInfo.at(trk).xpos << " ypos=" << tracksInfo.at(trk).ypos << "("<<trackPar[x][y][trk][0] << "," << trackPar[x][y][trk][1] <<")" << std::endl;
             }
          }
-
+         if(trackPar[x][y][2][4]!=0 && 0) std::cout << "-------------------------------------------------" << ", prob="<<trackProb[x][y][2]<< ", x="<< x << ", y=" << y<< ", "<<  "xpos=" << trackPar[x][y][2][0] << " ypos=" << trackPar[x][y][2][1] << "par2="<< trackPar[x][y][2][2] << "par3="<<trackPar[x][y][2][3]<< "flag="<<trackPar[x][y][2][4]<< std::endl;
           //----debug lines ----
           if(tracksInfo.at(trk).prob==1 && 0 ){
             std::cout << " NEW TRACK: " << std::endl;
@@ -1176,10 +1203,12 @@ std::cout << "event number=" << evt_counter<< std::endl;
           }
           //----debug lines ----END
 
-        }
-      }
-    }
-
+        }//trk (filling)
+      tracksInfo.clear();
+    } // y
+    }//x
+    goodSimTrk.clear();
+    goodSimVtx.clear();
   }
 
 
