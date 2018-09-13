@@ -29,26 +29,25 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 
 process.GlobalTag.globaltag="94X_mc2017_realistic_v10"
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(5) ) #-1 = tutti
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(50) ) #-1 = tutti
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root',' with the source file you want to use
     fileNames = cms.untracked.vstring(
-        'file:../../NNClustSeedInput/test/909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root'
-
+        'file:909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root'
         # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/510000/909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root'
-        # AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/50000/44048461-9FE4-E711-A2F8-0CC47A4D7606.root',
-        # AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/50000/987BD26A-9FE4-E711-B33F-0025905A48F2.root',
-        # AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/50000/C299B94A-9FE4-E711-9380-0CC47A7C3420.root',
-        # AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/510000/82A7A781-7FE4-E711-A50C-FA163E209BDB.root',
-        #AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/510000/909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root',
-        # AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/510000/96670A7C-3FE4-E711-9B02-001E675A681F.root',
-        # AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/02F54734-89DD-E711-A599-FA163E401012.root',
-        # AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/04121868-D3DE-E711-B68B-0CC47A4C8E5E.root',
-        # AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/04C60493-D4DA-E711-8C3E-001E67E6965D.root',
-        # AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/06D25F8E-16DA-E711-BAA5-FA163ECFFD5D.root',
-        # AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/08043237-80DA-E711-9396-FA163ECFFD5D.root',
-        # AAA'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/0A0C10A1-0DDD-E711-8DE9-90B11C08AD7D.root'
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/50000/44048461-9FE4-E711-A2F8-0CC47A4D7606.root',
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/50000/987BD26A-9FE4-E711-B33F-0025905A48F2.root',
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/50000/C299B94A-9FE4-E711-9380-0CC47A7C3420.root',
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/510000/82A7A781-7FE4-E711-A50C-FA163E209BDB.root',
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/510000/909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root',
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/510000/96670A7C-3FE4-E711-9B02-001E675A681F.root',
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/02F54734-89DD-E711-A599-FA163E401012.root',
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/04121868-D3DE-E711-B68B-0CC47A4C8E5E.root',
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/04C60493-D4DA-E711-8C3E-001E67E6965D.root',
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/06D25F8E-16DA-E711-BAA5-FA163ECFFD5D.root',
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/08043237-80DA-E711-9396-FA163ECFFD5D.root',
+        ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/0A0C10A1-0DDD-E711-8DE9-90B11C08AD7D.root'
         # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/0C2055B2-DDDC-E711-A558-0242AC130002.root',
         # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/0C61E7FE-47DA-E711-B32F-0CC47AD9914A.root',
         # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/0E043B41-4DDB-E711-B074-FA163E3F211F.root',
@@ -129,16 +128,20 @@ process.source = cms.Source("PoolSource",
     )
 )
 
-# process.remerge = cms.EDProducer("ClusterReMerger",
-#  pixelClusters=cms.InputTag("siPixelClusters"),
-# )
+process.remerge = cms.EDProducer("ClusterReMerger",
+ pixelClusters=cms.InputTag("siPixelClusters"),
+)
 
-process.demo = cms.EDProducer('NNPixSeedInput' ,#demo = nome libero
+
+process.demo = cms.EDProducer('NNClustSeedInput' ,#demo = nome libero
  pixelClusters=cms.InputTag("remerge"),
  vertices = cms.InputTag("offlinePrimaryVertices"),
  cores = cms.InputTag("ak4CaloJets"),
  #cores =cms.InputTag("ak4PFJetsCHS"),
  ptMin = cms.double(1000), #800
+ deltaR = cms.double(0.1),
+ centralMIPCharge = cms.double(18000.0),
+ chargeFractionMin = cms.double(2), #a caso
  simTracks= cms.InputTag("g4SimHits"),
  simVertex= cms.InputTag("g4SimHits"),
  pixelCPE = cms.string( "PixelCPEGeneric" )
@@ -150,7 +153,7 @@ process.SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",
 )
 
 process.TFileService = cms.Service("TFileService",
-      fileName = cms.string("histo_100k_multiplied_in_1hit.root"),
+      fileName = cms.string("histo_1M_multiplied_4hit_30.root"),
       closeFileFast = cms.untracked.bool(True)
   )
 

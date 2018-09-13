@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    trackJet/NNPixSeedInput
-// Class:      NNPixSeedInput
+// Package:    trackJet/NNClustSeedInput
+// Class:      NNClustSeedInput
 //
-/**\class NNPixSeedInput NNPixSeedInput.cc trackJet/NNPixSeedInput/plugins/NNPixSeedInput.cc
+/**\class NNClustSeedInput NNClustSeedInput.cc trackJet/NNClustSeedInput/plugins/NNClustSeedInput.cc
 
  Description: [one line class summary]
 
@@ -95,10 +95,10 @@
 // constructor "usesResource("TFileService");"
 // This will improve performance in multithreaded jobs.
 
-class NNPixSeedInput : public edm::one::EDProducer<edm::one::SharedResources>  {
+class NNClustSeedInput : public edm::one::EDProducer<edm::one::SharedResources>  {
    public:
-      explicit NNPixSeedInput(const edm::ParameterSet&);
-      ~NNPixSeedInput();
+      explicit NNClustSeedInput(const edm::ParameterSet&);
+      ~NNClustSeedInput();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
   // A pointer to a cluster and a list of tracks on it
@@ -123,14 +123,15 @@ class NNPixSeedInput : public edm::one::EDProducer<edm::one::SharedResources>  {
 
   typedef boost::sub_range<std::vector<SiPixelClusterWithTracks> > SiPixelClustersWithTracks;
 
-  TFile* NNPixSeedInput_out;
-  TTree* NNPixSeedInputTree;
-  static const int jetDimX =200;
-  static const int jetDimY =200;
+  TFile* NNClustSeedInput_out;
+  TTree* NNClustSeedInputTree;
+  static const int jetDimX =30;
+  static const int jetDimY =30;
   static const int Nlayer =4;
   static const int Ntrack = 100;
   static const int Npar = 4;
   static const int Nover = 3;
+  static const int NClust = 5;
   double clusterMeas[jetDimX][jetDimY][Nlayer];
   double trackPar[jetDimX][jetDimY][Nover][Npar+1]; //NOFLAG
   double trackProb[jetDimX][jetDimY][Nover];
@@ -196,7 +197,9 @@ class NNPixSeedInput : public edm::one::EDProducer<edm::one::SharedResources>  {
   std::map<int, double [Nlayer][jetDimX][jetDimY]> trackMap;
 
   double ptMin_;
-  // double deltaR_;
+  double deltaR_;
+  double chargeFracMin_;
+  double centralMIPCharge_;
   std::string pixelCPE_;
 
 
@@ -220,6 +223,8 @@ class NNPixSeedInput : public edm::one::EDProducer<edm::one::SharedResources>  {
   void fillTrackInfo(const reco::Candidate&, const std::set<int>, const auto &,  const auto &, auto, auto, auto, const GeomDet*, std::vector<std::map<int,SiPixelCluster>>, const PixelClusterParameterEstimator*, const GeomDetUnit*);
 
   const GeomDet* DetectorSelector(int ,const reco::Candidate& jet, GlobalVector,  const reco::Vertex& jetVertex, const TrackerTopology* const, const PixelClusterParameterEstimator*, const auto &);
+
+  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex );
 
 
   // template<typename Cluster>
@@ -245,7 +250,7 @@ class NNPixSeedInput : public edm::one::EDProducer<edm::one::SharedResources>  {
 //
 // constructors and destructor
 //
-NNPixSeedInput::NNPixSeedInput(const edm::ParameterSet& iConfig) :
+NNClustSeedInput::NNClustSeedInput(const edm::ParameterSet& iConfig) :
 
       vertices_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
       pixelClusters_(consumes<edmNew::DetSetVector<SiPixelCluster> >(iConfig.getParameter<edm::InputTag>("pixelClusters"))),
@@ -254,6 +259,9 @@ NNPixSeedInput::NNPixSeedInput(const edm::ParameterSet& iConfig) :
       simtracksToken(consumes<std::vector<SimTrack> >(iConfig.getParameter<edm::InputTag>("simTracks"))),
       simvertexToken(consumes<std::vector<SimVertex> >(iConfig.getParameter<edm::InputTag>("simVertex"))),
       ptMin_(iConfig.getParameter<double>("ptMin")),
+      deltaR_(iConfig.getParameter<double>("deltaR")),
+      chargeFracMin_(iConfig.getParameter<double>("chargeFractionMin")),
+      centralMIPCharge_(iConfig.getParameter<double>("centralMIPCharge")),
       pixelCPE_(iConfig.getParameter<std::string>("pixelCPE"))
 
       //cores_(consumes<edm::View<reco::Candidate> >(iConfig.getParameter<edm::InputTag>("cores")))
@@ -270,46 +278,46 @@ NNPixSeedInput::NNPixSeedInput(const edm::ParameterSet& iConfig) :
    edm::Service<TFileService> fileService;
 
    //pxdMap_out =new TFile("pxdMap_out.root", "RECREATE");
-  // NNPixSeedInputTree= new TTree("NNPixSeedInputTree","NNPixSeedInputTree");
-   NNPixSeedInputTree= fileService->make<TTree>("NNPixSeedInputTree","NNPixSeedInputTree");
-  //  NNPixSeedInputTree->SetAutoFlush(10000);
-   NNPixSeedInputTree->Branch("cluster_measured",clusterMeas,"cluster_measured[200][200][4]/D");
-   NNPixSeedInputTree->Branch("trackPar", trackPar, "trackPar[200][200][3][5]/D"); //NOFLAG
-   NNPixSeedInputTree->Branch("trackProb", trackProb, "trackProb[200][200][3]/D");
-  //  NNPixSeedInputTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][100][100]/D");
-   NNPixSeedInputTree->Branch("jet_eta",&jet_eta);
-   NNPixSeedInputTree->Branch("jet_pt",&jet_pt);
-   NNPixSeedInputTree->Branch("jet_phi",&jet_phi);
-   NNPixSeedInputTree->Branch("jet_Ntrack",&jet_Ntrack);
-   NNPixSeedInputTree->Branch("track_pt",track_pt,"track_pt[100]/D");
-   NNPixSeedInputTree->Branch("track_pz",track_pz,"track_pz[100]/D");
-   NNPixSeedInputTree->Branch("track_eta",track_eta,"track_eta[100]/D");
-   NNPixSeedInputTree->Branch("track_phi",track_phi,"track_phi[100]/D");
+  // NNClustSeedInputTree= new TTree("NNClustSeedInputTree","NNClustSeedInputTree");
+   NNClustSeedInputTree= fileService->make<TTree>("NNClustSeedInputTree","NNClustSeedInputTree");
+  //  NNClustSeedInputTree->SetAutoFlush(10000);
+   NNClustSeedInputTree->Branch("cluster_measured",clusterMeas,"cluster_measured[30][30][4]/D");
+   NNClustSeedInputTree->Branch("trackPar", trackPar, "trackPar[30][30][3][5]/D"); //NOFLAG
+   NNClustSeedInputTree->Branch("trackProb", trackProb, "trackProb[30][30][3]/D");
+  //  NNClustSeedInputTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][100][100]/D");
+   NNClustSeedInputTree->Branch("jet_eta",&jet_eta);
+   NNClustSeedInputTree->Branch("jet_pt",&jet_pt);
+   NNClustSeedInputTree->Branch("jet_phi",&jet_phi);
+   NNClustSeedInputTree->Branch("jet_Ntrack",&jet_Ntrack);
+   NNClustSeedInputTree->Branch("track_pt",track_pt,"track_pt[100]/D");
+   NNClustSeedInputTree->Branch("track_pz",track_pz,"track_pz[100]/D");
+   NNClustSeedInputTree->Branch("track_eta",track_eta,"track_eta[100]/D");
+   NNClustSeedInputTree->Branch("track_phi",track_phi,"track_phi[100]/D");
 
    // //sto usando fileservice quindi non servono in fondo
    // //pxdMap_out->cd();
-   // //NNPixSeedInputTree->Write();
+   // //NNClustSeedInputTree->Write();
    // //pxdMap_out->Close();
 
 
    /// dichiarare cosa produce  produces<asd
-
-   for(int i=0; i<Npar+1; i++){ //NOFLAG
-     for(int j=0; j<jetDimX; j++){
-       for(int k=0; k<jetDimY; k++){
-         if(j<jetDimX && k<jetDimY && i< Nlayer) clusterMeas[j][k][i] = 0.0;
-         for(int m=0; m<Nover; m++){
-           if(j<jetDimX && k<jetDimY && i< Npar && m<Nover) trackPar[j][k][m][i] =0.0;
-           if(j<jetDimX && k<jetDimY && m<Nover) trackProb[j][k][m] =0.0;
+     for(int i=0; i<Npar+1; i++){ //NOFLAG
+       for(int j=0; j<jetDimX; j++){
+         for(int k=0; k<jetDimY; k++){
+           if(j<jetDimX && k<jetDimY && i< Nlayer) clusterMeas[j][k][i] = 0.0;
+           for(int m=0; m<Nover; m++){
+             if(j<jetDimX && k<jetDimY && i< Npar && m<Nover) trackPar[j][k][m][i] =0.0;
+             if(j<jetDimX && k<jetDimY && m<Nover) trackProb[j][k][m] =0.0;
+           }
          }
        }
      }
-   }
+
 
 }
 
 
-NNPixSeedInput::~NNPixSeedInput()
+NNClustSeedInput::~NNClustSeedInput()
 {
 
    // do anything here that needs to be done at desctruction time
@@ -326,10 +334,11 @@ NNPixSeedInput::~NNPixSeedInput()
 #define foreach BOOST_FOREACH
 
 
-void NNPixSeedInput::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
+void NNClustSeedInput::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   evt_counter++;
   std::cout << "event number (iterative)=" << evt_counter<< ", event number (id)="<< iEvent.id().event() << std::endl;
+
 
   // for(jet){ //soglia pt 500 Gev
   //   save(jet->pt,eta)
@@ -395,7 +404,7 @@ void NNPixSeedInput::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   auto output = std::make_unique<edmNew::DetSetVector<SiPixelCluster>>();
 
 print = false;
-double jet_number =0;
+int jet_number = 0;
   //std::cout << "jet tot number =" << cores->size() << std::endl;
   for (unsigned int ji = 0; ji < cores->size(); ji++) { //loop jet
     jet_number++;
@@ -409,6 +418,12 @@ double jet_number =0;
       //  if(print2)std::cout << "|____________________NEW JET_______________________________|" <<std::endl;
 
       const reco::Candidate& jet = (*cores)[ji];
+      const reco::Vertex& jetVertex = (*vertices)[0];
+
+      std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex);
+      std::cout << "numero of cluster da splittare" << splitClustDirSet.size() << std::endl;;
+      for(int cc=0; cc<(int)splitClustDirSet.size(); cc++){
+      GlobalVector bigClustDir = splitClustDirSet.at(cc);
 
       std::set<int> trkIDset;
       LocalPoint jetInter(0,0,0);
@@ -420,29 +435,32 @@ double jet_number =0;
       jet_pt = jet.pt();
       jet_eta = jet.eta();
       jet_phi = jet.phi();
-      GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
+
+
+      // GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
+
       //GlobalVector jetVertex(jet.vertex());
 
-      const reco::Vertex& jetVertex = (*vertices)[0];
       auto jetVert = jetVertex; //trackInfo filling
+
+
       std::vector<std::map<int,SiPixelCluster>> clusterMapVector;
       const GeomDetUnit* detUnit = (GeomDetUnit*)0; //fuffa assigment to allow to compile;
 
       // std::cout << "jetdirection=" << jetDir << std::endl;
-
       // jetDir=recenter(jet, jetDir, jetVertex, tTopo, pp);
-
       // std::cout << "jetdirection corrected=" << jetDir << std::endl;
-
       //reco::Candidate::Point jetVertex = jet.vertex(); //probably equivalent
+
       edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt = inputPixelClusters->begin();
 
-      const GeomDet* globDet = DetectorSelector(2, jet, jetDir, jetVertex, tTopo,pp, simtracksVector);
+      const GeomDet* globDet = DetectorSelector(2, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector); //select detector mostly hitten by the jet
+
       if(globDet == 0) continue;
 
-      const GeomDet* goodDet1 = DetectorSelector(1, jet, jetDir, jetVertex, tTopo,pp, simtracksVector);
-      const GeomDet* goodDet3 = DetectorSelector(3, jet, jetDir, jetVertex, tTopo,pp, simtracksVector);
-      const GeomDet* goodDet4 = DetectorSelector(4, jet, jetDir, jetVertex, tTopo,pp, simtracksVector);
+      const GeomDet* goodDet1 = DetectorSelector(1, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector);
+      const GeomDet* goodDet3 = DetectorSelector(3, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector);
+      const GeomDet* goodDet4 = DetectorSelector(4, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector);
 
 
 
@@ -465,7 +483,7 @@ double jet_number =0;
           //int lay = detPX.layer();
           int lay = tTopo->layer(det->geographicalId());
 
-          std::pair<bool, Basic3DVector<float>> interPair = findIntersection(jetDir,(reco::Candidate::Point)jetVertex.position(), det);
+          std::pair<bool, Basic3DVector<float>> interPair = findIntersection(bigClustDir,(reco::Candidate::Point)jetVertex.position(), det);
 
           if(interPair.first==false) continue;
 
@@ -486,13 +504,9 @@ double jet_number =0;
 
           //useful lines only if print =.=
             GlobalVector intersectionDir = (GlobalPoint) inter - pointVertex;
-            auto deltaR_glob = Geom::deltaR(jetDir, intersectionDir);
+            auto deltaR_glob = Geom::deltaR(bigClustDir, intersectionDir);
             GlobalVector clusterDir = cPos - pointVertex;
-            auto deltaR_clust = Geom::deltaR(jetDir, clusterDir);
-            // if(lay==1 && (aCluster.sizeY()==3 || aCluster.sizeY()==2) && (aCluster.sizeX()==3 || aCluster.sizeX()==2)) {
-            //   std::cout <<"deltaR=" << deltaR_clust << ", jetDir="<< jetDir << ", clusterDir=" <<clusterDir << ", X=" << aCluster.sizeX()<< ", Y=" << aCluster.sizeY()<<std::endl;
-            //
-            // }
+            auto deltaR_clust = Geom::deltaR(bigClustDir, clusterDir);
         //end of =.=
 
           //--------------------------end---------------------//
@@ -500,10 +514,6 @@ double jet_number =0;
 
           if(std::abs(cPos_local.x()-localInter.x())/pitchX<=jetDimX/2 && std::abs(cPos_local.y()-localInter.y())/pitchY<=jetDimY/2){ // per ora preso baricentro, da migliorare
 
-            if(aCluster.getSplitClusterErrorY()>0 && lay==1 && (aCluster.sizeY()==3 || aCluster.sizeY()==2) && (aCluster.sizeX()==3 || aCluster.sizeX()==2)) {
-              // std::cout <<"IN THE WINDOW! deltaR=" << deltaR_clust << ", jetDir="<< jetDir << ", clusterDir=" <<clusterDir << ", X=" << aCluster.sizeX()<< ", Y=" << aCluster.sizeY()<<std::endl;
-
-            }
             if(det==goodDet1 || det==goodDet3 || det==goodDet4 || det==globDet) {
               // std::cout << ">>>>>>>>>>>>>>>>>>>>>>>> Another Det, det==" << det << "layer=" << lay <<std::endl;
               fillPixelMatrix(aCluster,lay,localInter, det);
@@ -537,9 +547,9 @@ double jet_number =0;
     // int lay = tTopo->layer(globDet->geographicalId());
     // std::cout << "layer filled=" << lay << std::endl;
     // if(globDet == 0) continue;
-    fillTrackInfo(jet, trkIDset, simtracksVector, simvertexVector, jetInter, jetDir, jetVert, globDet, clusterMapVector, pp, detUnit);
+    fillTrackInfo(jet, trkIDset, simtracksVector, simvertexVector, jetInter, bigClustDir, jetVert, globDet, clusterMapVector, pp, detUnit);
     clusterMapVector.clear();
-    NNPixSeedInputTree->Fill();
+    NNClustSeedInputTree->Fill();
     std::cout << "FILL!" << std::endl;
 
     for(int i=0; i<Npar+1; i++){
@@ -560,6 +570,7 @@ double jet_number =0;
       }
     }
     trkIDset.clear();
+  } //bigcluster
   } //jet > pt
  } //jet
 //  print = false;
@@ -578,7 +589,7 @@ trackMap.clear();
 
 
 
-  std::pair<bool, Basic3DVector<float>> NNPixSeedInput::findIntersection(const GlobalVector & dir,const  reco::Candidate::Point & vertex, const GeomDet* det){
+  std::pair<bool, Basic3DVector<float>> NNClustSeedInput::findIntersection(const GlobalVector & dir,const  reco::Candidate::Point & vertex, const GeomDet* det){
      StraightLinePlaneCrossing vertexPlane(Basic3DVector<float>(vertex.x(),vertex.y(),vertex.z()), Basic3DVector<float>(dir.x(),dir.y(),dir.z()));
 
      std::pair<bool, Basic3DVector<float>> pos = vertexPlane.position(det->specificSurface());
@@ -588,7 +599,7 @@ trackMap.clear();
 
 
 
-  std::pair<int,int> NNPixSeedInput::local2Pixel(double locX, double locY, const GeomDet* det){
+  std::pair<int,int> NNClustSeedInput::local2Pixel(double locX, double locY, const GeomDet* det){
     LocalPoint locXY(locX,locY);
     float pixX=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().pixel(locXY).first;
     float pixY=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().pixel(locXY).second;
@@ -596,14 +607,14 @@ trackMap.clear();
     return out;
   }
 
-  LocalPoint NNPixSeedInput::pixel2Local(int pixX, int pixY, const GeomDet* det){
+  LocalPoint NNClustSeedInput::pixel2Local(int pixX, int pixY, const GeomDet* det){
     float locX=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().localX(pixX);
     float locY=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().localY(pixY);
     LocalPoint locXY(locX,locY);
     return locXY;
   }
 
-  int NNPixSeedInput::pixelFlipper(const GeomDet* det){
+  int NNClustSeedInput::pixelFlipper(const GeomDet* det){
     int out =1;
     LocalVector locZdir(0,0,1);
     GlobalVector globZdir  = det->specificSurface().toGlobal(locZdir);
@@ -616,7 +627,7 @@ trackMap.clear();
    }
 
 
-  GlobalVector NNPixSeedInput::recenter(const reco::Candidate& jet, GlobalVector dir, const reco::Vertex& jetVertex, const TrackerTopology* const tTopo, const PixelClusterParameterEstimator* pp){
+  GlobalVector NNClustSeedInput::recenter(const reco::Candidate& jet, GlobalVector dir, const reco::Vertex& jetVertex, const TrackerTopology* const tTopo, const PixelClusterParameterEstimator* pp){
 
     int layNum=4;
     int jetCore = 40;
@@ -700,10 +711,10 @@ trackMap.clear();
 }
 
 
-  void NNPixSeedInput::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det){
+  void NNClustSeedInput::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det){
     // if(print){std::cout << "----- cluster filled-------" << std::endl;
     // std::cout << "cluser layer" << layer << std::endl;}
-     if(print){std::cout << "--------new cluster----------cluster size=" <<cluster.size() <<std::endl;
+     if(layer==1){std::cout << "--------new cluster----------cluster size=" <<cluster.size() <<std::endl;
     std::cout << "layer=" << layer << std::endl;}
     if(layer==0) std::cout << "LAYER 0!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
 
@@ -728,7 +739,7 @@ trackMap.clear();
         ny = ny+jetDimY/2;
         if(nx<jetDimX && ny<jetDimY && layer-1< Nlayer && layer-1>=0 && nx>=0 && ny>=0) clusterMeas[nx][ny][layer-1] += (pix.adc)/(float)(14000);
 
-        if(print){std::cout << "x position pixel " << nx-jetDimX/2 <<std::endl;
+        if(layer==1){std::cout << "x position pixel " << nx-jetDimX/2 <<std::endl;
         std::cout << "y position pixel " << ny-jetDimY/2 <<std::endl;
         std::cout << "charge " << pix.adc <<std::endl;}
 
@@ -742,7 +753,7 @@ trackMap.clear();
 
   }
 
-  void NNPixSeedInput::fillPixelTrackMap(int trackID, const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det){
+  void NNClustSeedInput::fillPixelTrackMap(int trackID, const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det){
 
     int flip = pixelFlipper(det); // 1=not flip, -1=flip
 
@@ -770,7 +781,7 @@ trackMap.clear();
     }
   }
 
-  void NNPixSeedInput::fillPixelTrackMatrix(const std::vector<SimTrack>* const & stVector){
+  void NNClustSeedInput::fillPixelTrackMatrix(const std::vector<SimTrack>* const & stVector){
     int trk = 0;
     double trackFlag[Ntrack] = {0.0};
     for(std::map<int, double [Nlayer][jetDimX][jetDimY]>::iterator it=trackMap.begin(); it!=trackMap.end(); it++){
@@ -819,9 +830,9 @@ trackMap.clear();
 
 
 
-  void NNPixSeedInput::fillTrackInfo(const reco::Candidate& jet, const std::set<int> setTrkID, const auto & stVector,  const auto & svVector, auto jti, auto jetDir, auto jVert, const GeomDet* det, std::vector<std::map<int,SiPixelCluster>> clusterVector, const PixelClusterParameterEstimator* cpe, const GeomDetUnit* detUnit){
+  void NNClustSeedInput::fillTrackInfo(const reco::Candidate& jet, const std::set<int> setTrkID, const auto & stVector,  const auto & svVector, auto jti, auto jetDir, auto jVert, const GeomDet* det, std::vector<std::map<int,SiPixelCluster>> clusterVector, const PixelClusterParameterEstimator* cpe, const GeomDetUnit* detUnit){
 
-    bool oneHitInfo = true;
+    bool oneHitInfo = false;
 
     struct trkInfoObj
     {
@@ -1096,8 +1107,8 @@ trackMap.clear();
             //
             // info[4] = atan(localJetDir.x()/localJetDir.z())-atan(localTrkDir.x()/localTrkDir.z());
             // info[5] = atan(localJetDir.y()/localJetDir.z())-atan(localTrkDir.y()/localTrkDir.z());
-            info[4] = st.momentum().Eta()-jet.eta();
-            info[5] = deltaPhi(st.momentum().Phi(),jet.phi());
+            info[4] = st.momentum().Eta()-jetDir.eta();
+            info[5] = deltaPhi(st.momentum().Phi(),jetDir.phi());
             // info[6] = jet.eta();
             // info[7] = jet.pt();
 
@@ -1259,7 +1270,7 @@ trackMap.clear();
 
 
 
-  std::map<int,SiPixelCluster> NNPixSeedInput::splitClusterInTracks(const SiPixelCluster & cluster, const DetId & clusterID){ //devo passargli anche detset?
+  std::map<int,SiPixelCluster> NNClustSeedInput::splitClusterInTracks(const SiPixelCluster & cluster, const DetId & clusterID){ //devo passargli anche detset?
 
     std::map<int,SiPixelCluster> output;
 
@@ -1419,7 +1430,7 @@ trackMap.clear();
     return output;
   }
 
-const GeomDet* NNPixSeedInput::DetectorSelector(int llay, const reco::Candidate& jet, GlobalVector jetDir, const reco::Vertex& jetVertex, const TrackerTopology* const tTopo, const PixelClusterParameterEstimator* pp, const auto & simtracksVector){
+const GeomDet* NNClustSeedInput::DetectorSelector(int llay, const reco::Candidate& jet, GlobalVector jetDir, const reco::Vertex& jetVertex, const TrackerTopology* const tTopo, const PixelClusterParameterEstimator* pp, const auto & simtracksVector){
 
   struct trkNumCompare {
   bool operator()(std::pair<int,const GeomDet*> x, std::pair<int,const GeomDet*> y) const
@@ -1516,7 +1527,58 @@ const GeomDet* NNPixSeedInput::DetectorSelector(int llay, const reco::Candidate&
   else return track4detSet.begin()->second;
 }
 
+std::vector<GlobalVector> NNClustSeedInput::splittedClusterDirections(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex ){
+  std::vector<GlobalVector> clustDirs;
 
+  edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt_int = inputPixelClusters->begin();
+
+
+  for (; detIt_int != inputPixelClusters->end(); detIt_int++) {
+
+    const edmNew::DetSet<SiPixelCluster>& detset_int = *detIt_int;
+    const GeomDet* det_int = geometry_->idToDet(detset_int.id());
+    int lay = tTopo->layer(det_int->geographicalId());
+    if(lay != 1) continue;
+
+    for (auto cluster = detset_int.begin(); cluster != detset_int.end(); cluster++) {
+      const SiPixelCluster& aCluster = *cluster;
+      // bool hasBeenSplit = false;
+      // bool shouldBeSplit = false;
+      GlobalPoint cPos = det_int->surface().toGlobal(pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt_int->id())))[0].first);
+      GlobalPoint ppv(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
+      GlobalVector clusterDir = cPos - ppv;
+      GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
+      // std::cout <<"deltaR" << Geom::deltaR(jetDir, clusterDir)<<", jetDir="<< jetDir << ", clusterDir=" <<clusterDir << ", X=" << aCluster.sizeX()<< ", Y=" << aCluster.sizeY()<<std::endl;
+      if (Geom::deltaR(jetDir, clusterDir) < deltaR_) {
+            // check if the cluster has to be splitted
+
+            bool isEndCap =
+                (std::abs(cPos.z()) > 30.f);  // FIXME: check detID instead!
+            float jetZOverRho = jet.momentum().Z() / jet.momentum().Rho();
+            if (isEndCap)
+              jetZOverRho = jet.momentum().Rho() / jet.momentum().Z();
+            float expSizeY =
+                std::sqrt((1.3f*1.3f) + (1.9f*1.9f) * jetZOverRho*jetZOverRho);
+            if (expSizeY < 1.f) expSizeY = 1.f;
+            float expSizeX = 1.5f;
+            if (isEndCap) {
+              expSizeX = expSizeY;
+              expSizeY = 1.5f;
+            }  // in endcap col/rows are switched
+            float expCharge =
+                std::sqrt(1.08f + jetZOverRho * jetZOverRho) * centralMIPCharge_;
+            // std::cout <<"jDir="<< jetDir << ", cDir=" <<clusterDir <<  ", carica=" << aCluster.charge() << ", expChar*cFracMin_=" << expCharge * chargeFracMin_ <<", X=" << aCluster.sizeX()<< ", expSizeX+1=" <<  expSizeX + 1<< ", Y="<<aCluster.sizeY() <<", expSizeY+1="<< expSizeY + 1<< std::endl;
+            if (aCluster.charge() > expCharge * chargeFracMin_ && (aCluster.sizeX() > expSizeX + 1 ||  aCluster.sizeY() > expSizeY + 1)) {
+              // shouldBeSplit = true;
+              std::cout << "trovato cluster con deltaR=" << Geom::deltaR(jetDir, clusterDir)<< std::endl;
+              clustDirs.push_back(clusterDir);
+            }
+          }
+        }
+      }
+      return clustDirs;
+
+}
 
 //
 // #ifdef THIS_IS_AN_EVENT_EXAMPLE
@@ -1534,19 +1596,19 @@ const GeomDet* NNPixSeedInput::DetectorSelector(int llay, const reco::Candidate&
 
 // ------------ method called once each job just before starting event loop  ------------
 void
-NNPixSeedInput::beginJob()
+NNClustSeedInput::beginJob()
 {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void
-NNPixSeedInput::endJob()
+NNClustSeedInput::endJob()
 {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-NNPixSeedInput::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+NNClustSeedInput::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -1555,4 +1617,4 @@ NNPixSeedInput::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(NNPixSeedInput);
+DEFINE_FWK_MODULE(NNClustSeedInput);
