@@ -153,7 +153,7 @@ process.SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",
 )
 
 process.TFileService = cms.Service("TFileService",
-      fileName = cms.string("histo_1M_multiplied_4hit_30.root"),
+      fileName = cms.string("histo_1M_multiplied_4hit_30_50-pitchTest.root"),
       closeFileFast = cms.untracked.bool(True)
   )
 

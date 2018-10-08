@@ -714,7 +714,7 @@ trackMap.clear();
   void NNClustSeedInput::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det){
     // if(print){std::cout << "----- cluster filled-------" << std::endl;
     // std::cout << "cluser layer" << layer << std::endl;}
-     if(layer==1){std::cout << "--------new cluster----------cluster size=" <<cluster.size() <<std::endl;
+     if(layer==1 && 0){std::cout << "--------new cluster----------cluster size=" <<cluster.size() <<std::endl;
     std::cout << "layer=" << layer << std::endl;}
     if(layer==0) std::cout << "LAYER 0!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
 
@@ -739,7 +739,7 @@ trackMap.clear();
         ny = ny+jetDimY/2;
         if(nx<jetDimX && ny<jetDimY && layer-1< Nlayer && layer-1>=0 && nx>=0 && ny>=0) clusterMeas[nx][ny][layer-1] += (pix.adc)/(float)(14000);
 
-        if(layer==1){std::cout << "x position pixel " << nx-jetDimX/2 <<std::endl;
+        if(layer==1 && 0){std::cout << "x position pixel " << nx-jetDimX/2 <<std::endl;
         std::cout << "y position pixel " << ny-jetDimY/2 <<std::endl;
         std::cout << "charge " << pix.adc <<std::endl;}
 
@@ -1023,12 +1023,12 @@ trackMap.clear();
 
 
           std::pair<int,int> pixJInter = local2Pixel(Jinter.x(),Jinter.y(),det);
-          std::pair<int,int> pixTrkInter = local2Pixel(localTrkInter.x(),localTrkInter.y(),det);
+          std::pair<int,int> pixTrkInter = local2Pixel(localTrkInter.x()*pitchX,localTrkInter.y(),det); //ADDED PITCH
 
           int pixX = (pixTrkInter.first-pixJInter.first);
           int pixY = (pixTrkInter.second-pixJInter.second);
 
-          pixX=pixX;
+          // pixX=pixX;
           pixX = pixX+jetDimX/2;
           pixY = pixY+jetDimY/2;
 
@@ -1036,6 +1036,8 @@ trackMap.clear();
           double info[7] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 
           if (x==pixX && y==pixY) {
+            // if(theCluster.sizeX()==1) std::cout << "PROB1 " << "size x="<< theCluster.sizeX()<< ", size Y="<< theCluster.sizeY()<<", local x ="<<localTrkInter.x()<< ", local y="<<localTrkInter.y() << ", divided by pitch X=" << localTrkInter.x()/pitchX << ", divided by pitch Y=" << localTrkInter.y()/pitchY << ", flipped=" << flip << ", pixel num=" << theCluster.minPixelRow() << "," << theCluster.minPixelCol() << std::endl;
+
             // if(flagOver[x][y] < Nover){
             //   trackProb[x][y][flagOver[x][y]] = 1;
             //   flagOver[x][y]=flagOver[x][y]+1;
@@ -1058,15 +1060,15 @@ trackMap.clear();
           //  double distX = localTrkInter.x()-pix2loc.x()-0.5*pitchX;
           //  double distY = localTrkInter.y()-pix2loc.y()-0.5*pitchY;
           LocalPoint pix2loc = pixel2Local(x+pixJInter.first-jetDimX/2,y+pixJInter.second-jetDimY/2,det);
-          double distX =  localTrkInter.x()-pix2loc.x()-0.5*pitchX;
+          double distX =  localTrkInter.x()-pix2loc.x()-0.5*pitchX;//ADDED PITCH
           double distY =  localTrkInter.y()-pix2loc.y()-0.5*pitchY;
 
            if(distX<0.000001 && distX> -0.000001) {
-            //  std::cout << "distX="<< distX << std::endl;
+            // std::cout << "Xclust=" << theCluster.sizeX()<< ", distX="<< distX << ", localTrkInter x=" <<localTrkInter.x()/pitchX << ", pix2loc x=" << pix2loc.x() << std::endl;
              distX = 0.0;
            }
            if(distY<0.000001 && distY> - 0.000001){
-            //  std::cout << "distY="<< distY << std::endl;
+            //  std::cout << "Yclust=" << theCluster.sizeY() << ", distY="<< distY << ", localTrkInter y=" <<localTrkInter.y()/pitchY << ", pix2loc y=" << pix2loc.y() << std::endl;
              distY = 0.0;
            }
 
@@ -1090,6 +1092,7 @@ trackMap.clear();
 
           if(fabs(distX)<distThr*pitchX && fabs(distY)<distThr*pitchY){ //////////////////////////////////////////---GOOD WAY
           //if(x==pixX && y==pixY)
+
             info[2] = distX;
             info[3] = distY;
             //----debug lines ---- //
