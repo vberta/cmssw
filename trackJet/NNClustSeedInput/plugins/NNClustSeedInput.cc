@@ -1520,7 +1520,7 @@ const GeomDet* NNClustSeedInput::DetectorSelector(int llay, const reco::Candidat
     if(siz>0) track4detSet.insert(track4det);
   } //detset
 
-  std::cout << "Selected det=" << track4detSet.begin()->second << ", trk number=" << track4detSet.begin()->first << std::endl;
+  if(track4detSet.size()!=0) std::cout << "layer ="<< llay << " Selected det=" << track4detSet.begin()->second->gdetIndex() << ", trk number=" << track4detSet.begin()->first << std::endl;
   // for(std::set<std::pair<int,const GeomDet*>, trkNumCompare>::iterator track_iter= track4detSet.begin(); track_iter!=track4detSet.end(); track_iter++){
   //   std::cout << "det=" << track_iter->second << ", trk number=" << track_iter->first << std::endl;
   // }
