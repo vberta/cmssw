@@ -505,15 +505,27 @@ const GeomDet* TkSeedGeneratorNN::DetectorSelector(int llay, const reco::Candida
 
       auto localInter = det->specificSurface().toLocal((GlobalPoint)inter);
       // auto det->position()
-      std::cout << "layer =" << llay << " selected det=" << det->gdetIndex() << " dist=" << localInter.x() << std::endl;
-      if(minDist==0.0 || std::fabs(localInter.x())<minDist) {
-        minDist = std::fabs(localInter.x());
-        output = (GeomDet*)det;
-        std::cout << "layer =" << llay << " selected det=" << det->gdetIndex() << std::endl;
-        }
+      // std::cout << "layer =" << llay << " selected det=" << det->gdetIndex() << " distX=" << localInter.x() << " distY=" << localInter.y() <<std::endl;
+      // if(minDist==0.0 || std::fabs(localInter.x())<minDist) {
+      //   minDist = std::fabs(localInter.x());
+      //   output = (GeomDet*)det;
+      //   std::cout << "layer =" << llay << " selected det=" << det->gdetIndex() << std::endl;
+      //   }
+
+      // if((minDist==0.0 || (localInter.x()*localInter.x()+localInter.y()*localInter.y())<minDist)) {
+      if((minDist==0.0 || std::abs(localInter.x())<minDist) && std::abs(localInter.y())<3.35) {
+
+          // minDist = (localInter.x()*localInter.x()+localInter.y()*localInter.y());
+          minDist = std::abs(localInter.x());
+          output = (GeomDet*)det;
+          // std::cout << "layer =" << llay << " selected det=" << det->gdetIndex() << " distX=" << localInter.x() << " distY=" << localInter.y() << ", center=" << det->position()<< std::endl;
+      }
+        // if(det->gdetIndex()==3 && llay==1)  std::cout << "layer =" << llay << " selected det=" << det->gdetIndex() << " distX=" << localInter.x() << " distY=" << localInter.y() << ", center=" << det->position()<< std::endl;
+
+
     } //cluster
   } //detset
-  std::cout << "OK DET= layer =" << llay << " selected det=" << output->gdetIndex() << std::endl;
+  // std::cout << "OK DET= layer =" << llay << " selected det=" << output->gdetIndex() << std::endl;
   return output;
 }
 
