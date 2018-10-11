@@ -80,6 +80,8 @@
 
 #include "Geometry/TrackerGeometryBuilder/interface/PixelGeomDetUnit.h"
 
+#include "DataFormats/TrajectorySeed/interface/TrajectorySeedCollection.h"
+
 
 
 #include "TTree.h"
@@ -189,10 +191,10 @@ TkSeedGeneratorNN::TkSeedGeneratorNN(const edm::ParameterSet& iConfig) :
 
       vertices_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
       pixelClusters_(consumes<edmNew::DetSetVector<SiPixelCluster> >(iConfig.getParameter<edm::InputTag>("pixelClusters"))),
-      pixeldigisimlinkToken(consumes< edm::DetSetVector<PixelDigiSimLink> >(edm::InputTag("simSiPixelDigis"))),
+      // pixeldigisimlinkToken(consumes< edm::DetSetVector<PixelDigiSimLink> >(edm::InputTag("simSiPixelDigis"))),
       cores_(consumes<edm::View<reco::Candidate> >(iConfig.getParameter<edm::InputTag>("cores"))),
-      simtracksToken(consumes<std::vector<SimTrack> >(iConfig.getParameter<edm::InputTag>("simTracks"))),
-      simvertexToken(consumes<std::vector<SimVertex> >(iConfig.getParameter<edm::InputTag>("simVertex"))),
+      // simtracksToken(consumes<std::vector<SimTrack> >(iConfig.getParameter<edm::InputTag>("simTracks"))),
+      // simvertexToken(consumes<std::vector<SimVertex> >(iConfig.getParameter<edm::InputTag>("simVertex"))),
       ptMin_(iConfig.getParameter<double>("ptMin")),
       deltaR_(iConfig.getParameter<double>("deltaR")),
       chargeFracMin_(iConfig.getParameter<double>("chargeFractionMin")),
@@ -200,15 +202,17 @@ TkSeedGeneratorNN::TkSeedGeneratorNN(const edm::ParameterSet& iConfig) :
       pixelCPE_(iConfig.getParameter<std::string>("pixelCPE"))
 
 {
-   usesResource("TFileService");
+  //  usesResource("TFileService");
+  produces<TrajectorySeedCollection>();
 
 
-   edm::Service<TFileService> fileService;
 
-   TkSeedGeneratorNNTree= fileService->make<TTree>("TkSeedGeneratorNNTree","TkSeedGeneratorNNTree");
-   TkSeedGeneratorNNTree->Branch("cluster_measured",clusterMeas,"cluster_measured[30][30][4]/D");
-   TkSeedGeneratorNNTree->Branch("jet_eta",&jet_eta);
-   TkSeedGeneratorNNTree->Branch("jet_pt",&jet_pt);
+  //  edm::Service<TFileService> fileService;
+   //
+  //  TkSeedGeneratorNNTree= fileService->make<TTree>("TkSeedGeneratorNNTree","TkSeedGeneratorNNTree");
+  //  TkSeedGeneratorNNTree->Branch("cluster_measured",clusterMeas,"cluster_measured[30][30][4]/D");
+  //  TkSeedGeneratorNNTree->Branch("jet_eta",&jet_eta);
+  //  TkSeedGeneratorNNTree->Branch("jet_pt",&jet_pt);
 
 
      for(int i=0; i<Nlayer; i++){ //NOFLAG
@@ -248,11 +252,11 @@ void TkSeedGeneratorNN::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
   allSiPixelClusters.clear(); siPixelDetsWithClusters.clear();
   allSiPixelClusters.reserve(inputPixelClusters->dataSize()); // this is important, otherwise push_back invalidates the iterators
 
-  edm::Handle<std::vector<SimTrack> > simtracks;
-  iEvent.getByToken(simtracksToken, simtracks);
+  // edm::Handle<std::vector<SimTrack> > simtracks;
+  // iEvent.getByToken(simtracksToken, simtracks);
 
-  edm::Handle<std::vector<SimVertex> > simvertex;
-  iEvent.getByToken(simvertexToken, simvertex);
+  // edm::Handle<std::vector<SimVertex> > simvertex;
+  // iEvent.getByToken(simvertexToken, simvertex);
 
   Handle<std::vector<reco::Vertex> > vertices;
   iEvent.getByToken(vertices_, vertices);
@@ -260,7 +264,7 @@ void TkSeedGeneratorNN::produce(edm::Event& iEvent, const edm::EventSetup& iSetu
   Handle<edm::View<reco::Candidate> > cores;
   iEvent.getByToken(cores_, cores);
 
-  iEvent.getByToken(pixeldigisimlinkToken, pixeldigisimlink);
+  // iEvent.getByToken(pixeldigisimlinkToken, pixeldigisimlink);
 
   //--------------------------debuging lines ---------------------//
   edm::ESHandle<PixelClusterParameterEstimator> pe;
@@ -293,8 +297,8 @@ int jet_number = 0;
 
       LocalPoint jetInter(0,0,0);
 
-      const auto & simtracksVector = simtracks.product();
-      const auto & simvertexVector = simvertex.product();
+      // const auto & simtracksVector = simtracks.product();
+      // const auto & simvertexVector = simvertex.product();
 
       jet_pt = jet.pt();
       jet_eta = jet.eta();
@@ -302,7 +306,6 @@ int jet_number = 0;
       auto jetVert = jetVertex; //trackInfo filling
 
 
-      std::vector<std::map<int,SiPixelCluster>> clusterMapVector;
       const GeomDetUnit* detUnit = (GeomDetUnit*)0; //fuffa assigment to allow to compile;
 
       edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt = inputPixelClusters->begin();
@@ -325,20 +328,14 @@ int jet_number = 0;
 
           const SiPixelCluster& aCluster = *cluster;
           det_id_type aClusterID= detset.id();
-
           if(DetId(aClusterID).subdetId()!=1) continue;
 
           int lay = tTopo->layer(det->geographicalId());
 
           std::pair<bool, Basic3DVector<float>> interPair = findIntersection(bigClustDir,(reco::Candidate::Point)jetVertex.position(), det);
-
           if(interPair.first==false) continue;
-
           Basic3DVector<float> inter = interPair.second;
-
-
           auto localInter = det->specificSurface().toLocal((GlobalPoint)inter);
-
 
           GlobalPoint pointVertex(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
 
@@ -354,12 +351,20 @@ int jet_number = 0;
           } //cluster in ROI
         } //cluster
       } //detset
-    //  jetnum++;
+
+    // TkSeedGeneratorNNTree->Fill();
+
+    //HERE SOMEHOW THE NN PRODUCE THE SEED FROM THE FILLED INPUT
+
+    auto result = std::make_unique<TrajectorySeedCollection>();
+
+    LocalTrajectoryParameters lp(LocalPoint(0,0,0), LocalVector(1,1,1), TrackCharge(1));
+    long int detId=globDet->geographicalId();
+    result->push_back(TrajectorySeed( PTrajectoryStateOnDet (lp, 3., detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
+
+    iEvent.put(std::move(result));
 
 
-
-    clusterMapVector.clear();
-    TkSeedGeneratorNNTree->Fill();
     std::cout << "FILL!" << std::endl;
 
     for(int i=0; i<Nlayer; i++){
@@ -449,7 +454,7 @@ int jet_number = 0;
       if(abs(nx)<jetDimX/2 && abs(ny)<jetDimY/2){
         nx = nx+jetDimX/2;
         ny = ny+jetDimY/2;
-        if(nx<jetDimX && ny<jetDimY && layer-1< Nlayer && layer-1>=0 && nx>=0 && ny>=0) clusterMeas[nx][ny][layer-1] += (pix.adc)/(float)(14000);
+        if(nx<jetDimX && ny<jetDimY && layer-1< Nlayer && layer-1>=0 && nx>=0 && ny>=0) std::cout << "clusterMeas[nx][ny][layer-1] += (pix.adc)/(float)(14000) ="  << (pix.adc)/(float)(14000) << std::endl;;
 
         // if(layer==1 && 0){std::cout << "x position pixel " << nx-jetDimX/2 <<std::endl;
         // std::cout << "y position pixel " << ny-jetDimY/2 <<std::endl;

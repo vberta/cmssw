@@ -37,6 +37,8 @@
 <use name="FWCore/ServiceRegistry"/>
 
 <use name="SimG4Core/Application"/>
+<use name="DataFormats/TrajectorySeed"/>
+
 
 
 <flags EDM_PLUGIN="1"/>
