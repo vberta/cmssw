@@ -1,6 +1,6 @@
 import ROOT
 
-class module:
+class module2:
 	def __init__(self):
 	 	pass
 
@@ -10,7 +10,7 @@ class module:
 
 	def dosomething(self):
 
-		entries1 = self.d.Filter("GenPart_pt[GenPart_bareMuonIdx]>20").Count()
+		entries1 = self.d.Filter("Wrap_preFSR>0").Count()
 		
 		print("%s entries passed all filters" %entries1.GetValue())
 

@@ -3,6 +3,7 @@ import os
 import time
 
 from module import *
+from module2 import *
 
 class RDFprocessor:
     def __init__(self, outputFiles, inputFiles, cores, modules=[]):
@@ -22,10 +23,11 @@ class RDFprocessor:
 
         # modyfy RDF according to modules
         for m in self.modules: 
-            print "in module loop"
+
             m.beginJob(self.d)
             m.dosomething()
 
-        out = self.d.Snapshot("Events", self.outputFiles)
+        # this line crashes
+        #out = self.d.Snapshot("Events", self.outputFiles)
 
         #produce some kind of job report
