@@ -121,9 +121,15 @@ jetCoreRegionalStepTrajectoryBuilder = RecoTracker.CkfPattern.GroupedCkfTrajecto
     maxPtForLooperReconstruction = cms.double(0.7)
 )
 
+import RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi
+jetCoreSeeds  = RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi.jetCoreDirectSeedGenerator.clone(
+ vertices="firstStepPrimaryVertices"
+)
+
 # MAKING OF TRACK CANDIDATES
 import RecoTracker.CkfPattern.CkfTrackCandidates_cfi
 jetCoreRegionalStepTrackCandidates = RecoTracker.CkfPattern.CkfTrackCandidates_cfi.ckfTrackCandidates.clone(
+    # src                    = 'jetCoreSeeds',
     src                    = 'jetCoreRegionalStepSeeds',
     maxSeedsBeforeCleaning = 10000,
     TrajectoryBuilderPSet  = cms.PSet( refToPSet_ = cms.string('jetCoreRegionalStepTrajectoryBuilder')),
@@ -208,18 +214,19 @@ trackdnn.toReplaceWith(jetCoreRegionalStep, TrackLwtnnClassifier.clone(
 fastSim.toModify(jetCoreRegionalStep,vertices = 'firstStepPrimaryVerticesBeforeMixing')
 
 # Final sequence
-JetCoreRegionalStepTask = cms.Task(jetsForCoreTracking,                 
+JetCoreRegionalStepTask = cms.Task(jetsForCoreTracking,
                                    firstStepGoodPrimaryVertices,
                                    #jetCoreRegionalStepClusters,
                                    jetCoreRegionalStepSeedLayers,
                                    jetCoreRegionalStepTrackingRegions,
                                    jetCoreRegionalStepHitDoublets,
                                    jetCoreRegionalStepSeeds,
+                                   jetCoreSeeds,
                                    jetCoreRegionalStepTrackCandidates,
                                    jetCoreRegionalStepTracks,
 #                                   jetCoreRegionalStepClassifier1,jetCoreRegionalStepClassifier2,
                                    jetCoreRegionalStep)
 JetCoreRegionalStep = cms.Sequence(JetCoreRegionalStepTask)
-fastSim.toReplaceWith(JetCoreRegionalStepTask, 
+fastSim.toReplaceWith(JetCoreRegionalStepTask,
                       cms.Task(jetCoreRegionalStepTracks,
                                    jetCoreRegionalStep))
