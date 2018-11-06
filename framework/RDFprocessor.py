@@ -2,6 +2,26 @@ import ROOT
 import os
 import time
 
+# Begin code for casting
+
+# this injection can be replaced by properly having this in a header
+# included in the interpreter at framework startup
+ROOT.gInterpreter.Declare('''
+template <typename T>
+class NodeCaster {
+   public:
+   static ROOT::RDF::RNode Cast(T rdf)
+   {
+      return ROOT::RDF::RNode(rdf);
+   }
+};
+''')
+
+def CastToRNode(node):
+   return ROOT.NodeCaster(node.__cppname__).Cast(node)
+
+# end code for casting
+
 class RDFprocessor:
     def __init__(self, outputFiles, inputFiles, cores, histoFile, modules=[], snapshot = False):
 
@@ -23,9 +43,9 @@ class RDFprocessor:
         # modyfy RDF according to modules
         for m in self.modules: 
 
-            m.beginJob(self.d)
-            m.dosomething()
-            (self.d, tmp_obj) = m.endJob()
+            print type(self.d)
+            #self.d = m.doSomething(CastToRNode(self.d))
+            tmp_obj = m.getObjects()
 
             for obj in tmp_obj:
                 self.objs.append(obj)
@@ -34,6 +54,7 @@ class RDFprocessor:
         for obj in self.objs:
             obj.Write()
 
-        if self.snapshot: out = self.d.Snapshot("Events",self.outputFiles)
+        #if self.snapshot: out = self.d.Snapshot("Events",self.outputFiles)
+        if self.snapshot: out = self.d.Snapshot("Events","foo.root", "")
 
         #produce some kind of job report

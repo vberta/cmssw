@@ -3,13 +3,12 @@ import ROOT
 class module2():
     def __init__(self):
         pass
-
-    def beginJob(self, d):  
         
-        self.d = d
         self.myObj = []
         
-    def dosomething(self):
+    def doSomething(self,d):
+
+        self.d = d
 
         d_new = self.d.Filter("Wrap_preFSR>0")
 
@@ -21,6 +20,8 @@ class module2():
         
         self.d = d_new
 
-    def endJob(self):
+        return self.d
 
-        return (self.d,  self.myObj)
+    def getObjects(self):
+
+        return self.myObj
