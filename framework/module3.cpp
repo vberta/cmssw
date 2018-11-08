@@ -12,7 +12,8 @@ class leptonSelection {
   
   private:
 
-  	std::vector<ROOT::RDF::RResultPtr<TH1D>> _myObj;
+  	std::vector<ROOT::RDF::RResultPtr<TH1D>> _h1List;
+  	std::vector<ROOT::RDF::RResultPtr<TH2D>> _h2List;
 
   public:
 
@@ -21,21 +22,17 @@ class leptonSelection {
   	~leptonSelection();
 
   	 RNode doSomething(RNode);
-  	 std::vector<ROOT::RDF::RResultPtr<TH1D>> getObjects();
+  	 std::vector<ROOT::RDF::RResultPtr<TH1D>> getTH1();
+  	 std::vector<ROOT::RDF::RResultPtr<TH2D>> getTH2();
     
 };
 
-leptonSelection::leptonSelection(){
-
-	_myObj.resize(0);
-
-}
+leptonSelection::leptonSelection(){}
 
 leptonSelection::~leptonSelection(){}
 
 RNode leptonSelection::doSomething(RNode d){
 
-	
 	// get bare muon & neutrino
 
 	auto getBareMuonIdx = [](rvec_f pt, rvec_i statusFlags, rvec_i status, rvec_i pdgId){
@@ -58,17 +55,25 @@ RNode leptonSelection::doSomething(RNode d){
 
 	};
 
-	d.Define("GenPart_NeutrinoIdx", getNeutrinoIdx, {"GenPart_pt", "GenPart_statusFlags", "GenPart_status", "GenPart_pdgId"})
-	.Filter("GenPart_NeutrinoIdx!=-99");
+	auto d1 = d.Define("GenPart_NeutrinoIdx2", getNeutrinoIdx, {"GenPart_pt", "GenPart_statusFlags", "GenPart_status", "GenPart_pdgId"})
+	.Filter("GenPart_NeutrinoIdx2!=-99");
 
-	return d;
+	auto h = d1.Histo1D("GenPart_NeutrinoIdx2");
+
+	_h1List.push_back(h);
+
+	return d1;
 
 }
 
-std::vector<ROOT::RDF::RResultPtr<TH1D>> leptonSelection::getObjects(){
+std::vector<ROOT::RDF::RResultPtr<TH1D>> leptonSelection::getTH1(){
 
-	
-	return _myObj;
+	return _h1List;
+}
+
+std::vector<ROOT::RDF::RResultPtr<TH2D>> leptonSelection::getTH2(){
+
+	return _h2List;
 }
 
 

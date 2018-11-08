@@ -40,21 +40,44 @@ class RDFprocessor:
 
     def run(self):
 
+        #start analysis
+        t0 = time.clock()
+
         # modyfy RDF according to modules
         for m in self.modules: 
 
-            print type(self.d)
-            #self.d = m.doSomething(CastToRNode(self.d))
-            tmp_obj = m.getObjects()
+            self.d = m.doSomething(CastToRNode(self.d))
+            tmp_th1 = m.getTH1()
+            tmp_th2 = m.getTH2()
 
-            for obj in tmp_obj:
+            for obj in tmp_th1:
+                self.objs.append(obj)
+
+            for obj in tmp_th2:
                 self.objs.append(obj)
 
         self.histoFile.cd()
         for obj in self.objs:
-            obj.Write()
+            #obj.Write()
+            print "obj"
 
-        #if self.snapshot: out = self.d.Snapshot("Events",self.outputFiles)
-        if self.snapshot: out = self.d.Snapshot("Events","foo.root", "")
+        if self.snapshot: 
 
-        #produce some kind of job report
+            opts = ROOT.ROOT.RDF.RSnapshotOptions()
+            opts.fLazy = True
+
+            out = self.d.Snapshot("Events",self.outputFiles, "", opts)
+            print time.clock()-t0, "first snapshot"
+            """
+            out = self.d.Snapshot("LuminosityBlocks",self.outputFiles, "", opts)
+            print time.clock()-t0, "second snapshot"
+            out = self.d.Snapshot("Runs",self.outputFiles, "", opts)
+            print time.clock()-t0, "third snapshot"
+            out = self.d.Snapshot("MetaData",self.outputFiles, "", opts)
+            print time.clock()-t0, "forth snapshot"
+
+            opts.fLazy = False
+            out = self.d.Snapshot("ParameterSets",self.outputFiles, "", opts)
+            print time.clock()-t0, "last snapshot"
+            """
+        
