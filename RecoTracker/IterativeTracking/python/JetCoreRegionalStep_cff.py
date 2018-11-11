@@ -17,9 +17,9 @@ firstStepGoodPrimaryVertices = cms.EDFilter("PrimaryVertexObjectFilter",
 
 # SEEDING LAYERS
 jetCoreRegionalStepSeedLayers = cms.EDProducer("SeedingLayersEDProducer",
-    layerList = cms.vstring('BPix1+BPix2', 'BPix1+BPix3', 'BPix2+BPix3', 
-                            'BPix1+FPix1_pos', 'BPix1+FPix1_neg', 
-                            'BPix2+FPix1_pos', 'BPix2+FPix1_neg', 
+    layerList = cms.vstring('BPix1+BPix2', 'BPix1+BPix3', 'BPix2+BPix3',
+                            'BPix1+FPix1_pos', 'BPix1+FPix1_neg',
+                            'BPix2+FPix1_pos', 'BPix2+FPix1_neg',
                             'FPix1_pos+FPix2_pos', 'FPix1_neg+FPix2_neg',
                             #'BPix2+TIB1','BPix2+TIB2',
                             'BPix3+TIB1','BPix3+TIB2'),
@@ -117,10 +117,16 @@ jetCoreRegionalStepTrajectoryBuilder = RecoTracker.CkfPattern.GroupedCkfTrajecto
     maxPtForLooperReconstruction = cms.double(0.7)
     )
 
+import RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi
+jetCoreSeeds  = RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi.jetCoreDirectSeedGenerator.clone(
+ vertices="firstStepPrimaryVertices"
+)
+
 # MAKING OF TRACK CANDIDATES
 import RecoTracker.CkfPattern.CkfTrackCandidates_cfi
 jetCoreRegionalStepTrackCandidates = RecoTracker.CkfPattern.CkfTrackCandidates_cfi.ckfTrackCandidates.clone(
-    src = cms.InputTag('jetCoreRegionalStepSeeds'),
+    # src = cms.InputTag('jetCoreRegionalStepSeeds'),
+    src = cms.InputTag('jetCoreSeeds'),
     maxSeedsBeforeCleaning = cms.uint32(10000),
     TrajectoryBuilderPSet = cms.PSet( refToPSet_ = cms.string('jetCoreRegionalStepTrajectoryBuilder')),
     NavigationSchool = cms.string('SimpleNavigationSchool'),
@@ -193,18 +199,19 @@ trackingPhase1.toReplaceWith(jetCoreRegionalStep, TrackMVAClassifierPrompt.clone
 fastSim.toModify(jetCoreRegionalStep,vertices = "firstStepPrimaryVerticesBeforeMixing")
 
 # Final sequence
-JetCoreRegionalStepTask = cms.Task(jetsForCoreTracking,                 
+JetCoreRegionalStepTask = cms.Task(jetsForCoreTracking,
                                    firstStepGoodPrimaryVertices,
                                    #jetCoreRegionalStepClusters,
                                    jetCoreRegionalStepSeedLayers,
                                    jetCoreRegionalStepTrackingRegions,
                                    jetCoreRegionalStepHitDoublets,
                                    jetCoreRegionalStepSeeds,
+                                   jetCoreSeeds,
                                    jetCoreRegionalStepTrackCandidates,
                                    jetCoreRegionalStepTracks,
 #                                   jetCoreRegionalStepClassifier1,jetCoreRegionalStepClassifier2,
                                    jetCoreRegionalStep)
 JetCoreRegionalStep = cms.Sequence(JetCoreRegionalStepTask)
-fastSim.toReplaceWith(JetCoreRegionalStepTask, 
+fastSim.toReplaceWith(JetCoreRegionalStepTask,
                       cms.Task(jetCoreRegionalStepTracks,
                                    jetCoreRegionalStep))
