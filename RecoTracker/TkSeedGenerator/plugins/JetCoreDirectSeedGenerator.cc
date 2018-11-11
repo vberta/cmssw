@@ -325,14 +325,14 @@ int jet_number = 0;
     // JetCoreDirectSeedGeneratorTree->Fill();
 
     //HERE SOMEHOW THE NN PRODUCE THE SEED FROM THE FILLED INPUT
-std::cout << "Filling complete" << std::endl;
+// std::cout << "Filling complete" << std::endl;
     std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]> seedParamNN = JetCoreDirectSeedGenerator::SeedEvaluation(input_tensors);
 
     for(int i=0; i<jetDimX; i++){
       for(int j=0; j<jetDimY; j++){
         for(int o=0; o<Nover; o++){
-          if(seedParamNN.second[i][j][o]>0.99){
-            std::cout << "prob success=" << seedParamNN.second[i][j][o]<< ", for (x,y)=" << i <<"," <<j << ", threshold="<< probThr << std::endl;
+          if(seedParamNN.second[i][j][o]>0.90){//0.99=probThr (doesn't work the variable, SOLVE THIS ISSUE!!)
+            // /std::cout << "prob success=" << seedParamNN.second[i][j][o]<< ", for (x,y)=" << i <<"," <<j << ", threshold="<< probThr << std::endl;
 
             //NN pixel parametrization->local parametrization
             LocalPoint xyLocal = pixel2Local(i,j,globDet);
@@ -354,7 +354,12 @@ std::cout << "Filling complete" << std::endl;
             long int detId=globDet->geographicalId();
             LocalTrajectoryParameters localParam(localSeedPoint, localSeedDir, TrackCharge(1));
             result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam, 3., detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
-            std::cout <<" seed parameters=" << xx <<", "<< yy << ", " << track_eta << ", "<< track_phi << std::endl;
+            std::cout << "----------------------------new prediction -------------------------" <<std::endl;
+            std::cout << "prob success=" << seedParamNN.second[i][j][o]<<  std::endl;
+            std::cout << "X pixel=" << i << ", Y pixel=" << j << ", pred X=" << seedParamNN.first[i][j][o][0] << ", pred Y=" << seedParamNN.first[i][j][o][1] << ", pred eta=" << seedParamNN.first[i][j][o][2]<< ", pred phi=" << seedParamNN.first[i][j][o][3] << std::endl;
+
+            std::cout <<" seed parameters=" << xx <<", "<< yy << ", " << track_eta << ", "<< track_phi << ", " << localSeedDir << std::endl;
+            std::cout << "localParam.vector()=" <<  localParam.vector() << std::endl;
           }
         }
       }
@@ -444,7 +449,7 @@ void JetCoreDirectSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster,
         // std::cout << "prefill" << std::endl;
 
         input_tensors(0,nx,ny,layer-1) += (pix.adc)/(float)(14000);
-        std::cout << "filling (nx, ny,layer)" << nx<<","<<ny<<"," << layer-1 << ", pixel=" << (pix.adc)/(float)(14000) << std::endl;
+        // std::cout << "filling (nx, ny,layer)" << nx<<","<<ny<<"," << layer-1 << ", pixel=" << (pix.adc)/(float)(14000) << std::endl;
         // input_tensors[2].second.matrix<float>()(0,nx,ny,layer-1) += (pix.adc)/(float)(14000);
         // std::cout << "postfill" << std::endl;
 
@@ -502,6 +507,7 @@ std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]>
         for(int p=0; p<Npar;p++){
           // trackPar[x][y][trk][p]=outputs.at(0).matrix<double>()(0,x,y,trk,p);
           output_combined.first[x][y][trk][p]=matrix_output_par(0,x,y,trk,p);//outputs.at(0).matrix<double>()(0,x,y,trk,p);
+          if(matrix_output_prob(0,x,y,trk,0)>0.9) std::cout << "internal output" << ", x=" << x << ", y="<< y << ", trk=" <<trk << ", par=" << p << ",value="<< matrix_output_par(0,x,y,trk,p) << std::endl;
         }
       }
     }
