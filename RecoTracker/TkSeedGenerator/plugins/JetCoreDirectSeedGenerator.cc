@@ -255,6 +255,16 @@ int jet_number = 0;
       input_tensors[1] = tensorflow::NamedTensor(inputTensorName_[1], tensorflow::Tensor(tensorflow::DT_FLOAT, input_size_pt));
       input_tensors[2] = tensorflow::NamedTensor(inputTensorName_[2], tensorflow::Tensor(tensorflow::DT_FLOAT, {input_size_cluster}));
 
+      //put all the input tensor to 0
+      input_tensors[0].second.matrix<float>()(0,0) =0.0;
+      input_tensors[1].second.matrix<float>()(0,0) = 0.0;
+      for(int x=0; x<jetDimX; x++){
+        for(int y=0; y<jetDimY; y++){
+          for(int l=0; l<4; l++){
+              input_tensors[2].second.tensor<float,4>()(0,x,y,l) = 0.0;
+            }
+          }
+        }
       // auto input_matrix_eta = input_tensors[0].second.tensor<float,2>();
       // auto input_matrix_pt = input_tensors[1].second.tensor<float,2>();
       // auto input_matrix_cluster = input_tensors[2].second.tensor<float,4>();
@@ -355,9 +365,9 @@ int jet_number = 0;
             LocalPoint localSeedPoint = LocalPoint(xx,yy,00);
 
             // double jet_theta = 2*std::atan(std::exp(-jet_eta));
-            double track_eta = seedParamNN.first[i][j][o][2]+bigClustDir.eta();
+            double track_eta = seedParamNN.first[i][j][o][2]*0.01+bigClustDir.eta();//NOT SURE ABOUT THIS 0.01, only to debug
             double track_theta = 2*std::atan(std::exp(-track_eta));
-            double track_phi = seedParamNN.first[i][j][o][3]+bigClustDir.phi();
+            double track_phi = seedParamNN.first[i][j][o][3]*0.01+bigClustDir.phi();//NOT SURE ABOUT THIS 0.01, only to debug
             double normdirR = 1;
 
             const GlobalVector globSeedDir( Geom::Theta<double>(track_theta), Geom::Phi<double> (track_phi), normdirR);
@@ -501,16 +511,16 @@ std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]>
   // //     input_tensors[0].second.matrix<float>()(0,j) = values_[j];
   // // }
 
-  //debug!!!
-  // for(int x=0; x<jetDimX; x++){
-  //   for(int y=0; y<jetDimY; y++){
-  //     for(int l=0; l<4; l++){
-  //       if(input_tensors(0,x,y,l)!=0){
-  //         std::cout << "input" << "x=" << x << ", y=" << y <<", lay=" << l << ", val =" << input_tensors(0,x,y,l) << std::endl;
-  //       }
-  //     }
-  //   }
-  // } //end of debug
+  // debug!!!
+  for(int x=0; x<jetDimX; x++){
+    for(int y=0; y<jetDimY; y++){
+      for(int l=0; l<4; l++){
+        if(input_tensors[2].second.tensor<float,4>()(0,x,y,l)!=0){
+          std::cout << "input, " << "x=" << x << ", y=" << y <<", lay=" << l << ", val =" << input_tensors[2].second.tensor<float,4>()(0,x,y,l) << std::endl;
+        }
+      }
+    }
+  } //end of debug
 
   std::vector<tensorflow::Tensor> outputs;
   std::vector<std::string> output_names;
