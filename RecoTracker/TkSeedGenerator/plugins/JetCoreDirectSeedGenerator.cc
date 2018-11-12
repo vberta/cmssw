@@ -176,9 +176,19 @@ void JetCoreDirectSeedGenerator::produce(edm::Event& iEvent, const edm::EventSet
   tensorflow::SessionOptions sessionOptions;
   tensorflow::setThreading(sessionOptions, nThreads, singleThreadPool);
   session_ = tensorflow::createSession(graph_, sessionOptions);
-  tensorflow::TensorShape input_size_eta   {1,1} ;
-  tensorflow::TensorShape input_size_pt   {1,1} ;
-  tensorflow::TensorShape input_size_cluster   {1,jetDimX,jetDimY,Nlayer} ;
+  tensorflow::TensorShape input_size_eta({1,1}) ;
+  tensorflow::TensorShape input_size_pt({1,1}) ;
+  tensorflow::TensorShape input_size_cluster({1,jetDimX,jetDimY,Nlayer});
+
+  // std::cout << "input_size_cluster=" << input_size_cluster.num_elements() << "," << "," << input_size_cluster.dims() << "," <<  input_size_cluster.dim_size(0) << "," << input_size_cluster.dim_size(1) <<"," << input_size_cluster.dim_size(2) <<"," << input_size_cluster.dim_size(3) << std::endl;
+
+  // input_size_cluster.set_dim(0,1);
+  // input_size_cluster.set_dim(1,jetDimX);
+  // input_size_cluster.set_dim(2,jetDimY);
+  // input_size_cluster.set_dim(3,Nlayer);
+  ;
+
+    // tensorflow::TensorShape input_size_cluster   {1,1,1,1} ;
   //-----------------end of TF setup (1/2)----------------------//
 
   evt_counter++;
@@ -243,11 +253,12 @@ int jet_number = 0;
       input_tensors.resize(3);
       input_tensors[0] = tensorflow::NamedTensor(inputTensorName_[0], tensorflow::Tensor(tensorflow::DT_FLOAT, input_size_eta));
       input_tensors[1] = tensorflow::NamedTensor(inputTensorName_[1], tensorflow::Tensor(tensorflow::DT_FLOAT, input_size_pt));
-      input_tensors[2] = tensorflow::NamedTensor(inputTensorName_[2], tensorflow::Tensor(tensorflow::DT_FLOAT, input_size_cluster));
+      input_tensors[2] = tensorflow::NamedTensor(inputTensorName_[2], tensorflow::Tensor(tensorflow::DT_FLOAT, {input_size_cluster}));
 
-      auto input_matrix_eta = input_tensors[0].second.tensor<float,2>();
-      auto input_matrix_pt = input_tensors[1].second.tensor<float,2>();
-      auto input_matrix_cluster = input_tensors[2].second.tensor<float,4>();
+      // auto input_matrix_eta = input_tensors[0].second.tensor<float,2>();
+      // auto input_matrix_pt = input_tensors[1].second.tensor<float,2>();
+      // auto input_matrix_cluster = input_tensors[2].second.tensor<float,4>();
+
       //
       // std::vector<tensorflow::Tensor> inputs;
       // std::vector<std::string> input_names;
@@ -269,10 +280,10 @@ int jet_number = 0;
       jet_pt = jet.pt();
       // input_tensors(0).at(0) = jet.eta();
       // input_tensors[1](0) = jet.pt();
-      input_matrix_eta(0,0) = jet.eta();
-      input_matrix_pt(0,0) = jet.pt();
-      // input_tensors[0].second.matrix<float>()(0) = jet.eta();
-      // input_tensors[1].second.matrix<float>()(0) = jet.pt();
+      // input_matrix_eta(0,0) = jet.eta();
+      // input_matrix_pt(0,0) = jet.pt();
+      input_tensors[0].second.matrix<float>()(0,0) = jet.eta();
+      input_tensors[1].second.matrix<float>()(0,0) = jet.pt();
 
       auto jetVert = jetVertex; //trackInfo filling
 
@@ -316,7 +327,9 @@ int jet_number = 0;
           if(std::abs(cPos_local.x()-localInter.x())/pitchX<=jetDimX/2 && std::abs(cPos_local.y()-localInter.y())/pitchY<=jetDimY/2){ // per ora preso baricentro, da migliorare
 
             if(det==goodDet1 || det==goodDet3 || det==goodDet4 || det==globDet) {
-              fillPixelMatrix(aCluster,lay,localInter, det, input_matrix_cluster);
+              // fillPixelMatrix(aCluster,lay,localInter, det, input_matrix_cluster);
+              fillPixelMatrix(aCluster,lay,localInter, det, input_tensors);
+
               }
           } //cluster in ROI
         } //cluster
@@ -432,7 +445,7 @@ LocalPoint JetCoreDirectSeedGenerator::pixel2Local(int pixX, int pixY, const Geo
 
 
 
-void JetCoreDirectSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det, auto input_tensors ){//tensorflow::NamedTensorList input_tensors){
+void JetCoreDirectSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det, tensorflow::NamedTensorList input_tensors ){//tensorflow::NamedTensorList input_tensors){
 
     int flip = pixelFlipper(det); // 1=not flip, -1=flip
 
@@ -448,9 +461,13 @@ void JetCoreDirectSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster,
         ny = ny+jetDimY/2;
         // std::cout << "prefill" << std::endl;
 
-        input_tensors(0,nx,ny,layer-1) += (pix.adc)/(float)(14000);
-        // std::cout << "filling (nx, ny,layer)" << nx<<","<<ny<<"," << layer-1 << ", pixel=" << (pix.adc)/(float)(14000) << std::endl;
-        // input_tensors[2].second.matrix<float>()(0,nx,ny,layer-1) += (pix.adc)/(float)(14000);
+        // input_tensors(0,nx,ny,layer-1) += (pix.adc)/(float)(14000);
+        std::cout << "filling (nx, ny,layer)" << nx<<","<<ny<<"," << layer-1 << ", pixel=" << (pix.adc)/(float)(14000) << std::endl;
+        // input_tensors[1].second.matrix<float>()(0,0) = 2;
+
+        // auto input_matrix_cluster = input_tensors[2].second.tensor<float,4>();
+        input_tensors[2].second.tensor<float,4>()(0,nx,ny, layer-1) += (pix.adc)/(float)(14000);
+        //  input_matrix_cluster(0,nx,ny,layer-1) + (pix.adc)/(float)(14000);
         // std::cout << "postfill" << std::endl;
 
 
@@ -484,6 +501,17 @@ std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]>
   // //     input_tensors[0].second.matrix<float>()(0,j) = values_[j];
   // // }
 
+  //debug!!!
+  // for(int x=0; x<jetDimX; x++){
+  //   for(int y=0; y<jetDimY; y++){
+  //     for(int l=0; l<4; l++){
+  //       if(input_tensors(0,x,y,l)!=0){
+  //         std::cout << "input" << "x=" << x << ", y=" << y <<", lay=" << l << ", val =" << input_tensors(0,x,y,l) << std::endl;
+  //       }
+  //     }
+  //   }
+  // } //end of debug
+
   std::vector<tensorflow::Tensor> outputs;
   std::vector<std::string> output_names;
   output_names.push_back(outputTensorName_[0]);
@@ -507,7 +535,7 @@ std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]>
         for(int p=0; p<Npar;p++){
           // trackPar[x][y][trk][p]=outputs.at(0).matrix<double>()(0,x,y,trk,p);
           output_combined.first[x][y][trk][p]=matrix_output_par(0,x,y,trk,p);//outputs.at(0).matrix<double>()(0,x,y,trk,p);
-          if(matrix_output_prob(0,x,y,trk,0)>0.9) std::cout << "internal output" << ", x=" << x << ", y="<< y << ", trk=" <<trk << ", par=" << p << ",value="<< matrix_output_par(0,x,y,trk,p) << std::endl;
+          if(matrix_output_prob(0,x,y,trk,0)>0.9) std::cout << "internal output, prob= "<<matrix_output_prob(0,x,y,trk,0)<< ", x=" << x << ", y="<< y << ", trk=" <<trk << ", par=" << p << ",value="<< matrix_output_par(0,x,y,trk,p) << std::endl;
         }
       }
     }
