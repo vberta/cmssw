@@ -171,7 +171,7 @@ class JetCoreDirectSeedGenerator : public edm::one::EDProducer<edm::one::SharedR
 
   std::pair<bool, Basic3DVector<float>> findIntersection(const GlobalVector & , const reco::Candidate::Point & ,const GeomDet*);
 
-  void fillPixelMatrix(const SiPixelCluster &, int, auto, const GeomDet*, auto);//tensorflow::NamedTensorList);
+  void fillPixelMatrix(const SiPixelCluster &, int, auto, const GeomDet*, tensorflow::NamedTensorList);
 
   std::pair<int,int> local2Pixel(double, double, const GeomDet*);
 
