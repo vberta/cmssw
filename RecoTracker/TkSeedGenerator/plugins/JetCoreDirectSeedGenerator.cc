@@ -370,7 +370,7 @@ int jet_number = 0;
             double track_phi = seedParamNN.first[i][j][o][3]*0.01+bigClustDir.phi();//NOT SURE ABOUT THIS 0.01, only to debug
             double normdirR = 1;
 
-            const GlobalVector globSeedDir( Geom::Theta<double>(track_theta), Geom::Phi<double> (track_phi), normdirR);
+            const GlobalVector globSeedDir( GlobalVector::Polar(Geom::Theta<double>(track_theta), Geom::Phi<double> (track_phi), normdirR));
             LocalVector localSeedDir = globDet->surface().toLocal(globSeedDir);
 
             //seed creation
@@ -383,6 +383,11 @@ int jet_number = 0;
 
             std::cout <<" seed parameters=" << xx <<", "<< yy << ", " << track_eta << ", "<< track_phi << ", " << localSeedDir << std::endl;
             std::cout << "localParam.vector()=" <<  localParam.vector() << std::endl;
+            std::cout << "globSeedDir=" << globSeedDir << std::endl;
+            std::cout << "localSeedDir=" << localSeedDir << std::endl;
+            std::cout << "track_eta=" << track_eta;
+            std::cout << " track_theta=" << track_theta << std::endl;
+
           }
         }
       }
