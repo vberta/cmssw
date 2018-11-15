@@ -23,25 +23,23 @@ def CastToRNode(node):
 # end code for casting
 
 class RDFprocessor:
-    def __init__(self, outputFiles, inputFiles, cores, histoFile, modules=[], snapshot = False):
+    def __init__(self, outputFile, inputFiles, histoFile, modules=[], snapshot = False):
 
-        self.outputFiles = outputFiles
+        self.outputFile = outputFile
         self.inputFiles = inputFiles
-        self.cores = cores
         self.modules = modules
         self.histoFile = ROOT.TFile(histoFile, "recreate")
         self.snapshot = snapshot
 
-        ROOT.ROOT.EnableImplicitMT(self.cores)
-
         RDF = ROOT.ROOT.RDataFrame
         self.d = RDF("Events", inputFiles)
+
         self.objs = [] # objects to be received from modules
 
     def run(self):
 
         #start analysis
-        t0 = time.clock()
+        start = time.clock()
 
         # modyfy RDF according to modules
         for m in self.modules: 
@@ -56,28 +54,36 @@ class RDFprocessor:
             for obj in tmp_th2:
                 self.objs.append(obj)
 
-        self.histoFile.cd()
-        for obj in self.objs:
-            #obj.Write()
-            print "obj"
-
         if self.snapshot: 
 
-            opts = ROOT.ROOT.RDF.RSnapshotOptions()
-            opts.fLazy = True
-
-            out = self.d.Snapshot("Events",self.outputFiles, "", opts)
+            """ comment until we understand Snapshot bug
+            ROOT.ROOT.RDataFrame("LuminosityBlocks", self.inputFiles).Snapshot("LuminosityBlocks",self.outputFile, "")
             print time.clock()-t0, "first snapshot"
-            """
-            out = self.d.Snapshot("LuminosityBlocks",self.outputFiles, "", opts)
-            print time.clock()-t0, "second snapshot"
-            out = self.d.Snapshot("Runs",self.outputFiles, "", opts)
-            print time.clock()-t0, "third snapshot"
-            out = self.d.Snapshot("MetaData",self.outputFiles, "", opts)
-            print time.clock()-t0, "forth snapshot"
+            
+            opts = ROOT.ROOT.RDF.RSnapshotOptions()
+            opts.fMode = "UPDATE"
 
-            opts.fLazy = False
-            out = self.d.Snapshot("ParameterSets",self.outputFiles, "", opts)
-            print time.clock()-t0, "last snapshot"
+            ROOT.ROOT.RDataFrame("Runs", self.inputFiles).Snapshot("Runs", self.outputFile, "", opts)
+            print time.clock()-start, "second snapshot"
             """
+            
+            # edm::Stuff cannot be written via Snapshot
+            #ROOT.ROOT.RDataFrame("MetaData", self.inputFiles).Snapshot("MetaData",self.outputFile, "", opts)
+            #print time.clock()-t0, "third snapshot"
+            
+            #ROOT.ROOT.RDataFrame("ParameterSets", self.inputFiles).Snapshot("ParameterSets", self.outputFile, "", opts)
+            #print time.clock()-t0, "fourth loop"
+
+            self.d.Snapshot("Events", self.outputFile)
+            print time.clock()-start, "events snapshot"
+
+        entries = self.d.Count()    
+        self.histoFile.cd()
+        for obj in self.objs:
+            obj.Write()
         
+        
+        print time.clock()-start, "histogram writing"
+        print entries.GetValue(), " events processed in ", time.clock()-start, " s"
+
+        return time.clock()-start
