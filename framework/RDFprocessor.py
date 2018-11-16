@@ -33,13 +33,14 @@ class RDFprocessor:
 
         RDF = ROOT.ROOT.RDataFrame
         self.d = RDF("Events", inputFiles)
+        self.entries = self.d.Count() 
 
         self.objs = [] # objects to be received from modules
 
     def run(self):
 
         #start analysis
-        start = time.clock()
+        start = time.time()
 
         # modyfy RDF according to modules
         for m in self.modules: 
@@ -58,32 +59,31 @@ class RDFprocessor:
 
             """ comment until we understand Snapshot bug
             ROOT.ROOT.RDataFrame("LuminosityBlocks", self.inputFiles).Snapshot("LuminosityBlocks",self.outputFile, "")
-            print time.clock()-t0, "first snapshot"
+            print time.time()-t0, "first snapshot"
             
             opts = ROOT.ROOT.RDF.RSnapshotOptions()
             opts.fMode = "UPDATE"
 
             ROOT.ROOT.RDataFrame("Runs", self.inputFiles).Snapshot("Runs", self.outputFile, "", opts)
-            print time.clock()-start, "second snapshot"
+            print time.time()-start, "second snapshot"
             """
             
             # edm::Stuff cannot be written via Snapshot
             #ROOT.ROOT.RDataFrame("MetaData", self.inputFiles).Snapshot("MetaData",self.outputFile, "", opts)
-            #print time.clock()-t0, "third snapshot"
+            #print time.time()-t0, "third snapshot"
             
             #ROOT.ROOT.RDataFrame("ParameterSets", self.inputFiles).Snapshot("ParameterSets", self.outputFile, "", opts)
-            #print time.clock()-t0, "fourth loop"
+            #print time.time()-t0, "fourth loop"
 
             self.d.Snapshot("Events", self.outputFile)
-            print time.clock()-start, "events snapshot"
-
-        entries = self.d.Count()    
+            print time.time()-start, "events snapshot"
+   
         self.histoFile.cd()
         for obj in self.objs:
             obj.Write()
         
         
-        print time.clock()-start, "histogram writing"
-        print entries.GetValue(), " events processed in ", time.clock()-start, " s"
+        print time.time()-start, "histogram writing"
+        print self.entries.GetValue(), " events processed in ", time.time()-start, " s"
 
-        return time.clock()-start
+        return time.time()-start

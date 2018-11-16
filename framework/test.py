@@ -27,6 +27,7 @@ plt.show()
 """
 
 ROOT.ROOT.EnableImplicitMT(60)
-p = RDFprocessor(outputFile = "test2.root", inputFiles ='/scratch/emanca/WMass/NanoDevelopment/CMSSW_10_2_6/src/PhysicsTools/NanoAODTools/scripts/inputTree.root', modules=[ROOT.AngCoeff()], histoFile = 'histo.root', snapshot=True)
+#p = RDFprocessor(outputFile = "test.root", inputFiles ='/scratch/emanca/WMass/NanoDevelopment/CMSSW_10_2_6/src/PhysicsTools/NanoAODTools/scripts/inputTree.root', modules=[ROOT.AngCoeff()], histoFile = 'histo.root', snapshot=True)
+p = RDFprocessor(outputFile = "test2.root", inputFiles ='test.root', modules=[module1()], histoFile = 'histo.root', snapshot=False)
 time = p.run()
-print "elapsed processor time", time, "s"
+print "elapsed world time", time, "s"
