@@ -1,4 +1,5 @@
 import ROOT
+from array import array
 
 ROOT.gInterpreter.Declare("""ROOT::RDF::RResultPtr<float> FilterAndSum(ROOT::RDF::RNode df, double lowY, double upY, double lowPt, double upPt, int i)
 {
@@ -31,53 +32,58 @@ class module1:
         
     def doSomething(self,d):
 
+        yArr = [-3.5, -3.0, -2.5, -2.0, -1.6, -1.2, -0.8, -0.4, 0, 0.4, 0.8, 1.2 ,1.6, 2.0, 2.5, 3.0, 3.5]
+        ptArr = [0, 4, 8, 12, 16, 20, 24, 32, 40, 60]
+
         self.d = d.Filter("GenPart_pdgId[GenPart_bareMuonIdx]<0") #select W+
 
 
         coeff = ['A0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']
 
         tmpCoeff = []
-        tmpPt = []
-        tmpY = []
-
+        
         normPt = []
         normY = []
 
         for c in coeff:
-            self.myTH2.append(ROOT.TH2D("{c}".format(c=c), "{c}".format(c=c), 100, -5., 5., 100, 0, 100))
+            self.myTH2.append(ROOT.TH2D("{c}".format(c=c), "{c}".format(c=c), len(yArr)-1, array('f',yArr), len(ptArr)-1, array('f',ptArr)))
 
         for i, h in enumerate(self.myTH2):
             
-            #print 'outer loop'
+            tmpPt = []
             for j in range(1, h.GetNbinsY()+1):  # bins in W pt
-                #print '\tinner loop'
-                
+
                 upPt = h.GetYaxis().GetBinUpEdge(j)
                 lowPt = h.GetYaxis().GetBinLowEdge(j)
                 
+                tmpY = []
                 for k in range(1, h.GetNbinsX()+1):  # bin in W y
                     
                     upY = h.GetXaxis().GetBinUpEdge(k)
                     lowY = h.GetXaxis().GetBinLowEdge(k)
-                     
+                    
+                    print k
                     tmpY.append(ROOT.FilterAndSum(CastToRNode2(d), lowY, upY, lowPt, upPt, i))  # one dimensional array
 
                     if i==0: 
                         normY.append(ROOT.FilterAndSumNorm(CastToRNode2(d), lowY, upY, lowPt, upPt))  # one dimensional array            
                 
-                if len(normY) >0: normPt.append(normY)   
+                if i==0: normPt.append(normY)   
 
+                print len(tmpY), len(normY),"number of y bins:", len(yArr)-1
                 tmpPt.append(tmpY)  # bidimensional array
+                print len(tmpPt), len(normPt), "number of pt bins:", len(ptArr)-1
             
             tmpCoeff.append(tmpPt)  # tridimensional array
+            print len(tmpCoeff), "number of coefficients"
 
         print 'jitting'
         for i, h in enumerate(self.myTH2):
             for j in range(1, h.GetNbinsY()+1):  # bins in W pt
                 for k in range(1, h.GetNbinsX()+1):  # bin in W y
 
-                    print j,k   
-                    h.SetBinContent(k, j, tmpCoeff[i][j][k].GetValue())
+                    mybin = h.GetBin(k,j)
+                    h.SetBinContent(mybin, tmpCoeff[i][j-1][k-1].GetValue()/normPt[j-1][k-1].GetValue())
 
         print 'returning'    
 
