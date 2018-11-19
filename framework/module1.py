@@ -1,5 +1,7 @@
 import ROOT
+import math
 from array import array
+
 
 ROOT.gInterpreter.Declare("""ROOT::RDF::RResultPtr<float> FilterAndSum(ROOT::RDF::RNode df, double lowY, double upY, double lowPt, double upPt, int i)
 {
@@ -62,20 +64,17 @@ class module1:
                     upY = h.GetXaxis().GetBinUpEdge(k)
                     lowY = h.GetXaxis().GetBinLowEdge(k)
                     
-                    print k
-                    tmpY.append(ROOT.FilterAndSum(CastToRNode2(d), lowY, upY, lowPt, upPt, i))  # one dimensional array
+                    tmpY.append(ROOT.FilterAndSum(CastToRNode2(d), lowY, upY, lowPt, upPt, i))  
 
                     if i==0: 
-                        normY.append(ROOT.FilterAndSumNorm(CastToRNode2(d), lowY, upY, lowPt, upPt))  # one dimensional array            
+                        normY.append(ROOT.FilterAndSumNorm(CastToRNode2(d), lowY, upY, lowPt, upPt))  
                 
-                if i==0: normPt.append(normY)   
+                if i==0: 
+                    normPt.append(normY)   
 
-                print len(tmpY), len(normY),"number of y bins:", len(yArr)-1
-                tmpPt.append(tmpY)  # bidimensional array
-                print len(tmpPt), len(normPt), "number of pt bins:", len(ptArr)-1
-            
-            tmpCoeff.append(tmpPt)  # tridimensional array
-            print len(tmpCoeff), "number of coefficients"
+                tmpPt.append(tmpY) 
+
+            tmpCoeff.append(tmpPt)  
 
         print 'jitting'
         for i, h in enumerate(self.myTH2):
@@ -84,6 +83,7 @@ class module1:
 
                     mybin = h.GetBin(k,j)
                     h.SetBinContent(mybin, tmpCoeff[i][j-1][k-1].GetValue()/normPt[j-1][k-1].GetValue())
+                    h.SetBinError(mybin, math.sqrt(1./normPt[j-1][k-1].GetValue()))
 
         print 'returning'    
 
