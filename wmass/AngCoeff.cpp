@@ -6,7 +6,7 @@ RNode AngCoeff::doSomething(RNode d){
 
     // first normalise generator weights
 
-    auto dw = d.Define("Generator_weight_norm", [](float w)-> float{ return w/225896;}, {"Generator_weight"});
+    auto dw = d.Filter("GenPart_pdgId[GenPart_preFSRMuonIdx]<0").Define("Generator_weight_norm", [](float w)-> float{ return w/225896;}, {"Generator_weight"});
 
     auto sq = [](float a)-> float{ return a*a;};
 
@@ -45,11 +45,11 @@ RNode AngCoeff::doSomething(RNode d){
     
     for(auto c:coeff){
 
-    auto hNumerator = d7.Histo2D(TH2D(Form("A%s", c.c_str()), Form("A%s", c.c_str()), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+c+"w");
-    auto hP2 =  d7.Histo2D(TH2D(Form("hnum2_%s", c.c_str()), Form("hnum2_%s", c.c_str()), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+c+"w2");
+        auto hNumerator = d7.Histo2D(TH2D(Form("A%s", c.c_str()), Form("A%s", c.c_str()), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+c+"w");
+        auto hP2 =  d7.Histo2D(TH2D(Form("hnum2_%s", c.c_str()), Form("hnum2_%s", c.c_str()), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+c+"w2");
 
-    h2Num.push_back(hNumerator);
-    h2Num2.push_back(hP2);
+        h2Num.push_back(hNumerator);
+        h2Num2.push_back(hP2);
     
     }
     
@@ -58,24 +58,54 @@ RNode AngCoeff::doSomething(RNode d){
 
         for(int j=1; j<h2Num[h]->GetNbinsY()+1; j++){ // for each pt bin
 
+            float UpPt = h2Num[h]->GetYaxis()->GetBinUpEdge(j);
+            float lowPt = h2Num[h]->GetYaxis()->GetBinLowEdge(j);
+            
             for(int i=1; i<h2Num[h]->GetNbinsX()+1; i++){ // for each y bin
+
+                float UpY = h2Num[h]->GetXaxis()->GetBinUpEdge(i);
+                float lowY = h2Num[h]->GetXaxis()->GetBinLowEdge(i);
+
+                float area = (UpPt-lowPt)*(UpY-lowY);
 
                 h2Num[h]->SetBinContent(i,j, h2Num[h]->GetBinContent(i,j)/hDenominator->GetBinContent(i,j));
                 
                 float stdErr2 = h2Num2[h]->GetBinContent(i,j)/hDenominator->GetBinContent(i,j) - h2Num[h]->GetBinContent(i,j)*h2Num[h]->GetBinContent(i,j);
-                float sqrtneff = hDenominator->GetBinContent(i,j)/TMath::Sqrt(hDenominator->GetBinError(i,j));
-                float coeff_err = TMath::Sqrt(stdErr2*0.5)/sqrtneff;
+                float sqrtneff = hDenominator->GetBinContent(i,j)/area/TMath::Sqrt(hDenominator->GetBinError(i,j)/area);
+                float coeff_err = TMath::Sqrt(stdErr2)/(sqrtneff);
                     
                 h2Num[h]->SetBinError(i,j, coeff_err);
-                
+
+                // rescale with the right coefficient
+
+                float cont = h2Num[h]->GetBinContent(i,j);
+                float err = h2Num[h]->GetBinError(i,j);
+                    
+                if(h == 0){        
+                    h2Num[h]->SetBinContent(i,j, 20./3.*cont + 2./3.);
+                    h2Num[h]->SetBinError(i,j, 20./3.*err);
                 }
-
-
+                else if(h == 1 || h == 5 || h == 6){        
+                    h2Num[h]->SetBinContent(i,j, 5*cont);
+                    h2Num[h]->SetBinError(i,j, 5*err);
+                }
+                else if(h == 2){         
+                    h2Num[h]->SetBinContent(i,j, 10*cont);
+                    h2Num[h]->SetBinError(i,j, 10*err);
+                }
+                else{       
+                    h2Num[h]->SetBinContent(i,j, 4*cont);
+                    h2Num[h]->SetBinError(i,j, 4*err);
+                }
+                
             }
 
-            _h2List.push_back(h2Num[h]);
 
-        }   
+        }
+
+        _h2List.push_back(h2Num[h]);
+
+    }   
 
     
     return d7;
