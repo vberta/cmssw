@@ -32,6 +32,9 @@ class AngCoeff : public Module {
     std::vector<ROOT::RDF::RResultPtr<TH1D>> getTH1() override;
     std::vector<ROOT::RDF::RResultPtr<TH2D>> getTH2() override;
 
+    // custom functions
+    RNode defineArmonics(RNode);
+    RNode defineArmonicsSqAndW(RNode, std::string);
 };
 
 #endif
