@@ -79,7 +79,7 @@ RNode AngCoeff::doSomething(RNode d){
                 h2Num[h]->SetBinContent(i,j, h2Num[h]->GetBinContent(i,j)/hDenominator->GetBinContent(i,j));
                 
                 float stdErr2 = h2Num2[h]->GetBinContent(i,j)/hDenominator->GetBinContent(i,j) - h2Num[h]->GetBinContent(i,j)*h2Num[h]->GetBinContent(i,j);
-                float sqrtneff = hDenominator->GetBinContent(i,j)/TMath::Sqrt(hDenominator->GetBinError(i,j));
+                float sqrtneff = hDenominator->GetBinContent(i,j)/hDenominator->GetBinError(i,j);
                 float coeff_err = TMath::Sqrt(stdErr2)/(sqrtneff);
                     
                 h2Num[h]->SetBinError(i,j, coeff_err);
