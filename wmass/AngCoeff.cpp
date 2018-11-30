@@ -27,9 +27,9 @@ RNode AngCoeff::defineArmonics(RNode d){
 
 RNode AngCoeff::defineArmonicsSqAndW(RNode d, std::string c){
 
-    auto sq = [](float a)-> float{ return a*a;};
+    auto sq = [](float a, float w)-> float{ return a*a*w;};
 
-    auto d2 = d.Define("P"+c+ "sq", sq, {"P"+c}).Define("P"+c+ "w", [](float p, float w){ return p*w;}, {"P"+c, "Generator_weight_norm"});
+    auto d2 = d.Define("P"+c+ "sq", sq, {"P"+c, "Generator_weight_norm"}).Define("P"+c+ "w", [](float p, float w){ return p*w;}, {"P"+c, "Generator_weight_norm"});
 
     return d2;
 
