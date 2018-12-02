@@ -25,15 +25,15 @@ RNode AngCoeff::defineArmonics(RNode d){
 
 }
 
-RNode AngCoeff::defineArmonicsSqAndW(RNode d, std::string c){
+RNode AngCoeff::defineArmonicsSqAndWscale(RNode d, int c, int k){
 
-    auto sq = [](float a, float w)-> float{ return a*a*w;};
+    auto sq = [k](float a, float w, rvec_f wscale)-> float{ return a*a*w*wscale[k];};
 
-    auto d2 = d.Define("P"+c+ "sq", sq, {"P"+c, "Generator_weight_norm"}).Define("P"+c+ "w", [](float p, float w){ return p*w;}, {"P"+c, "Generator_weight_norm"});
+    auto d2 = d.Define("P"+std::to_string(c)+ "sq"+std::to_string(k), sq, {"P"+std::to_string(c), "Generator_weight_norm", "LHEScaleWeight"}).Define("P"+std::to_string(c)+ "w"+std::to_string(k), [k](float p, float w, rvec_f wscale){ return p*w*wscale[k];}, {"P"+std::to_string(c), "Generator_weight_norm", "LHEScaleWeight"});
 
     return d2;
 
-    }
+}
 
 RNode AngCoeff::doSomething(RNode d){
 
@@ -50,73 +50,104 @@ RNode AngCoeff::doSomething(RNode d){
     int nBinsY = 16;
     int nBinsPt = 9;
 
-    std::vector<std::string> coeff = {"0", "1", "2", "3", "4", "5", "6", "7"};
+    std::vector<int> coeff = {0, 1, 2, 3, 4, 5, 6, 7};
 
-    std::vector<ROOT::RDF::RResultPtr<TH2D>> h2Num;
-    std::vector<ROOT::RDF::RResultPtr<TH2D>> h2Num2;
+    std::map<int, std::vector<ROOT::RDF::RResultPtr<TH2D>>> h2Num;
+    std::map<int, ROOT::RDF::RResultPtr<TH2D>> h2Den;
+    std::map<int,std::vector<ROOT::RDF::RResultPtr<TH2D>>> h2Num2;
 
-    // only once 
-    auto hDenominator = dArm.Histo2D(TH2D("hdenom", "hdenom", nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "Generator_weight_norm");
-    
-    for(auto c:coeff){
+    std::vector<ROOT::RDF::RResultPtr<TH2D>> temp;
+    std::vector<ROOT::RDF::RResultPtr<TH2D>> temp2;
 
-        auto dArm2 = defineArmonicsSqAndW(dArm, c);
-        auto hNumerator = dArm2.Histo2D(TH2D(Form("A%s", c.c_str()), Form("A%s", c.c_str()), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+c+"w");
-        auto hP2 =  dArm2.Histo2D(TH2D(Form("hnum2_%s", c.c_str()), Form("hnum2_%s", c.c_str()), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+c+"sq");
+    // only once per coefficient
 
-        h2Num.push_back(hNumerator);
-        h2Num2.push_back(hP2);
-    
+    for(unsigned int k=0; k<9; k++){ // loop on QCD scale variations
+
+        auto hDenominator = dArm.Define("w"+std::to_string(k), [k](float w, rvec_f wscale){ return w*wscale[k];}, {"Generator_weight_norm", "LHEScaleWeight"}).Histo2D(TH2D("hdenom", "hdenom", nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "w"+std::to_string(k));
+
+        h2Den.insert(std::pair<int, ROOT::RDF::RResultPtr<TH2D>>(k, hDenominator));
+
+        for(auto c:coeff){
+
+        auto dArm2 = defineArmonicsSqAndWscale(dArm, c, k); // function depends on coefficient and scale index
+
+        auto hNumerator = dArm2.Histo2D(TH2D(Form("A%i_%i", c,k), Form("A%i_%i", c,k), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+std::to_string(c)+ "w"+std::to_string(k));
+        auto hP2 =  dArm2.Histo2D(TH2D(Form("A%i_%i", c,k), Form("A%i_%i", c,k), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+std::to_string(c)+ "sq"+std::to_string(k));
+
+        temp.push_back(hNumerator);
+        temp2.push_back(hP2);
     }
+
+    h2Num.insert(std::pair<int, std::vector<ROOT::RDF::RResultPtr<TH2D>>>(k, temp)); // all histos with variation k
+    h2Num2.insert(std::pair<int, std::vector<ROOT::RDF::RResultPtr<TH2D>>>(k, temp2));
+
+    temp.resize(0);
+    temp2.resize(0);
     
+}
 
-    for(std::size_t h=0; h < h2Num.size(); h++){    
+// now iterate over maps
 
-        for(int j=1; j<h2Num[h]->GetNbinsY()+1; j++){ // for each pt bin
+auto it_h2Num = h2Num.begin();
+auto it_h2Den = h2Den.begin();
+auto it_h2Num2 = h2Num2.begin();
 
-            for(int i=1; i<h2Num[h]->GetNbinsX()+1; i++){ // for each y bin
+while (it_h2Num != h2Num.end())
+{
 
-                h2Num[h]->SetBinContent(i,j, h2Num[h]->GetBinContent(i,j)/hDenominator->GetBinContent(i,j));
+    for(std::size_t h=0; h < it_h2Num->second.size(); h++){    
+
+
+        for(int j=1; j<it_h2Num->second.at(h)->GetNbinsY()+1; j++){ // for each pt bin
+
+            for(int i=1; i<it_h2Num->second.at(h)->GetNbinsX()+1; i++){ // for each y bin
+
+                it_h2Num->second.at(h)->SetBinContent(i,j, it_h2Num->second.at(h)->GetBinContent(i,j)/it_h2Den->second->GetBinContent(i,j));
                 
-                float stdErr2 = h2Num2[h]->GetBinContent(i,j)/hDenominator->GetBinContent(i,j) - h2Num[h]->GetBinContent(i,j)*h2Num[h]->GetBinContent(i,j);
-                float sqrtneff = hDenominator->GetBinContent(i,j)/hDenominator->GetBinError(i,j);
+                float stdErr2 = it_h2Num2->second.at(h)->GetBinContent(i,j)/it_h2Den->second->GetBinContent(i,j) - it_h2Num->second.at(h)->GetBinContent(i,j)*it_h2Num->second.at(h)->GetBinContent(i,j);
+                float sqrtneff = it_h2Den->second->GetBinContent(i,j)/it_h2Den->second->GetBinError(i,j);
                 float coeff_err = TMath::Sqrt(stdErr2)/(sqrtneff);
-                    
-                h2Num[h]->SetBinError(i,j, coeff_err);
+
+                it_h2Num->second.at(h)->SetBinError(i,j, coeff_err);
 
                 // rescale with the right coefficient
 
-                float cont = h2Num[h]->GetBinContent(i,j);
-                float err = h2Num[h]->GetBinError(i,j);
-                    
+                float cont = it_h2Num->second.at(h)->GetBinContent(i,j);
+                float err = it_h2Num->second.at(h)->GetBinError(i,j);
+
                 if(h == 0){        
-                    h2Num[h]->SetBinContent(i,j, 20./3.*cont + 2./3.);
-                    h2Num[h]->SetBinError(i,j, 20./3.*err);
+                    it_h2Num->second.at(h)->SetBinContent(i,j, 20./3.*cont + 2./3.);
+                    it_h2Num->second.at(h)->SetBinError(i,j, 20./3.*err);
                 }
                 else if(h == 1 || h == 5 || h == 6){        
-                    h2Num[h]->SetBinContent(i,j, 5*cont);
-                    h2Num[h]->SetBinError(i,j, 5*err);
+                    it_h2Num->second.at(h)->SetBinContent(i,j, 5*cont);
+                    it_h2Num->second.at(h)->SetBinError(i,j, 5*err);
                 }
                 else if(h == 2){         
-                    h2Num[h]->SetBinContent(i,j, 10*cont);
-                    h2Num[h]->SetBinError(i,j, 10*err);
+                    it_h2Num->second.at(h)->SetBinContent(i,j, 10*cont);
+                    it_h2Num->second.at(h)->SetBinError(i,j, 10*err);
                 }
                 else{       
-                    h2Num[h]->SetBinContent(i,j, 4*cont);
-                    h2Num[h]->SetBinError(i,j, 4*err);
+                    it_h2Num->second.at(h)->SetBinContent(i,j, 4*cont);
+                    it_h2Num->second.at(h)->SetBinError(i,j, 4*err);
                 }
                 
             }
-
-
         }
 
-        _h2List.push_back(h2Num[h]);
 
-    }   
+        _h2List.push_back(it_h2Num->second.at(h));
 
-    
-    return d;
+    }
+
+    ++it_h2Den;
+    ++it_h2Num;
+    ++it_h2Num2;
+
+}
+
+
+return d;
 
 }
 
@@ -136,4 +167,3 @@ std::vector<ROOT::RDF::RResultPtr<TH2D>> AngCoeff::getTH2(){
 
 
 
-    

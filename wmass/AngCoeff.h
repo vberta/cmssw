@@ -34,7 +34,7 @@ class AngCoeff : public Module {
 
     // custom functions
     RNode defineArmonics(RNode);
-    RNode defineArmonicsSqAndW(RNode, std::string);
+    RNode defineArmonicsSqAndWscale(RNode, int, int);
 };
 
 #endif
