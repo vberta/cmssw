@@ -29,7 +29,17 @@ RNode AngCoeff::defineArmonicsSqAndWscale(RNode d, int c, int k){
 
     auto sq = [k](float a, float w, rvec_f wscale)-> float{ return a*a*w*wscale[k];};
 
-    auto d2 = d.Define("P"+std::to_string(c)+ "sq"+std::to_string(k), sq, {"P"+std::to_string(c), "Generator_weight_norm", "LHEScaleWeight"}).Define("P"+std::to_string(c)+ "w"+std::to_string(k), [k](float p, float w, rvec_f wscale){ return p*w*wscale[k];}, {"P"+std::to_string(c), "Generator_weight_norm", "LHEScaleWeight"});
+    auto d2 = d.Define("P"+std::to_string(c)+ "sq"+ "_scale" +std::to_string(k), sq, {"P"+std::to_string(c), "Generator_weight_norm", "LHEScaleWeight"}).Define("P"+std::to_string(c)+ "w"+"_scale" +std::to_string(k), [k](float p, float w, rvec_f wscale){ return p*w*wscale[k];}, {"P"+std::to_string(c), "Generator_weight_norm", "LHEScaleWeight"});
+
+    return d2;
+
+}
+
+RNode AngCoeff::defineArmonicsSqAndWPDF(RNode d, int c, int k){
+
+    auto sq = [k](float a, float w, rvec_f wscale)-> float{ return a*a*w*wscale[k];};
+
+    auto d2 = d.Define("P"+std::to_string(c)+ "sq"+ "_PDF"+ std::to_string(k), sq, {"P"+std::to_string(c), "Generator_weight_norm", "LHEPdfWeight"}).Define("P"+std::to_string(c)+ "w"+ "_PDF" + std::to_string(k), [k](float p, float w, rvec_f wscale){ return p*w*wscale[k];}, {"P"+std::to_string(c), "Generator_weight_norm", "LHEPdfWeight"});
 
     return d2;
 
@@ -59,23 +69,41 @@ RNode AngCoeff::doSomething(RNode d){
     std::vector<ROOT::RDF::RResultPtr<TH2D>> temp;
     std::vector<ROOT::RDF::RResultPtr<TH2D>> temp2;
 
-    // only once per coefficient
 
-    for(unsigned int k=0; k<9; k++){ // loop on QCD scale variations
+    for(unsigned int k=0; k<111; k++){ // loop on QCD scale and PDF variations (8 + 102 variations)
 
-        auto hDenominator = dArm.Define("w"+std::to_string(k), [k](float w, rvec_f wscale){ return w*wscale[k];}, {"Generator_weight_norm", "LHEScaleWeight"}).Histo2D(TH2D("hdenom", "hdenom", nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "w"+std::to_string(k));
-
-        h2Den.insert(std::pair<int, ROOT::RDF::RResultPtr<TH2D>>(k, hDenominator));
+        if(k<9){
+            auto hDenominator = dArm.Define("w_scale"+std::to_string(k), [k](float w, rvec_f wscale){ return w*wscale[k];}, {"Generator_weight_norm", "LHEScaleWeight"}).Histo2D(TH2D("hdenom", "hdenom", nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "w_scale"+std::to_string(k));
+            h2Den.insert(std::pair<int, ROOT::RDF::RResultPtr<TH2D>>(k, hDenominator));
+        }
+        else{
+            auto d = k-9;
+            auto hDenominator = dArm.Define("w_PDF"+std::to_string(k-9), [d](float w, rvec_f wscale){ return w*wscale[d];}, {"Generator_weight_norm", "LHEPdfWeight"}).Histo2D(TH2D("hdenom", "hdenom", nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "w_PDF"+std::to_string(k-9));
+            h2Den.insert(std::pair<int, ROOT::RDF::RResultPtr<TH2D>>(k, hDenominator));
+        }
 
         for(auto c:coeff){
 
-        auto dArm2 = defineArmonicsSqAndWscale(dArm, c, k); // function depends on coefficient and scale index
+            if(k<9){
 
-        auto hNumerator = dArm2.Histo2D(TH2D(Form("A%i_%i", c,k), Form("A%i_%i", c,k), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+std::to_string(c)+ "w"+std::to_string(k));
-        auto hP2 =  dArm2.Histo2D(TH2D(Form("A%i_%i", c,k), Form("A%i_%i", c,k), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+std::to_string(c)+ "sq"+std::to_string(k));
+                auto dArm2 = defineArmonicsSqAndWscale(dArm, c, k); // function depends on coefficient and scale index
+                auto hNumerator = dArm2.Histo2D(TH2D(Form("A%i_scaleVar%i", c,k), Form("A%i_scaleVar%i", c,k), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+std::to_string(c)+ "w"+"_scale" +std::to_string(k));
+                auto hP2 =  dArm2.Histo2D(TH2D(Form("A%i_scaleVar%i", c,k), Form("A%i_scaleVar%i", c,k), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+std::to_string(c)+ "sq"+ "_scale" +std::to_string(k));
 
-        temp.push_back(hNumerator);
-        temp2.push_back(hP2);
+                temp.push_back(hNumerator);
+                temp2.push_back(hP2);
+
+            }
+            else{
+
+                auto dArm2 = defineArmonicsSqAndWPDF(dArm, c, k-9); // function depends on coefficient and scale index
+                auto hNumerator = dArm2.Histo2D(TH2D(Form("A%i_PDFVar%i", c,k-9), Form("A%i_PDFVar%i", c,k-9), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+std::to_string(c)+ "w"+"_PDF" +std::to_string(k-9));
+                auto hP2 =  dArm2.Histo2D(TH2D(Form("A%i_PDFVar%i", c,k-9), Form("A%i_PDFVar%i", c,k-9), nBinsY, yArr, nBinsPt, ptArr), "Wrap_preFSR", "Wpt_preFSR", "P"+std::to_string(c)+ "sq"+ "_PDF" +std::to_string(k-9));
+
+                temp.push_back(hNumerator);
+                temp2.push_back(hP2);
+            }
+            
     }
 
     h2Num.insert(std::pair<int, std::vector<ROOT::RDF::RResultPtr<TH2D>>>(k, temp)); // all histos with variation k
