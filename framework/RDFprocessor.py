@@ -43,7 +43,9 @@ class RDFprocessor:
         start = time.time()
 
         # modyfy RDF according to modules
-        for m in self.modules: 
+        for i, m in enumerate(self.modules): 
+
+            print 'analysing module', i+1
 
             self.d = m.doSomething(CastToRNode(self.d))
             tmp_th1 = m.getTH1()
@@ -80,6 +82,7 @@ class RDFprocessor:
    
         self.histoFile.cd()
         for obj in self.objs:
+            print type(obj), obj
             obj.Write()
         
         
