@@ -129,6 +129,7 @@ JetCoreDirectSeedGenerator::JetCoreDirectSeedGenerator(const edm::ParameterSet& 
 
 {
   produces<TrajectorySeedCollection>();
+  produces<reco::TrackCollection>();
 
 
 
@@ -166,6 +167,7 @@ void JetCoreDirectSeedGenerator::produce(edm::Event& iEvent, const edm::EventSet
   evt_counter++;
   std::cout << "NEW EVENT, event number" << evt_counter  <<std::endl;
   auto result = std::make_unique<TrajectorySeedCollection>();
+  auto resultTracks = std::make_unique<reco::TrackCollection>();
 
   //-------------------TensorFlow setup - session (1/2)----------------------//
 
@@ -239,12 +241,14 @@ int jet_number = 0;
     jet_number++;
 
     if ((*cores)[ji].pt() > ptMin_) {
-       std::cout << "|____________________NEW JET_______________________________| jet number=" << jet_number  <<std::endl;
+       std::cout << "|____________________NEW JET_______________________________| jet number=" << jet_number  << " " << (*cores)[ji].pt() << " " << (*cores)[ji].eta() << " " << (*cores)[ji].phi() <<  std::endl;
 
+      std::set<long long int> ids;
       const reco::Candidate& jet = (*cores)[ji];
       const reco::Vertex& jetVertex = (*vertices)[0];
 
       std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex);
+      splitClustDirSet.push_back(GlobalVector(jet.px(),jet.py(),jet.pz()));
       std::cout << "splitted cluster number=" << splitClustDirSet.size() << std::endl;;
       for(int cc=0; cc<(int)splitClustDirSet.size(); cc++){
 
@@ -354,39 +358,68 @@ int jet_number = 0;
     for(int i=0; i<jetDimX; i++){
       for(int j=0; j<jetDimY; j++){
         for(int o=0; o<Nover; o++){
-          if(seedParamNN.second[i][j][o]>0.90){//0.99=probThr (doesn't work the variable, SOLVE THIS ISSUE!!)
-            // /std::cout << "prob success=" << seedParamNN.second[i][j][o]<< ", for (x,y)=" << i <<"," <<j << ", threshold="<< probThr << std::endl;
-
+          if(seedParamNN.second[i][j][o]>(0.75-o*0.1)){//0.99=probThr (doesn't work the variable, SOLVE THIS ISSUE!!)
+            std::cout << "prob success=" << seedParamNN.second[i][j][o]<< ", for (x,y)=" << i <<"," <<j << ", threshold="<< probThr << std::endl;
+	    /*seedParamNN.first[i][j][o][0]=0; 
+	    seedParamNN.first[i][j][o][1]=0; 
+	    seedParamNN.first[i][j][o][2]=0; 
+	    seedParamNN.first[i][j][o][3]=0; */
             //NN pixel parametrization->local parametrization
-            LocalPoint xyLocal = pixel2Local(i,j,globDet);
-            double xx = xyLocal.x()+seedParamNN.first[i][j][o][0]*0.01;
-            double yy = xyLocal.y()+seedParamNN.first[i][j][o][1]*0.01;
+	    std::pair<bool, Basic3DVector<float>> interPair =  findIntersection(bigClustDir,(reco::Candidate::Point)jetVertex.position(), globDet);
+	    auto localInter = globDet->specificSurface().toLocal((GlobalPoint)interPair.second);
 
-            LocalPoint localSeedPoint = LocalPoint(xx,yy,00);
+	    int flip = pixelFlipper(globDet); // 1=not flip, -1=flip
+	    int nx=i-jetDimX/2;
+	    int ny=j-jetDimY/2;
+            nx=flip*nx;
+      	    std::pair<int,int> pixInter = local2Pixel(localInter.x(),localInter.y(),globDet);
+            nx = nx+pixInter.first;
+            ny = ny+pixInter.second;
+            LocalPoint xyLocal = pixel2Local(nx,ny,globDet);
+
+
+            double xx = xyLocal.x()+seedParamNN.first[i][j][o][0]*0.01 ;
+            double yy = xyLocal.y()+seedParamNN.first[i][j][o][1]*0.01 ;
+            LocalPoint localSeedPoint = LocalPoint(xx,yy,0);
 
             // double jet_theta = 2*std::atan(std::exp(-jet_eta));
             double track_eta = seedParamNN.first[i][j][o][2]*0.01+bigClustDir.eta();//NOT SURE ABOUT THIS 0.01, only to debug
             double track_theta = 2*std::atan(std::exp(-track_eta));
             double track_phi = seedParamNN.first[i][j][o][3]*0.01+bigClustDir.phi();//NOT SURE ABOUT THIS 0.01, only to debug
-            double normdirR = 1;
-
+            double normdirR = 10.;
             const GlobalVector globSeedDir( GlobalVector::Polar(Geom::Theta<double>(track_theta), Geom::Phi<double> (track_phi), normdirR));
             LocalVector localSeedDir = globDet->surface().toLocal(globSeedDir);
+            double normdirR2 = 2.;
+            const GlobalVector globSeedDir2( GlobalVector::Polar(Geom::Theta<double>(track_theta), Geom::Phi<double> (track_phi), normdirR2));
+            LocalVector localSeedDir2 = globDet->surface().toLocal(globSeedDir2);
+	    int64_t  seedid=  (int64_t(xx*200.)<<0)+(int64_t(yy*200.)<<16)+(int64_t(track_eta*400.)<<32)+(int64_t(track_phi*400.)<<48); 
+	    if(ids.count(seedid)!=0) { 
+		std::cout << "Rejecting seed" << xx << " " << yy << " " << track_eta << " " << track_phi << " " << seedid << std::endl;
+		continue; 
+            }
+	    ids.insert(seedid); 
+	    std::cout << "Creating seed" << xx << " " << yy << " " << track_eta << " " << track_phi << " " << seedid << std::endl;
 
-            //seed creation
+	    //seed creation
+            float em[15]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            em[0]=0.15*0.15;
+            em[2]=0.5e-5;
+            em[5]=0.5e-5;
+            em[9]=2e-5;
+            em[14]=2e-5;
+ /*[2]=1e-5;
+            em[5]=1e-5;
+            em[9]=2e-5;
+            em[14]=2e-5;*/
             long int detId=globDet->geographicalId();
             LocalTrajectoryParameters localParam(localSeedPoint, localSeedDir, TrackCharge(1));
-            result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam, 3., detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
-            std::cout << "----------------------------new prediction -------------------------" <<std::endl;
-            std::cout << "prob success=" << seedParamNN.second[i][j][o]<<  std::endl;
-            std::cout << "X pixel=" << i << ", Y pixel=" << j << ", pred X=" << seedParamNN.first[i][j][o][0] << ", pred Y=" << seedParamNN.first[i][j][o][1] << ", pred eta=" << seedParamNN.first[i][j][o][2]<< ", pred phi=" << seedParamNN.first[i][j][o][3] << std::endl;
+           result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam, 10., em, detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
+            LocalTrajectoryParameters localParam2(localSeedPoint, localSeedDir2, TrackCharge(1));
+           result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam2, 2., em, detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
 
-            std::cout <<" seed parameters=" << xx <<", "<< yy << ", " << track_eta << ", "<< track_phi << ", " << localSeedDir << std::endl;
-            std::cout << "localParam.vector()=" <<  localParam.vector() << std::endl;
-            std::cout << "globSeedDir=" << globSeedDir << std::endl;
-            std::cout << "localSeedDir=" << localSeedDir << std::endl;
-            std::cout << "track_eta=" << track_eta;
-            std::cout << " track_theta=" << track_theta << std::endl;
+           GlobalPoint globalSeedPoint = globDet->surface().toGlobal(localSeedPoint);
+	   reco::Track::CovarianceMatrix mm;
+           resultTracks->push_back(reco::Track(1,1,reco::Track::Point(globalSeedPoint.x(),globalSeedPoint.y(),globalSeedPoint.z()),reco::Track::Vector(globSeedDir.x(),globSeedDir.y(),globSeedDir.z()),1,mm));
 
           }
         }
@@ -408,6 +441,7 @@ int jet_number = 0;
   } //jet > pt
  } //jet
 iEvent.put(std::move(result));
+iEvent.put(std::move(resultTracks));
 }
 
 
@@ -517,6 +551,7 @@ std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]>
   // // }
 
   // debug!!!
+/*
   for(int x=0; x<jetDimX; x++){
     for(int y=0; y<jetDimY; y++){
       for(int l=0; l<4; l++){
@@ -526,7 +561,7 @@ std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]>
       }
     }
   } //end of debug
-
+*/
   std::vector<tensorflow::Tensor> outputs;
   std::vector<std::string> output_names;
   output_names.push_back(outputTensorName_[0]);
@@ -550,7 +585,7 @@ std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]>
         for(int p=0; p<Npar;p++){
           // trackPar[x][y][trk][p]=outputs.at(0).matrix<double>()(0,x,y,trk,p);
           output_combined.first[x][y][trk][p]=matrix_output_par(0,x,y,trk,p);//outputs.at(0).matrix<double>()(0,x,y,trk,p);
-          if(matrix_output_prob(0,x,y,trk,0)>0.9) std::cout << "internal output, prob= "<<matrix_output_prob(0,x,y,trk,0)<< ", x=" << x << ", y="<< y << ", trk=" <<trk << ", par=" << p << ",value="<< matrix_output_par(0,x,y,trk,p) << std::endl;
+//          if(matrix_output_prob(0,x,y,trk,0)>0.9) std::cout << "internal output, prob= "<<matrix_output_prob(0,x,y,trk,0)<< ", x=" << x << ", y="<< y << ", trk=" <<trk << ", par=" << p << ",value="<< matrix_output_par(0,x,y,trk,p) << std::endl;
         }
       }
     }
@@ -619,7 +654,7 @@ std::vector<GlobalVector> JetCoreDirectSeedGenerator::splittedClusterDirections(
     const edmNew::DetSet<SiPixelCluster>& detset_int = *detIt_int;
     const GeomDet* det_int = geometry_->idToDet(detset_int.id());
     int lay = tTopo->layer(det_int->geographicalId());
-    if(lay != 1) continue;
+//    if(lay != 1) continue;
 
     for (auto cluster = detset_int.begin(); cluster != detset_int.end(); cluster++) {
       const SiPixelCluster& aCluster = *cluster;
@@ -629,7 +664,7 @@ std::vector<GlobalVector> JetCoreDirectSeedGenerator::splittedClusterDirections(
       GlobalVector clusterDir = cPos - ppv;
       GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
       if (Geom::deltaR(jetDir, clusterDir) < deltaR_) {
-
+/*
             bool isEndCap =
                 (std::abs(cPos.z()) > 30.f);  // FIXME: check detID instead!
             float jetZOverRho = jet.momentum().Z() / jet.momentum().Rho();
@@ -645,7 +680,8 @@ std::vector<GlobalVector> JetCoreDirectSeedGenerator::splittedClusterDirections(
             }  // in endcap col/rows are switched
             float expCharge =
                 std::sqrt(1.08f + jetZOverRho * jetZOverRho) * centralMIPCharge_;
-            if (aCluster.charge() > expCharge * chargeFracMin_ && (aCluster.sizeX() > expSizeX + 1 ||  aCluster.sizeY() > expSizeY + 1)) {
+          //  if (aCluster.charge() > expCharge * chargeFracMin_ && (aCluster.sizeX() > expSizeX + 1 ||  aCluster.sizeY() > expSizeY + 1)) {
+ */           if (1) { //aCluster.charge() > expCharge * chargeFracMin_ && (aCluster.sizeX() > expSizeX + 1 ||  aCluster.sizeY() > expSizeY + 1)) {
               std::cout << "trovato cluster con deltaR=" << Geom::deltaR(jetDir, clusterDir)<< std::endl;
               clustDirs.push_back(clusterDir);
             }
