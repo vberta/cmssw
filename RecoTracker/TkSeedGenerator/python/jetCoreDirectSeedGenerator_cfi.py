@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 jetCoreDirectSeedGenerator = cms.EDProducer("JetCoreDirectSeedGenerator",
     vertices=    cms.InputTag("offlinePrimaryVertices"),
-    pixelClusters=    cms.InputTag("siPixelClusters"),
+    pixelClusters=    cms.InputTag("siPixelClustersPreSplitting"),
     cores= cms.InputTag("jetsForCoreTracking"),
     ptMin= cms.double(300),
     deltaR= cms.double(0.1),
