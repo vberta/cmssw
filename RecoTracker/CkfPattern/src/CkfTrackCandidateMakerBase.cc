@@ -110,7 +110,7 @@ namespace cms{
 #endif
 
 #ifdef VI_REPRODUCIBLE
-   std::cout << "CkfTrackCandidateMaker in reproducible setting" << std::endl;
+  //  std::cout << "CkfTrackCandidateMaker in reproducible setting" << std::endl;
    assert(nullptr==theSeedCleaner);
    assert(0>=maxSeedsBeforeCleaning_);
 #endif
@@ -174,7 +174,7 @@ namespace cms{
         edm::Handle<StripClusterMask> stripMask;
         e.getByToken(maskStrips_, stripMask);
         dataWithMasks = std::make_unique<MeasurementTrackerEvent>(*data, *stripMask, *pixelMask);
-        //std::cout << "Trajectory builder " << conf_.getParameter<std::string>("@module_label") << " created with masks " << std::endl;
+        // std::cout << "Trajectory builder " << conf_.getParameter<std::string>("@module_label") << " created with masks " << std::endl;
         theTrajectoryBuilder->setEvent(e, es, &*dataWithMasks);
     } else if (phase2skipClusters_) {
         //FIXME:just temporary solution for phase2!
@@ -183,10 +183,10 @@ namespace cms{
         edm::Handle<Phase2OTClusterMask> phase2OTMask;
         e.getByToken(maskPhase2OTs_, phase2OTMask);
         dataWithMasks = std::make_unique<MeasurementTrackerEvent>(*data, *pixelMask, *phase2OTMask);
-        //std::cout << "Trajectory builder " << conf_.getParameter<std::string>("@module_label") << " created with phase2 masks " << std::endl;
+        // std::cout << "Trajectory builder " << conf_.getParameter<std::string>("@module_label") << " created with phase2 masks " << std::endl;
         theTrajectoryBuilder->setEvent(e, es, &*dataWithMasks);
     } else {
-        //std::cout << "Trajectory builder " << conf_.getParameter<std::string>("@module_label") << " created without masks " << std::endl;
+        // std::cout << "Trajectory builder " << conf_.getParameter<std::string>("@module_label") << " created without masks " << std::endl;
         theTrajectoryBuilder->setEvent(e, es, &*data);
     }
     // TISE ES must be set here due to dependence on theTrajectoryBuilder
@@ -292,6 +292,7 @@ namespace cms{
         unsigned int nCandPerSeed = 0;
         auto const & startTraj = theTrajectoryBuilder->buildTrajectories( (*collseed)[j], theTmpTrajectories, nCandPerSeed, nullptr );
         {
+          std::cout << "----------------------------------------AFTER CKF TrajBuild------------------------------------------------"<< std::endl;
           Lock lock(theMutex);
           (*outputSeedStopInfos)[j].setCandidatesPerSeed(nCandPerSeed);
           if(theTmpTrajectories.empty()) {
@@ -300,6 +301,9 @@ namespace cms{
           }
         }
 
+  std::cout << "======== In-out trajectory building found " << theTmpTrajectories.size()
+			            << " trajectories from seed " << j << " ========\n"
+			       <<PrintoutHelper::dumpCandidates(theTmpTrajectories) << std::endl;
 	LogDebug("CkfPattern") << "======== In-out trajectory building found " << theTmpTrajectories.size()
 			            << " trajectories from seed " << j << " ========\n"
 			       <<PrintoutHelper::dumpCandidates(theTmpTrajectories);
@@ -308,7 +312,11 @@ namespace cms{
 
 	  // Select the best trajectory from this seed (declare others invalid)
   	  theTrajectoryCleaner->clean(theTmpTrajectories);
-
+      //
+      std::cout <<"AFTinout======== In-out trajectory cleaning gave the following " << theTmpTrajectories.size()
+                                      << " valid trajectories from seed "
+                                 << j << " ========\n"
+                                 				 << PrintoutHelper::dumpCandidates(theTmpTrajectories) << std::endl;
   	  LogDebug("CkfPattern") << "======== In-out trajectory cleaning gave the following " << theTmpTrajectories.size()
                                       << " valid trajectories from seed "
                                  << j << " ========\n"
@@ -320,6 +328,7 @@ namespace cms{
 
 	if (doSeedingRegionRebuilding) {
 	  theTrajectoryBuilder->rebuildTrajectories(startTraj,(*collseed)[j],theTmpTrajectories);
+    std::cout << "rebuilding seeding region" << std::endl;
 
   	  LogDebug("CkfPattern") << "======== Out-in trajectory building found " << theTmpTrajectories.size()
   			              << " valid/invalid trajectories from seed " << j << " ========\n"
@@ -334,7 +343,9 @@ namespace cms{
 
         // Select the best trajectory from this seed (after seed region rebuilding, can be more than one)
 	theTrajectoryCleaner->clean(theTmpTrajectories);
-
+  std::cout <<  "======== Trajectory cleaning gave the following " << theTmpTrajectories.size() << " valid trajectories from seed "
+                               << j << " ========\n"
+			       <<PrintoutHelper::dumpCandidates(theTmpTrajectories) << std::endl;
         LogDebug("CkfPattern") << "======== Trajectory cleaning gave the following " << theTmpTrajectories.size() << " valid trajectories from seed "
                                << j << " ========\n"
 			       <<PrintoutHelper::dumpCandidates(theTmpTrajectories);
@@ -356,6 +367,7 @@ namespace cms{
 
         theTmpTrajectories.clear();
 
+        std::cout << "rawResult trajectories found so far = " << rawResult.size()<< std::endl;
 	LogDebug("CkfPattern") << "rawResult trajectories found so far = " << rawResult.size();
 
         { Lock lock(theMutex);
@@ -385,7 +397,7 @@ namespace cms{
       assert(ntseed==collseed_size);
       if (theSeedCleaner) theSeedCleaner->done();
 
-      // std::cout << "VICkfPattern " << "rawResult trajectories found = " << rawResult.size() << " in " << ntseed << " seeds " << collseed_size << std::endl;
+      std::cout << "VICkfPattern " << "rawResult trajectories found = " << rawResult.size() << " in " << ntseed << " seeds " << collseed_size << std::endl;
 
 #ifdef VI_REPRODUCIBLE
       // sort trajectory
@@ -527,7 +539,7 @@ namespace cms{
       						    <<PrintoutHelper::regressionTest(*tracker,unsmoothedResult);
 
       assert(viTotHits>=0); // just to use it...
-      // std::cout << "VICkfPattern result " << output->size() << " " << viTotHits << std::endl;
+      std::cout << "VICkfPattern result " << output->size() << " " << viTotHits << std::endl;
 
       if (theTrajectoryOutput){ outputT->swap(unsmoothedResult);}
 

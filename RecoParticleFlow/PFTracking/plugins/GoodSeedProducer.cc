@@ -2,7 +2,7 @@
 //
 // Package:    PFTracking
 // Class:      GoodSeedProducer
-// 
+//
 // Original Author:  Michele Pioppi
 // March 2010. F. Beaudette. Produce PreId information
 
@@ -20,8 +20,8 @@
 #include "DataFormats/ParticleFlowReco/interface/PreId.h"
 #include "TrackingTools/TrackFitters/interface/TrajectoryFitter.h"
 #include "TrackingTools/PatternTools/interface/TrajectorySmoother.h"
-#include "TrackingTools/Records/interface/TransientRecHitRecord.h"  
-#include "TrackingTools/Records/interface/TrackingComponentsRecord.h" 
+#include "TrackingTools/Records/interface/TransientRecHitRecord.h"
+#include "TrackingTools/Records/interface/TrackingComponentsRecord.h"
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateTransform.h"
 #include "FastSimulation/BaseParticlePropagator/interface/BaseParticlePropagator.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
@@ -46,14 +46,14 @@ GoodSeedProducer::GoodSeedProducer(const ParameterSet& iConfig, const goodseedhe
   resMapPhiECAL_(nullptr)
 {
   LogInfo("GoodSeedProducer")<<"Electron PreIdentification started  ";
-  
+
   //now do what ever initialization is needed
   std::vector<edm::InputTag> tags =   iConfig.getParameter< vector < InputTag > >("TkColList");
   for(unsigned int i=0;i<tags.size();++i) {
     trajContainers_.push_back(consumes<vector<Trajectory> >(tags[i]));
     tracksContainers_.push_back(consumes<reco::TrackCollection>(tags[i]));
   }
-  
+
   minPt_=iConfig.getParameter<double>("MinPt");
   maxPt_=iConfig.getParameter<double>("MaxPt");
   maxEta_=iConfig.getParameter<double>("MaxEta");
@@ -65,40 +65,40 @@ GoodSeedProducer::GoodSeedProducer(const ParameterSet& iConfig, const goodseedhe
   EcalStripSumE_deltaPhiOverQ_maxValue_ = iConfig.getParameter<double>("EcalStripSumE_deltaPhiOverQ_maxValue");
   minEoverP_= iConfig.getParameter<double>("EOverPLead_minValue");
   maxHoverP_= iConfig.getParameter<double>("HOverPLead_maxValue");
- 
+
   pfCLusTagECLabel_=consumes<reco::PFClusterCollection>(iConfig.getParameter<InputTag>("PFEcalClusterLabel"));
 
-  pfCLusTagHCLabel_=consumes<reco::PFClusterCollection>(iConfig.getParameter<InputTag>("PFHcalClusterLabel"));  
+  pfCLusTagHCLabel_=consumes<reco::PFClusterCollection>(iConfig.getParameter<InputTag>("PFHcalClusterLabel"));
 
   pfCLusTagPSLabel_=consumes<reco::PFClusterCollection>(iConfig.getParameter<InputTag>("PFPSClusterLabel"));
-  
+
   preidgsf_ = iConfig.getParameter<string>("PreGsfLabel");
   preidckf_ = iConfig.getParameter<string>("PreCkfLabel");
   preidname_= iConfig.getParameter<string>("PreIdLabel");
-  
-  
+
+
   fitterName_ = iConfig.getParameter<string>("Fitter");
   smootherName_ = iConfig.getParameter<string>("Smoother");
-  
-  
+
+
   nHitsInSeed_=iConfig.getParameter<int>("NHitsInSeed");
 
   clusThreshold_=iConfig.getParameter<double>("ClusterThreshold");
-  
+
   minEp_=iConfig.getParameter<double>("MinEOverP");
   maxEp_=iConfig.getParameter<double>("MaxEOverP");
 
   //collection to produce
   produceCkfseed_ = iConfig.getUntrackedParameter<bool>("ProduceCkfSeed",false);
 
-  // to disable the electron part (for HI collisions for examples) 
-  disablePreId_ = iConfig.getUntrackedParameter<bool>("DisablePreId",false);  
+  // to disable the electron part (for HI collisions for examples)
+  disablePreId_ = iConfig.getUntrackedParameter<bool>("DisablePreId",false);
 
-  producePreId_ = iConfig.getUntrackedParameter<bool>("ProducePreId",true);  
+  producePreId_ = iConfig.getUntrackedParameter<bool>("ProducePreId",true);
   //  if no electron, cannot produce the preid
-  if(disablePreId_) 
+  if(disablePreId_)
     producePreId_=false;
-  PtThresholdSavePredId_ = iConfig.getUntrackedParameter<double>("PtThresholdSavePreId",1.);  
+  PtThresholdSavePredId_ = iConfig.getUntrackedParameter<double>("PtThresholdSavePreId",1.);
 
   LogDebug("GoodSeedProducer")<<"Seeds for GSF will be produced ";
 
@@ -116,8 +116,8 @@ GoodSeedProducer::GoodSeedProducer(const ParameterSet& iConfig, const goodseedhe
     produces<PreIdCollection>(preidname_);
     if(tracksContainers_.size()==1) // do not make a value map if more than one input track collection
       produces<edm::ValueMap<reco::PreIdRef> >(preidname_);
-  } 
-  
+  }
+
   useQuality_   = iConfig.getParameter<bool>("UseQuality");
   trackQuality_=TrackBase::qualityByName(iConfig.getParameter<std::string>("TrackQuality"));
 
@@ -172,10 +172,10 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
   iSetup.get<IdealMagneticFieldRecord>().get(magneticField);
 
   //Handle input collections
-  //ECAL clusters	      
+  //ECAL clusters
   Handle<PFClusterCollection> theECPfClustCollection;
   iEvent.getByToken(pfCLusTagECLabel_,theECPfClustCollection);
-  
+
 
  vector<PFCluster const *> basClus;
   for ( auto const & klus : *theECPfClustCollection.product() ) {
@@ -185,28 +185,29 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
   //HCAL clusters
   Handle<PFClusterCollection> theHCPfClustCollection;
   iEvent.getByToken(pfCLusTagHCLabel_,theHCPfClustCollection);
-  
+
   //PS clusters
   Handle<PFClusterCollection> thePSPfClustCollection;
   iEvent.getByToken(pfCLusTagPSLabel_,thePSPfClustCollection);
 
   //Vector of track collections
   for (unsigned int istr=0; istr<tracksContainers_.size();++istr){
-    
+
     //Track collection
     Handle<TrackCollection> tkRefCollection;
     iEvent.getByToken(tracksContainers_[istr], tkRefCollection);
     const TrackCollection&  Tk=*(tkRefCollection.product());
-    
+
     LogDebug("GoodSeedProducer")<<"Number of tracks in collection "
                                 <<"tracksContainers_[" << istr << "] to be analyzed "
                                 <<Tk.size();
 
     //loop over the track collection
-    for(unsigned int i=0;i<Tk.size();++i){		
+    for(unsigned int i=0;i<Tk.size();++i){
+      if(Tk[i].algo() == 11) {std::cout << "a jet Core track found: no seed hit " << std::endl; continue; }	
       if (useQuality_ &&
 	  (!(Tk[i].quality(trackQuality_)))) continue;
-      
+
       reco::PreId myPreId;
       bool GoodPreId=false;
 
@@ -219,18 +220,18 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 	{
 	  int ipteta=getBin(Tk[i].eta(),Tk[i].pt());
 	  int ibin=ipteta*9;
-	  
+
 	  float oPTOB=1.f/std::sqrt(Tk[i].innerMomentum().mag2()); // FIXME the original code was buggy should be outerMomentum...
 	  //  float chikfred=Tk[i].normalizedChi2();
 	  float nchi=Tk[i].normalizedChi2();
 
 	  int nhitpi=Tk[i].found();
 	  float EP=0;
-      
+
 	  // set track info
 	  myPreId.setTrack(trackRef);
 	  //CLUSTERS - TRACK matching
-      
+
 	  auto pfmass=  0.0005;
 	  auto pfoutenergy=sqrt((pfmass*pfmass)+Tk[i].outerMomentum().Mag2());
 
@@ -246,11 +247,11 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 	  BaseParticlePropagator theOutParticle( RawParticle(mom,pos),
 				    0,0,B_.z());
 	  theOutParticle.setCharge(Tk[i].charge());
-      
-	  theOutParticle.propagateToEcalEntrance(false);
-      
 
-      
+	  theOutParticle.propagateToEcalEntrance(false);
+
+
+
 	  float toteta=1000.f;
 	  float totphi=1000.f;
 	  float dr=1000.f;
@@ -268,33 +269,33 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 
             constexpr float psLim = 2.50746495928f; // std::sinh(1.65f);
             bool isBelowPS= (ElecTrkEcalPos.z()*ElecTrkEcalPos.z()) > (psLim*psLim)*ElecTrkEcalPos.perp2();
-	    // bool isBelowPS=(std::abs(ElecTrkEcalPos.eta())>1.65f);	
-	
+	    // bool isBelowPS=(std::abs(ElecTrkEcalPos.eta())>1.65f);
+
 	    unsigned clusCounter=0;
 	    float max_ee = 0;
 	    for(auto aClus : basClus) {
 
 	      float tmp_ep=float(aClus->correctedEnergy())*oPTOB;
               if ((tmp_ep<minEp_)|(tmp_ep>maxEp_)) { ++clusCounter; continue;}
-	    
+
 	      double ecalShowerDepth
 		= PFCluster::getDepthCorrection(aClus->correctedEnergy(),
 						isBelowPS,
 						false);
 	      auto mom = theOutParticle.momentum().Vect();
 	      auto meanShower = ElecTrkEcalPos +
-		GlobalVector(mom.x(),mom.y(),mom.z()).unit()*ecalShowerDepth;	
-	  
+		GlobalVector(mom.x(),mom.y(),mom.z()).unit()*ecalShowerDepth;
+
 	      float etarec=meanShower.eta();
 	      float phirec=meanShower.phi();
-	     
+
 
 	      float tmp_phi=std::abs(aClus->positionREP().phi()-phirec);
 	      if (tmp_phi>float(TMath::Pi())) tmp_phi-= float(TMath::TwoPi());
-	      
+
 	      float tmp_dr=std::sqrt(std::pow(tmp_phi,2.f)+
 				std::pow(aClus->positionREP().eta()-etarec,2.f));
-	  
+
 	      if (tmp_dr<dr){
 		dr=tmp_dr;
 		if(dr < Min_dr_){ // find the most closest and energetic ECAL cluster
@@ -307,7 +308,7 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 		    feta= aClus->positionREP().eta();
 		    clusterRef = PFClusterRef(theECPfClustCollection,clusCounter);
 		    meanShowerSaved = meanShower;
-		    
+
 		  }
 		}
 	      }
@@ -318,16 +319,16 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 	  float trk_ecalDphi_ = fabs(totphi);
 
 	  //Resolution maps
-	  auto ecaletares 
+	  auto ecaletares
 	    = resMapEtaECAL_->GetBinContent(resMapEtaECAL_->FindBin(feta,EE));
-	  auto ecalphires 
-	    = resMapPhiECAL_->GetBinContent(resMapPhiECAL_->FindBin(feta,EE)); 
-      
+	  auto ecalphires
+	    = resMapPhiECAL_->GetBinContent(resMapPhiECAL_->FindBin(feta,EE));
+
 	  //geomatrical compatibility
 	  float chieta=(toteta!=1000.f)? toteta/ecaletares : toteta;
 	  float chiphi=(totphi!=1000.f)? totphi/ecalphires : totphi;
 	  float chichi= sqrt(chieta*chieta + chiphi*chiphi);
-      
+
 	  //Matching criteria
 	  float eta_cut = thr[ibin+0];
 	  float phi_cut = thr[ibin+1];
@@ -335,31 +336,31 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 	  bool GoodMatching= ((trk_ecalDeta_<eta_cut) && (trk_ecalDphi_<phi_cut) && (EP>ep_cutmin) && (nhitpi>10));
 
 	  bool EcalMatching=GoodMatching;
-      
+
 	  if (tkpt>maxPt_) GoodMatching=true;
 	  if (tkpt<minPt_) GoodMatching=false;
 
 
-  
+
 	  math::XYZPoint myPoint(ElecTrkEcalPos.x(),ElecTrkEcalPos.y(),ElecTrkEcalPos.z());
 	  myPreId.setECALMatchingProperties(clusterRef,myPoint,meanShowerSaved,std::abs(toteta),std::abs(totphi),chieta,
 					    chiphi,chichi,EP);
 	  myPreId.setECALMatching(EcalMatching);
 
 
-	  bool GoodRange= ((std::abs(tketa)<maxEta_) & 
+	  bool GoodRange= ((std::abs(tketa)<maxEta_) &
 			   (tkpt>minPt_));
 	  //KF FILTERING FOR UNMATCHED EVENTS
 	  int hit1max=int(thr[ibin+3]);
 	  float chiredmin=thr[ibin+4];
 	  bool GoodKFFiltering =
 	    ((nchi>chiredmin) | (nhitpi<hit1max));
-      
+
 
 	  myPreId.setTrackFiltering(GoodKFFiltering);
 
 	  bool GoodTkId= false;
-      
+
 	  if((!GoodMatching) &&(GoodKFFiltering) &&(GoodRange)){
 	    chired=1000;
 	    chiRatio=1000;
@@ -368,25 +369,25 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 	    chikfred = nchi;
 	    trk_ecalDeta = trk_ecalDeta_;
 	    trk_ecalDphi = trk_ecalDphi_;
-      
+
 	    Trajectory::ConstRecHitContainer tmp;
             auto hb = Tk[i].recHitsBegin();
             for(unsigned int h=0;h<Tk[i].recHitsSize();h++){
               auto recHit = *(hb+h); tmp.push_back(recHit->cloneSH());
             }
-            auto const & theTrack = Tk[i]; 
+            auto const & theTrack = Tk[i];
             GlobalVector gv(theTrack.innerMomentum().x(),theTrack.innerMomentum().y(),theTrack.innerMomentum().z());
             GlobalPoint  gp(theTrack.innerPosition().x(),theTrack.innerPosition().y(),theTrack.innerPosition().z());
             GlobalTrajectoryParameters gtps(gp,gv,theTrack.charge(),&*magneticField);
             TrajectoryStateOnSurface tsos(gtps,theTrack.innerStateCovariance(),*tmp[0]->surface());
 	    Trajectory  && FitTjs= fitter_->fitOne(Seed,tmp,tsos);
-	
+
 	      if(FitTjs.isValid()){
 		Trajectory && SmooTjs= smoother_->trajectory(FitTjs);
 		  if(SmooTjs.isValid()){
-		
+
 		    //Track refitted with electron hypothesis
-		
+
 		    float pt_out=SmooTjs.firstMeasurement().
 		      updatedState().globalMomentum().perp();
 		    float pt_in=SmooTjs.lastMeasurement().
@@ -398,38 +399,38 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 
 		  }
 		}
-	     
-	
+
+
 	    //TMVA Analysis
 	    if(useTmva_){
-	
+
 	      eta=tketa;
 	      pt=tkpt;
 	      eP=EP;
               float vars[10] = { nhit, chikfred, dpt, eP, chiRatio, chired, trk_ecalDeta, trk_ecalDphi, pt, eta};
-              
+
 	      float Ytmva = globalCache()->gbr[ipteta]->GetClassifier( vars );
-	      
-	      float BDTcut=thr[ibin+5]; 
+
+	      float BDTcut=thr[ibin+5];
 	      if ( Ytmva>BDTcut) GoodTkId=true;
 	      myPreId.setMVA(GoodTkId,Ytmva);
 	      myPreId.setTrackProperties(chired,chiRatio,dpt);
-	    }else{ 
-	  	 	  
-	      float chiratiocut=thr[ibin+6]; 
-	      float gschicut=thr[ibin+7]; 
+	    }else{
+
+	      float chiratiocut=thr[ibin+6];
+	      float gschicut=thr[ibin+7];
 	      float gsptmin=thr[ibin+8];
 
-	      GoodTkId=((dpt>gsptmin)&(chired<gschicut)&(chiRatio<chiratiocut));      
-       
+	      GoodTkId=((dpt>gsptmin)&(chired<gschicut)&(chiRatio<chiratiocut));
+
 	    }
 	  }
-    
-	  GoodPreId= GoodTkId | GoodMatching; 
+
+	  GoodPreId= GoodTkId | GoodMatching;
 
 	  myPreId.setFinalDecision(GoodPreId);
 
-#ifdef EDM_ML_DEBUG      
+#ifdef EDM_ML_DEBUG
 	  if(GoodPreId)
 	    LogDebug("GoodSeedProducer")<<"Track (pt= "<<Tk[i].pt()<<
 	      "GeV/c, eta= "<<Tk[i].eta() <<
@@ -442,9 +443,9 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 
 	} // end of !disablePreId_
 
-      
+
       if (GoodPreId){
-	//NEW SEED with n hits	
+	//NEW SEED with n hits
 	ElectronSeed NewSeed(Seed);
 	NewSeed.setCtfTrack(trackRef);
 	output_preid->push_back(NewSeed);
@@ -457,11 +458,11 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 	{
 	  // save the index of the PreId object as to be able to create a Ref later
 	  refMap_[trackRef] = output_preidinfo->size();
-	  output_preidinfo->push_back(myPreId);	  
+	  output_preidinfo->push_back(myPreId);
 	}
     } //end loop on track collection
   } //end loop on the vector of track collections
-  
+
   // no disablePreId_ switch, it is simpler to have an empty collection rather than no collection
   iEvent.put(std::move(output_preid),preidgsf_);
   if (produceCkfseed_)
@@ -485,10 +486,10 @@ GoodSeedProducer::produce(Event& iEvent, const EventSetup& iSetup)
 
 // intialize the cross-thread cache to hold gbr trees and resolution maps
 namespace goodseedhelpers {
-  HeavyObjectCache::HeavyObjectCache( const edm::ParameterSet& conf) {    
+  HeavyObjectCache::HeavyObjectCache( const edm::ParameterSet& conf) {
     // mvas
     const bool useTmva = conf.getUntrackedParameter<bool>("UseTMVA",false);
-    
+
     if( useTmva ) {
       const std::string method_ = conf.getParameter<string>("TMVAMethod");
       std::array<edm::FileInPath,kMaxWeights> weights = {{ edm::FileInPath(conf.getParameter<string>("Weights1")),
@@ -500,10 +501,10 @@ namespace goodseedhelpers {
                                                            edm::FileInPath(conf.getParameter<string>("Weights7")),
                                                            edm::FileInPath(conf.getParameter<string>("Weights8")),
                                                            edm::FileInPath(conf.getParameter<string>("Weights9")) }};
-            
+
       for(UInt_t j = 0; j < gbr.size(); ++j){
         TMVA::Reader reader("!Color:Silent");
-                
+
         reader.AddVariable("NHits", &nhit);
         reader.AddVariable("NormChi", &chikfred);
         reader.AddVariable("dPtGSF", &dpt);
@@ -514,17 +515,17 @@ namespace goodseedhelpers {
         reader.AddVariable("EcalDPhi", &trk_ecalDphi);
         reader.AddVariable("pt", &pt);
         reader.AddVariable("eta", &eta);
-        
+
         reader.BookMVA(method_, weights[j].fullPath().c_str());
-        
+
         gbr[j].reset( new GBRForest( dynamic_cast<TMVA::MethodBDT*>( reader.FindMVA(method_) ) ) );
-      }    
+      }
     }
   }
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void 
+void
 GoodSeedProducer::beginRun(const edm::Run & run,
 			   const EventSetup& es)
 {
@@ -532,10 +533,10 @@ GoodSeedProducer::beginRun(const edm::Run & run,
   ESHandle<MagneticField> magneticField;
   es.get<IdealMagneticFieldRecord>().get(magneticField);
   B_=magneticField->inTesla(GlobalPoint(0,0,0));
-  
+
   pfTransformer_.reset( new PFTrackTransformer(B_) );
   pfTransformer_->OnlyProp();
-  
+
   //Resolution maps
     FileInPath ecalEtaMap(conf_.getParameter<string>("EtaMap"));
     FileInPath ecalPhiMap(conf_.getParameter<string>("PhiMap"));
@@ -548,7 +549,7 @@ GoodSeedProducer::beginRun(const edm::Run & run,
   for (int iy=0;iy<81;++iy) ifs >> thr[iy];
 }
 
-int 
+int
 GoodSeedProducer::getBin(float eta, float pt){
   int ie=0;
   int ip=0;
@@ -557,7 +558,7 @@ GoodSeedProducer::getBin(float eta, float pt){
     else ie=2;
   }
   if (pt<6) ip=0;
-  else {  if (pt<12) ip=1;     
+  else {  if (pt<12) ip=1;
 	else ip=2;
   }
   int iep= ie*3+ip;
@@ -576,7 +577,7 @@ void GoodSeedProducer::fillPreIdRefValueMap( Handle<TrackCollection> tracks,
    {
      reco::TrackRef theTrackRef(tracks,itrack);
      std::map<reco::TrackRef,unsigned>::const_iterator itcheck=refMap_.find(theTrackRef);
-     if(itcheck==refMap_.end()) 
+     if(itcheck==refMap_.end())
        {
 	 // the track has been early discarded
 	 values.push_back(reco::PreIdRef());

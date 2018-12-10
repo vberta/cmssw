@@ -1,0 +1,764 @@
+NEW EVENT, event number1
+event number (iterative)=2, event number (id)=1
+|____________________NEW JET_______________________________| jet number=1
+trovato cluster con deltaR=0.0322742
+trovato cluster con deltaR=0.0207493
+splitted cluster number=2
+filling (nx, ny,layer)13,13,0, pixel=0.343071
+filling (nx, ny,layer)14,13,0, pixel=0.952286
+filling (nx, ny,layer)13,14,0, pixel=0.344357
+filling (nx, ny,layer)14,14,0, pixel=0.353
+filling (nx, ny,layer)13,15,0, pixel=0.337357
+filling (nx, ny,layer)16,14,0, pixel=0.645071
+filling (nx, ny,layer)16,15,0, pixel=1.11186
+filling (nx, ny,layer)15,16,0, pixel=1.74307
+filling (nx, ny,layer)19,23,0, pixel=1.63429
+filling (nx, ny,layer)19,24,0, pixel=0.845857
+filling (nx, ny,layer)21,16,0, pixel=0.923143
+filling (nx, ny,layer)20,17,0, pixel=1.28779
+filling (nx, ny,layer)22,20,0, pixel=0.739286
+filling (nx, ny,layer)21,21,0, pixel=1.08907
+filling (nx, ny,layer)22,21,0, pixel=0.887571
+filling (nx, ny,layer)21,25,0, pixel=1.13707
+filling (nx, ny,layer)21,26,0, pixel=1.00814
+filling (nx, ny,layer)22,26,0, pixel=1.73079
+filling (nx, ny,layer)23,25,0, pixel=0.609
+filling (nx, ny,layer)24,15,0, pixel=0.343286
+filling (nx, ny,layer)23,16,0, pixel=1.64321
+filling (nx, ny,layer)23,5,0, pixel=0.736857
+filling (nx, ny,layer)23,6,0, pixel=2.44629
+filling (nx, ny,layer)26,26,0, pixel=1.20736
+filling (nx, ny,layer)26,8,0, pixel=1.75564
+filling (nx, ny,layer)26,9,0, pixel=0.742143
+filling (nx, ny,layer)28,24,0, pixel=0.368643
+filling (nx, ny,layer)27,25,0, pixel=2.36529
+filling (nx, ny,layer)27,26,0, pixel=2.49436
+filling (nx, ny,layer)27,27,0, pixel=0.378571
+filling (nx, ny,layer)12,10,1, pixel=0.100429
+filling (nx, ny,layer)12,11,1, pixel=1.19129
+filling (nx, ny,layer)11,12,1, pixel=0.187714
+filling (nx, ny,layer)12,12,1, pixel=0.260143
+filling (nx, ny,layer)15,18,1, pixel=0.342143
+filling (nx, ny,layer)15,19,1, pixel=0.982571
+filling (nx, ny,layer)14,20,1, pixel=0.458643
+filling (nx, ny,layer)16,12,1, pixel=0.478429
+filling (nx, ny,layer)16,13,1, pixel=2.009
+filling (nx, ny,layer)29,22,1, pixel=0.646143
+filling (nx, ny,layer)15,11,2, pixel=0.786143
+filling (nx, ny,layer)15,12,2, pixel=0.841786
+filling (nx, ny,layer)14,12,2, pixel=0.110714
+filling (nx, ny,layer)13,21,2, pixel=2.34986
+filling (nx, ny,layer)13,22,2, pixel=0.321571
+filling (nx, ny,layer)12,22,2, pixel=0.540071
+filling (nx, ny,layer)10,8,2, pixel=0.376214
+filling (nx, ny,layer)10,9,2, pixel=1.84507
+filling (nx, ny,layer)9,10,2, pixel=0.593143
+filling (nx, ny,layer)14,10,3, pixel=1.118
+filling (nx, ny,layer)14,11,3, pixel=0.399643
+filling (nx, ny,layer)13,11,3, pixel=1.154
+filling (nx, ny,layer)14,12,3, pixel=1.2105
+filling (nx, ny,layer)11,24,3, pixel=0.574357
+filling (nx, ny,layer)11,25,3, pixel=1.66593
+filling (nx, ny,layer)10,7,3, pixel=0.5075
+filling (nx, ny,layer)9,7,3, pixel=0.517071
+filling (nx, ny,layer)9,8,3, pixel=1.50021
+input, x=9, y=7, lay=3, val =0.517071
+input, x=9, y=8, lay=3, val =1.50021
+input, x=9, y=10, lay=2, val =0.593143
+input, x=10, y=7, lay=3, val =0.5075
+input, x=10, y=8, lay=2, val =0.376214
+input, x=10, y=9, lay=2, val =1.84507
+input, x=11, y=12, lay=1, val =0.187714
+input, x=11, y=24, lay=3, val =0.574357
+input, x=11, y=25, lay=3, val =1.66593
+input, x=12, y=10, lay=1, val =0.100429
+input, x=12, y=11, lay=1, val =1.19129
+input, x=12, y=12, lay=1, val =0.260143
+input, x=12, y=22, lay=2, val =0.540071
+input, x=13, y=11, lay=3, val =1.154
+input, x=13, y=13, lay=0, val =0.343071
+input, x=13, y=14, lay=0, val =0.344357
+input, x=13, y=15, lay=0, val =0.337357
+input, x=13, y=21, lay=2, val =2.34986
+input, x=13, y=22, lay=2, val =0.321571
+input, x=14, y=10, lay=3, val =1.118
+input, x=14, y=11, lay=3, val =0.399643
+input, x=14, y=12, lay=2, val =0.110714
+input, x=14, y=12, lay=3, val =1.2105
+input, x=14, y=13, lay=0, val =0.952286
+input, x=14, y=14, lay=0, val =0.353
+input, x=14, y=20, lay=1, val =0.458643
+input, x=15, y=11, lay=2, val =0.786143
+input, x=15, y=12, lay=2, val =0.841786
+input, x=15, y=16, lay=0, val =1.74307
+input, x=15, y=18, lay=1, val =0.342143
+input, x=15, y=19, lay=1, val =0.982571
+input, x=16, y=12, lay=1, val =0.478429
+input, x=16, y=13, lay=1, val =2.009
+input, x=16, y=14, lay=0, val =0.645071
+input, x=16, y=15, lay=0, val =1.11186
+input, x=19, y=23, lay=0, val =1.63429
+input, x=19, y=24, lay=0, val =0.845857
+input, x=20, y=17, lay=0, val =1.28779
+input, x=21, y=16, lay=0, val =0.923143
+input, x=21, y=21, lay=0, val =1.08907
+input, x=21, y=25, lay=0, val =1.13707
+input, x=21, y=26, lay=0, val =1.00814
+input, x=22, y=20, lay=0, val =0.739286
+input, x=22, y=21, lay=0, val =0.887571
+input, x=22, y=26, lay=0, val =1.73079
+input, x=23, y=5, lay=0, val =0.736857
+input, x=23, y=6, lay=0, val =2.44629
+input, x=23, y=16, lay=0, val =1.64321
+input, x=23, y=25, lay=0, val =0.609
+input, x=24, y=15, lay=0, val =0.343286
+input, x=26, y=8, lay=0, val =1.75564
+input, x=26, y=9, lay=0, val =0.742143
+input, x=26, y=26, lay=0, val =1.20736
+input, x=27, y=25, lay=0, val =2.36529
+input, x=27, y=26, lay=0, val =2.49436
+input, x=27, y=27, lay=0, val =0.378571
+input, x=28, y=24, lay=0, val =0.368643
+input, x=29, y=22, lay=1, val =0.646143
+internal output, prob= 0.909105, x=11, y=11, trk=0, par=0,value=0.802692
+internal output, prob= 0.909105, x=11, y=11, trk=0, par=1,value=0.428429
+internal output, prob= 0.909105, x=11, y=11, trk=0, par=2,value=0.154777
+internal output, prob= 0.909105, x=11, y=11, trk=0, par=3,value=0.131244
+internal output, prob= 0.944888, x=12, y=11, trk=0, par=0,value=-0.155634
+internal output, prob= 0.944888, x=12, y=11, trk=0, par=1,value=0.528561
+internal output, prob= 0.944888, x=12, y=11, trk=0, par=2,value=0.193854
+internal output, prob= 0.944888, x=12, y=11, trk=0, par=3,value=0.102721
+internal output, prob= 0.95042, x=14, y=19, trk=0, par=0,value=0.618603
+internal output, prob= 0.95042, x=14, y=19, trk=0, par=1,value=0.0704736
+internal output, prob= 0.95042, x=14, y=19, trk=0, par=2,value=-0.72475
+internal output, prob= 0.95042, x=14, y=19, trk=0, par=3,value=0.0394845
+internal output, prob= 0.91714, x=15, y=19, trk=0, par=0,value=-0.306895
+internal output, prob= 0.91714, x=15, y=19, trk=0, par=1,value=0.00867024
+internal output, prob= 0.91714, x=15, y=19, trk=0, par=2,value=-0.713775
+internal output, prob= 0.91714, x=15, y=19, trk=0, par=3,value=0.121794
+internal output, prob= 0.997688, x=16, y=13, trk=0, par=0,value=0.0214295
+internal output, prob= 0.997688, x=16, y=13, trk=0, par=1,value=-0.210506
+internal output, prob= 0.997688, x=16, y=13, trk=0, par=2,value=0.0263392
+internal output, prob= 0.997688, x=16, y=13, trk=0, par=3,value=0.208673
+----------------------------new prediction -------------------------
+prob success=0.909105
+X pixel=11, Y pixel=11, pred X=0.802692, pred Y=0.428429, pred eta=0.154777, pred phi=0.131244
+ seed parameters=-0.691973, -3.05572, 0.721937, 2.44864,  (-0.0596689,-0.618117,0.783818) 
+localParam.vector()=1, -0.0761259, -0.788597, -0.691973, -3.05572
+globSeedDir= (-0.604792,0.502164,0.618108) 
+localSeedDir= (-0.0596689,-0.618117,0.783818) 
+track_eta=0.721937 track_theta=0.904463
+----------------------------new prediction -------------------------
+prob success=0.944888
+X pixel=12, Y pixel=11, pred X=-0.155634, pred Y=0.528561, pred eta=0.193854, pred phi=0.102721
+ seed parameters=-0.691556, -3.05471, 0.722328, 2.44836,  (-0.0594309,-0.618358,0.783646) 
+localParam.vector()=1, -0.0758389, -0.789079, -0.691556, -3.05471
+globSeedDir= (-0.604503,0.502215,0.618349) 
+localSeedDir= (-0.0594309,-0.618358,0.783646) 
+track_eta=0.722328 track_theta=0.904156
+----------------------------new prediction -------------------------
+prob success=0.95042
+X pixel=14, Y pixel=19, pred X=0.618603, pred Y=0.0704736, pred eta=-0.72475, pred phi=0.0394845
+ seed parameters=-0.663814, -2.9393, 0.713142, 2.44772,  (-0.0592694,-0.612652,0.788127) 
+localParam.vector()=1, -0.0752028, -0.777352, -0.663814, -2.9393
+globSeedDir= (-0.607611,0.505447,0.612643) 
+localSeedDir= (-0.0592694,-0.612652,0.788127) 
+track_eta=0.713142 track_theta=0.911396
+----------------------------new prediction -------------------------
+prob success=0.91714
+X pixel=15, Y pixel=19, pred X=-0.306895, pred Y=0.00867024, pred eta=-0.713775, pred phi=0.121794
+ seed parameters=-0.663069, -2.93991, 0.713252, 2.44855,  (-0.059914,-0.612721,0.788025) 
+localParam.vector()=1, -0.0760306, -0.77754, -0.663069, -2.93991
+globSeedDir= (-0.607986,0.504913,0.612712) 
+localSeedDir= (-0.059914,-0.612721,0.788025) 
+track_eta=0.713252 track_theta=0.911309
+----------------------------new prediction -------------------------
+prob success=0.997688
+X pixel=16, Y pixel=13, pred X=0.0214295, pred Y=-0.210506, pred eta=0.0263392, pred phi=0.208673
+ seed parameters=-0.649786, -3.03211, 0.720653, 2.44942,  (-0.0603235,-0.617323,0.784394) 
+localParam.vector()=1, -0.0769046, -0.787006, -0.649786, -3.0321
+globSeedDir= (-0.605661,0.502094,0.617314) 
+localSeedDir= (-0.0603235,-0.617323,0.784394) 
+track_eta=0.720653 track_theta=0.905473
+FILL!
+filling (nx, ny,layer)7,2,0, pixel=0.343071
+filling (nx, ny,layer)8,2,0, pixel=0.952286
+filling (nx, ny,layer)7,3,0, pixel=0.344357
+filling (nx, ny,layer)8,3,0, pixel=0.353
+filling (nx, ny,layer)7,4,0, pixel=0.337357
+filling (nx, ny,layer)10,3,0, pixel=0.645071
+filling (nx, ny,layer)10,4,0, pixel=1.11186
+filling (nx, ny,layer)9,5,0, pixel=1.74307
+filling (nx, ny,layer)13,12,0, pixel=1.63429
+filling (nx, ny,layer)13,13,0, pixel=0.845857
+filling (nx, ny,layer)15,5,0, pixel=0.923143
+filling (nx, ny,layer)14,6,0, pixel=1.28779
+filling (nx, ny,layer)16,9,0, pixel=0.739286
+filling (nx, ny,layer)15,10,0, pixel=1.08907
+filling (nx, ny,layer)16,10,0, pixel=0.887571
+filling (nx, ny,layer)15,14,0, pixel=1.13707
+filling (nx, ny,layer)15,15,0, pixel=1.00814
+filling (nx, ny,layer)16,15,0, pixel=1.73079
+filling (nx, ny,layer)17,14,0, pixel=0.609
+filling (nx, ny,layer)15,18,0, pixel=0.638929
+filling (nx, ny,layer)15,19,0, pixel=2.57271
+filling (nx, ny,layer)18,4,0, pixel=0.343286
+filling (nx, ny,layer)17,5,0, pixel=1.64321
+filling (nx, ny,layer)20,15,0, pixel=1.20736
+filling (nx, ny,layer)22,13,0, pixel=0.368643
+filling (nx, ny,layer)21,14,0, pixel=2.36529
+filling (nx, ny,layer)21,15,0, pixel=2.49436
+filling (nx, ny,layer)21,16,0, pixel=0.378571
+filling (nx, ny,layer)26,21,0, pixel=1.27843
+filling (nx, ny,layer)25,22,0, pixel=0.460857
+filling (nx, ny,layer)9,11,1, pixel=0.987143
+filling (nx, ny,layer)9,12,1, pixel=1.16779
+filling (nx, ny,layer)12,24,1, pixel=1.13779
+filling (nx, ny,layer)13,24,1, pixel=0.350429
+filling (nx, ny,layer)12,25,1, pixel=0.506071
+filling (nx, ny,layer)13,5,1, pixel=1.44857
+filling (nx, ny,layer)12,6,1, pixel=0.168071
+filling (nx, ny,layer)13,6,1, pixel=0.326
+filling (nx, ny,layer)12,15,1, pixel=0.945286
+filling (nx, ny,layer)13,15,1, pixel=1.41671
+filling (nx, ny,layer)19,16,1, pixel=1.35486
+filling (nx, ny,layer)20,16,1, pixel=0.257786
+filling (nx, ny,layer)26,15,1, pixel=0.314857
+filling (nx, ny,layer)27,15,1, pixel=0.406214
+filling (nx, ny,layer)26,16,1, pixel=2.53207
+filling (nx, ny,layer)12,19,2, pixel=0.729929
+filling (nx, ny,layer)12,20,2, pixel=0.463643
+filling (nx, ny,layer)13,18,2, pixel=2.23386
+filling (nx, ny,layer)13,19,2, pixel=2.64807
+filling (nx, ny,layer)27,16,2, pixel=0.883429
+filling (nx, ny,layer)27,17,2, pixel=0.724643
+filling (nx, ny,layer)14,20,3, pixel=0.805786
+filling (nx, ny,layer)14,21,3, pixel=0.378286
+filling (nx, ny,layer)13,21,3, pixel=1.19307
+filling (nx, ny,layer)10,20,3, pixel=0.274857
+filling (nx, ny,layer)9,20,3, pixel=0.281929
+filling (nx, ny,layer)9,21,3, pixel=1.50664
+filling (nx, ny,layer)7,14,3, pixel=1.47429
+filling (nx, ny,layer)6,15,3, pixel=0.357643
+filling (nx, ny,layer)3,4,3, pixel=0.310714
+filling (nx, ny,layer)3,5,3, pixel=0.441643
+filling (nx, ny,layer)2,5,3, pixel=1.17786
+filling (nx, ny,layer)2,6,3, pixel=0.421786
+input, x=2, y=5, lay=3, val =1.17786
+input, x=2, y=6, lay=3, val =0.421786
+input, x=3, y=4, lay=3, val =0.310714
+input, x=3, y=5, lay=3, val =0.441643
+input, x=6, y=15, lay=3, val =0.357643
+input, x=7, y=2, lay=0, val =0.343071
+input, x=7, y=3, lay=0, val =0.344357
+input, x=7, y=4, lay=0, val =0.337357
+input, x=7, y=14, lay=3, val =1.47429
+input, x=8, y=2, lay=0, val =0.952286
+input, x=8, y=3, lay=0, val =0.353
+input, x=9, y=5, lay=0, val =1.74307
+input, x=9, y=11, lay=1, val =0.987143
+input, x=9, y=12, lay=1, val =1.16779
+input, x=9, y=20, lay=3, val =0.281929
+input, x=9, y=21, lay=3, val =1.50664
+input, x=10, y=3, lay=0, val =0.645071
+input, x=10, y=4, lay=0, val =1.11186
+input, x=10, y=20, lay=3, val =0.274857
+input, x=12, y=6, lay=1, val =0.168071
+input, x=12, y=15, lay=1, val =0.945286
+input, x=12, y=19, lay=2, val =0.729929
+input, x=12, y=20, lay=2, val =0.463643
+input, x=12, y=24, lay=1, val =1.13779
+input, x=12, y=25, lay=1, val =0.506071
+input, x=13, y=5, lay=1, val =1.44857
+input, x=13, y=6, lay=1, val =0.326
+input, x=13, y=12, lay=0, val =1.63429
+input, x=13, y=13, lay=0, val =0.845857
+input, x=13, y=15, lay=1, val =1.41671
+input, x=13, y=18, lay=2, val =2.23386
+input, x=13, y=19, lay=2, val =2.64807
+input, x=13, y=21, lay=3, val =1.19307
+input, x=13, y=24, lay=1, val =0.350429
+input, x=14, y=6, lay=0, val =1.28779
+input, x=14, y=20, lay=3, val =0.805786
+input, x=14, y=21, lay=3, val =0.378286
+input, x=15, y=5, lay=0, val =0.923143
+input, x=15, y=10, lay=0, val =1.08907
+input, x=15, y=14, lay=0, val =1.13707
+input, x=15, y=15, lay=0, val =1.00814
+input, x=15, y=18, lay=0, val =0.638929
+input, x=15, y=19, lay=0, val =2.57271
+input, x=16, y=9, lay=0, val =0.739286
+input, x=16, y=10, lay=0, val =0.887571
+input, x=16, y=15, lay=0, val =1.73079
+input, x=17, y=5, lay=0, val =1.64321
+input, x=17, y=14, lay=0, val =0.609
+input, x=18, y=4, lay=0, val =0.343286
+input, x=19, y=16, lay=1, val =1.35486
+input, x=20, y=15, lay=0, val =1.20736
+input, x=20, y=16, lay=1, val =0.257786
+input, x=21, y=14, lay=0, val =2.36529
+input, x=21, y=15, lay=0, val =2.49436
+input, x=21, y=16, lay=0, val =0.378571
+input, x=22, y=13, lay=0, val =0.368643
+input, x=25, y=22, lay=0, val =0.460857
+input, x=26, y=15, lay=1, val =0.314857
+input, x=26, y=16, lay=1, val =2.53207
+input, x=26, y=21, lay=0, val =1.27843
+input, x=27, y=15, lay=1, val =0.406214
+input, x=27, y=16, lay=2, val =0.883429
+input, x=27, y=17, lay=2, val =0.724643
+internal output, prob= 0.996619, x=9, y=12, trk=0, par=0,value=0.0484707
+internal output, prob= 0.996619, x=9, y=12, trk=0, par=1,value=-0.706754
+internal output, prob= 0.996619, x=9, y=12, trk=0, par=2,value=0.181383
+internal output, prob= 0.996619, x=9, y=12, trk=0, par=3,value=0.582445
+internal output, prob= 0.906089, x=12, y=5, trk=0, par=0,value=0.771014
+internal output, prob= 0.906089, x=12, y=5, trk=0, par=1,value=0.665868
+internal output, prob= 0.906089, x=12, y=5, trk=0, par=2,value=1.51989
+internal output, prob= 0.906089, x=12, y=5, trk=0, par=3,value=-0.00510147
+internal output, prob= 0.915468, x=13, y=5, trk=0, par=0,value=-0.116247
+internal output, prob= 0.915468, x=13, y=5, trk=0, par=1,value=0.753048
+internal output, prob= 0.915468, x=13, y=5, trk=0, par=2,value=1.48589
+internal output, prob= 0.915468, x=13, y=5, trk=0, par=3,value=0.181681
+internal output, prob= 0.916603, x=13, y=24, trk=0, par=0,value=-0.727736
+internal output, prob= 0.916603, x=13, y=24, trk=0, par=1,value=0.602797
+internal output, prob= 0.916603, x=13, y=24, trk=0, par=2,value=-1.61021
+internal output, prob= 0.916603, x=13, y=24, trk=0, par=3,value=0.197442
+internal output, prob= 0.926809, x=19, y=16, trk=0, par=0,value=0.130446
+internal output, prob= 0.926809, x=19, y=16, trk=0, par=1,value=0.312413
+internal output, prob= 0.926809, x=19, y=16, trk=0, par=2,value=-0.174813
+internal output, prob= 0.926809, x=19, y=16, trk=0, par=3,value=-0.337327
+internal output, prob= 0.921368, x=26, y=16, trk=0, par=0,value=0.174776
+internal output, prob= 0.921368, x=26, y=16, trk=0, par=1,value=-0.365181
+internal output, prob= 0.921368, x=26, y=16, trk=0, par=2,value=-0.0319334
+internal output, prob= 0.921368, x=26, y=16, trk=0, par=3,value=-1.57728
+----------------------------new prediction -------------------------
+prob success=0.996619
+X pixel=9, Y pixel=12, pred X=0.0484707, pred Y=-0.706754, pred eta=0.181383, pred phi=0.582445
+ seed parameters=-0.719515, -3.05207, 0.675487, 2.43261,  (-0.04843,-0.588587,0.806982) 
+localParam.vector()=1, -0.0600137, -0.729369, -0.719515, -3.05207
+globSeedDir= (-0.613624,0.526348,0.588578) 
+localSeedDir= (-0.04843,-0.588587,0.806982) 
+track_eta=0.675487 track_theta=0.941498
+----------------------------new prediction -------------------------
+prob success=0.906089
+X pixel=12, Y pixel=5, pred X=0.771014, pred Y=0.665868, pred eta=1.51989, pred phi=-0.00510147
+ seed parameters=-0.68229, -3.14334, 0.688872, 2.42673,  (-0.0433425,-0.597266,0.800871) 
+localParam.vector()=1, -0.0541192, -0.745771, -0.68229, -3.14334
+globSeedDir= (-0.605695,0.525755,0.597257) 
+localSeedDir= (-0.0433425,-0.597266,0.800871) 
+track_eta=0.688872 track_theta=0.93072
+----------------------------new prediction -------------------------
+prob success=0.915468
+X pixel=13, Y pixel=5, pred X=-0.116247, pred Y=0.753048, pred eta=1.48589, pred phi=0.181681
+ seed parameters=-0.681162, -3.14247, 0.688532, 2.4286,  (-0.0448473,-0.597048,0.800951) 
+localParam.vector()=1, -0.0559926, -0.745423, -0.681162, -3.14247
+globSeedDir= (-0.606799,0.524729,0.597038) 
+localSeedDir= (-0.0448473,-0.597048,0.800951) 
+track_eta=0.688532 track_theta=0.930992
+----------------------------new prediction -------------------------
+prob success=0.916603
+X pixel=13, Y pixel=24, pred X=-0.727736, pred Y=0.602797, pred eta=-1.61021, pred phi=0.197442
+ seed parameters=-0.687277, -2.85897, 0.657571, 2.42876,  (-0.0457979,-0.576754,0.815633) 
+localParam.vector()=1, -0.0561502, -0.707125, -0.687277, -2.85897
+globSeedDir= (-0.618011,0.534254,0.576745) 
+localSeedDir= (-0.0457979,-0.576754,0.815633) 
+track_eta=0.657571 track_theta=0.956058
+----------------------------new prediction -------------------------
+prob success=0.926809
+X pixel=19, Y pixel=16, pred X=0.130446, pred Y=0.312413, pred eta=-0.174813, pred phi=-0.337327
+ seed parameters=-0.618696, -2.98188, 0.671925, 2.42341,  (-0.0410912,-0.586254,0.809084) 
+localParam.vector()=1, -0.0507873, -0.72459, -0.618696, -2.98188
+globSeedDir= (-0.610032,0.533083,0.586245) 
+localSeedDir= (-0.0410912,-0.586254,0.809084) 
+track_eta=0.671925 track_theta=0.944381
+----------------------------new prediction -------------------------
+prob success=0.921368
+X pixel=26, Y pixel=16, pred X=0.174776, pred Y=-0.365181, pred eta=-0.0319334, pred phi=-1.57728
+ seed parameters=-0.548252, -2.98865, 0.673354, 2.41101,  (-0.03103,-0.587191,0.808853) 
+localParam.vector()=1, -0.038363, -0.725956, -0.548252, -2.98865
+globSeedDir= (-0.60287,0.540153,0.587182) 
+localSeedDir= (-0.03103,-0.587191,0.808853) 
+track_eta=0.673354 track_theta=0.943224
+FILL!
+|____________________NEW JET_______________________________| jet number=2
+trovato cluster con deltaR=0.0884031
+splitted cluster number=1
+filling (nx, ny,layer)26,23,0, pixel=0.651
+filling (nx, ny,layer)26,24,0, pixel=0.527857
+filling (nx, ny,layer)23,19,0, pixel=0.286714
+filling (nx, ny,layer)22,19,0, pixel=2.61071
+filling (nx, ny,layer)23,20,0, pixel=0.370214
+filling (nx, ny,layer)20,7,0, pixel=1.26529
+filling (nx, ny,layer)19,7,0, pixel=0.315286
+filling (nx, ny,layer)18,9,0, pixel=1.02457
+filling (nx, ny,layer)18,10,0, pixel=1.5495
+filling (nx, ny,layer)17,23,0, pixel=0.341214
+filling (nx, ny,layer)16,23,0, pixel=1.50557
+filling (nx, ny,layer)16,11,0, pixel=1.10757
+filling (nx, ny,layer)15,11,0, pixel=0.466429
+filling (nx, ny,layer)16,29,0, pixel=0.447
+filling (nx, ny,layer)16,14,0, pixel=0.940286
+filling (nx, ny,layer)15,14,0, pixel=0.581786
+filling (nx, ny,layer)15,15,0, pixel=1.49293
+filling (nx, ny,layer)14,15,0, pixel=0.324071
+filling (nx, ny,layer)14,16,0, pixel=0.974286
+filling (nx, ny,layer)15,17,0, pixel=0.446643
+filling (nx, ny,layer)9,17,0, pixel=2.08393
+filling (nx, ny,layer)6,12,0, pixel=1.3945
+filling (nx, ny,layer)1,20,1, pixel=2.23536
+filling (nx, ny,layer)13,15,1, pixel=1.967
+filling (nx, ny,layer)14,15,1, pixel=0.352643
+filling (nx, ny,layer)15,11,1, pixel=0.161714
+filling (nx, ny,layer)15,12,1, pixel=0.642
+filling (nx, ny,layer)16,12,1, pixel=0.848786
+filling (nx, ny,layer)16,6,1, pixel=1.37793
+filling (nx, ny,layer)17,6,1, pixel=0.480571
+filling (nx, ny,layer)17,18,1, pixel=0.815571
+filling (nx, ny,layer)18,18,1, pixel=0.433571
+filling (nx, ny,layer)25,20,2, pixel=0.441929
+filling (nx, ny,layer)24,20,2, pixel=1.722
+filling (nx, ny,layer)15,10,2, pixel=2.28486
+filling (nx, ny,layer)14,10,2, pixel=2.6175
+filling (nx, ny,layer)10,16,2, pixel=2.28857
+filling (nx, ny,layer)12,8,3, pixel=1.48214
+filling (nx, ny,layer)11,8,3, pixel=0.654857
+filling (nx, ny,layer)6,16,3, pixel=1.31943
+filling (nx, ny,layer)5,16,3, pixel=0.596357
+input, x=1, y=20, lay=1, val =2.23536
+input, x=5, y=16, lay=3, val =0.596357
+input, x=6, y=12, lay=0, val =1.3945
+input, x=6, y=16, lay=3, val =1.31943
+input, x=9, y=17, lay=0, val =2.08393
+input, x=10, y=16, lay=2, val =2.28857
+input, x=11, y=8, lay=3, val =0.654857
+input, x=12, y=8, lay=3, val =1.48214
+input, x=13, y=15, lay=1, val =1.967
+input, x=14, y=10, lay=2, val =2.6175
+input, x=14, y=15, lay=0, val =0.324071
+input, x=14, y=15, lay=1, val =0.352643
+input, x=14, y=16, lay=0, val =0.974286
+input, x=15, y=10, lay=2, val =2.28486
+input, x=15, y=11, lay=0, val =0.466429
+input, x=15, y=11, lay=1, val =0.161714
+input, x=15, y=12, lay=1, val =0.642
+input, x=15, y=14, lay=0, val =0.581786
+input, x=15, y=15, lay=0, val =1.49293
+input, x=15, y=17, lay=0, val =0.446643
+input, x=16, y=6, lay=1, val =1.37793
+input, x=16, y=11, lay=0, val =1.10757
+input, x=16, y=12, lay=1, val =0.848786
+input, x=16, y=14, lay=0, val =0.940286
+input, x=16, y=23, lay=0, val =1.50557
+input, x=16, y=29, lay=0, val =0.447
+input, x=17, y=6, lay=1, val =0.480571
+input, x=17, y=18, lay=1, val =0.815571
+input, x=17, y=23, lay=0, val =0.341214
+input, x=18, y=9, lay=0, val =1.02457
+input, x=18, y=10, lay=0, val =1.5495
+input, x=18, y=18, lay=1, val =0.433571
+input, x=19, y=7, lay=0, val =0.315286
+input, x=20, y=7, lay=0, val =1.26529
+input, x=22, y=19, lay=0, val =2.61071
+input, x=23, y=19, lay=0, val =0.286714
+input, x=23, y=20, lay=0, val =0.370214
+input, x=24, y=20, lay=2, val =1.722
+input, x=25, y=20, lay=2, val =0.441929
+input, x=26, y=23, lay=0, val =0.651
+input, x=26, y=24, lay=0, val =0.527857
+internal output, prob= 0.989878, x=1, y=20, trk=0, par=0,value=-0.0367019
+internal output, prob= 0.989878, x=1, y=20, trk=0, par=1,value=0.035292
+internal output, prob= 0.989878, x=1, y=20, trk=0, par=2,value=-0.880404
+internal output, prob= 0.989878, x=1, y=20, trk=0, par=3,value=1.99534
+internal output, prob= 0.91318, x=14, y=15, trk=0, par=0,value=-0.782664
+internal output, prob= 0.91318, x=14, y=15, trk=0, par=1,value=0.0500165
+internal output, prob= 0.91318, x=14, y=15, trk=0, par=2,value=0.0519451
+internal output, prob= 0.91318, x=14, y=15, trk=0, par=3,value=0.0965442
+internal output, prob= 0.925039, x=16, y=12, trk=0, par=0,value=-0.340122
+internal output, prob= 0.925039, x=16, y=12, trk=0, par=1,value=-0.0765668
+internal output, prob= 0.925039, x=16, y=12, trk=0, par=2,value=0.08353
+internal output, prob= 0.925039, x=16, y=12, trk=0, par=3,value=-0.21544
+internal output, prob= 0.914751, x=17, y=6, trk=0, par=0,value=-0.681797
+internal output, prob= 0.914751, x=17, y=6, trk=0, par=1,value=0.0135892
+internal output, prob= 0.914751, x=17, y=6, trk=0, par=2,value=1.29584
+internal output, prob= 0.914751, x=17, y=6, trk=0, par=3,value=-0.300668
+internal output, prob= 0.906491, x=17, y=18, trk=0, par=0,value=0.449987
+internal output, prob= 0.906491, x=17, y=18, trk=0, par=1,value=-0.0188746
+internal output, prob= 0.906491, x=17, y=18, trk=0, par=2,value=-0.314603
+internal output, prob= 0.906491, x=17, y=18, trk=0, par=3,value=-0.335155
+internal output, prob= 0.911773, x=18, y=18, trk=0, par=0,value=-0.622443
+internal output, prob= 0.911773, x=18, y=18, trk=0, par=1,value=0.0106581
+internal output, prob= 0.911773, x=18, y=18, trk=0, par=2,value=-0.289914
+internal output, prob= 0.911773, x=18, y=18, trk=0, par=3,value=-0.278321
+----------------------------new prediction -------------------------
+prob success=0.989878
+X pixel=1, Y pixel=20, pred X=-0.0367019, pred Y=0.035292, pred eta=-0.880404, pred phi=1.99534
+ seed parameters=-0.800367, -2.92465, -0.157526, -0.332898,  (0.0126293,0.156086,0.987663) 
+localParam.vector()=1, 0.0127871, 0.158036, -0.800367, -2.92465
+globSeedDir= (0.933493,-0.322771,-0.156236) 
+localSeedDir= (0.0126293,0.156086,0.987663) 
+track_eta=-0.157526 track_theta=1.72767
+----------------------------new prediction -------------------------
+prob success=0.91318
+X pixel=14, Y pixel=15, pred X=-0.782664, pred Y=0.0500165, pred eta=0.0519451, pred phi=0.0965442
+ seed parameters=-0.677827, -2.9995, -0.148202, -0.351886,  (0.0314236,0.146977,0.988641) 
+localParam.vector()=1, 0.0317846, 0.148666, -0.677827, -2.9995
+globSeedDir= (0.928509,-0.340918,-0.147127) 
+localSeedDir= (0.0314236,0.146977,0.988641) 
+track_eta=-0.148202 track_theta=1.71846
+----------------------------new prediction -------------------------
+prob success=0.925039
+X pixel=16, Y pixel=12, pred X=-0.340122, pred Y=-0.0765668, pred eta=0.08353, pred phi=-0.21544
+ seed parameters=-0.653401, -3.04577, -0.147887, -0.355006,  (0.0345094,0.146668,0.988584) 
+localParam.vector()=1, 0.0349079, 0.148362, -0.653401, -3.04577
+globSeedDir= (0.927484,-0.343829,-0.146818) 
+localSeedDir= (0.0345094,0.146668,0.988584) 
+track_eta=-0.147887 track_theta=1.71815
+----------------------------new prediction -------------------------
+prob success=0.914751
+X pixel=17, Y pixel=6, pred X=-0.681797, pred Y=0.0135892, pred eta=1.29584, pred phi=-0.300668
+ seed parameters=-0.646818, -3.13486, -0.135764, -0.355858,  (0.0354123,0.134785,0.990242) 
+localParam.vector()=1, 0.0357613, 0.136114, -0.646818, -3.13486
+globSeedDir= (0.928775,-0.345209,-0.134935) 
+localSeedDir= (0.0354123,0.134785,0.990242) 
+track_eta=-0.135764 track_theta=1.70614
+----------------------------new prediction -------------------------
+prob success=0.906491
+X pixel=17, Y pixel=18, pred X=0.449987, pred Y=-0.0188746, pred eta=-0.314603, pred phi=-0.335155
+ seed parameters=-0.6355, -2.95519, -0.151868, -0.356203,  (0.0356717,0.150561,0.987957) 
+localParam.vector()=1, 0.0361065, 0.152397, -0.6355, -2.95519
+globSeedDir= (0.926522,-0.344735,-0.150711) 
+localSeedDir= (0.0356717,0.150561,0.987957) 
+track_eta=-0.151868 track_theta=1.72208
+----------------------------new prediction -------------------------
+prob success=0.911773
+X pixel=18, Y pixel=18, pred X=-0.622443, pred Y=0.0106581, pred eta=-0.289914, pred phi=-0.278321
+ seed parameters=-0.636224, -2.95489, -0.151621, -0.355635,  (0.0351115,0.15032,0.988014) 
+localParam.vector()=1, 0.0355375, 0.152144, -0.636224, -2.95489
+globSeedDir= (0.926753,-0.344221,-0.15047) 
+localSeedDir= (0.0351115,0.15032,0.988014) 
+track_eta=-0.151621 track_theta=1.72184
+FILL!
+|____________________NEW JET_______________________________| jet number=3
+splitted cluster number=0
+NEW EVENT, event number3
+event number (iterative)=4, event number (id)=2
+|____________________NEW JET_______________________________| jet number=1
+trovato cluster con deltaR=0.0847243
+trovato cluster con deltaR=0.0911497
+trovato cluster con deltaR=0.042038
+splitted cluster number=3
+filling (nx, ny,layer)15,13,0, pixel=1.47586
+filling (nx, ny,layer)15,14,0, pixel=0.707786
+filling (nx, ny,layer)14,15,0, pixel=0.423857
+filling (nx, ny,layer)15,15,0, pixel=0.469357
+filling (nx, ny,layer)14,16,0, pixel=0.869143
+filling (nx, ny,layer)16,16,0, pixel=0.5655
+filling (nx, ny,layer)17,15,0, pixel=0.985929
+filling (nx, ny,layer)17,16,0, pixel=0.572214
+filling (nx, ny,layer)16,17,0, pixel=0.867929
+filling (nx, ny,layer)17,14,0, pixel=0.194643
+filling (nx, ny,layer)16,18,0, pixel=0.814
+filling (nx, ny,layer)28,10,0, pixel=0.386643
+filling (nx, ny,layer)29,10,0, pixel=1.89814
+filling (nx, ny,layer)28,11,0, pixel=1.11686
+filling (nx, ny,layer)28,12,0, pixel=2.50493
+filling (nx, ny,layer)27,13,0, pixel=0.134071
+filling (nx, ny,layer)28,13,0, pixel=1.20086
+filling (nx, ny,layer)16,16,1, pixel=0.618571
+filling (nx, ny,layer)16,17,1, pixel=1.22686
+filling (nx, ny,layer)16,18,1, pixel=1.01207
+filling (nx, ny,layer)16,19,1, pixel=0.333214
+filling (nx, ny,layer)12,10,1, pixel=0.522286
+filling (nx, ny,layer)12,11,1, pixel=0.5595
+filling (nx, ny,layer)12,12,1, pixel=1.015
+filling (nx, ny,layer)12,13,1, pixel=2.6155
+filling (nx, ny,layer)12,14,1, pixel=0.339643
+filling (nx, ny,layer)18,19,2, pixel=0.194143
+filling (nx, ny,layer)18,20,2, pixel=0.735071
+filling (nx, ny,layer)17,20,2, pixel=1.54307
+filling (nx, ny,layer)17,21,2, pixel=1.7025
+filling (nx, ny,layer)17,22,2, pixel=2.07957
+filling (nx, ny,layer)17,23,2, pixel=1.43007
+filling (nx, ny,layer)16,17,2, pixel=0.936786
+filling (nx, ny,layer)15,17,2, pixel=0.306929
+filling (nx, ny,layer)15,18,2, pixel=0.792286
+filling (nx, ny,layer)15,19,2, pixel=1.18929
+filling (nx, ny,layer)15,20,2, pixel=0.9995
+filling (nx, ny,layer)9,9,2, pixel=1.53893
+filling (nx, ny,layer)9,10,2, pixel=1.09921
+filling (nx, ny,layer)9,11,2, pixel=0.761714
+filling (nx, ny,layer)8,12,2, pixel=2.51629
+input, x=8, y=12, lay=2, val =2.51629
+input, x=9, y=9, lay=2, val =1.53893
+input, x=9, y=10, lay=2, val =1.09921
+input, x=9, y=11, lay=2, val =0.761714
+input, x=12, y=10, lay=1, val =0.522286
+input, x=12, y=11, lay=1, val =0.5595
+input, x=12, y=12, lay=1, val =1.015
+input, x=12, y=13, lay=1, val =2.6155
+input, x=12, y=14, lay=1, val =0.339643
+input, x=14, y=15, lay=0, val =0.423857
+input, x=14, y=16, lay=0, val =0.869143
+input, x=15, y=13, lay=0, val =1.47586
+input, x=15, y=14, lay=0, val =0.707786
+input, x=15, y=15, lay=0, val =0.469357
+input, x=15, y=17, lay=2, val =0.306929
+input, x=15, y=18, lay=2, val =0.792286
+input, x=15, y=19, lay=2, val =1.18929
+input, x=15, y=20, lay=2, val =0.9995
+input, x=16, y=16, lay=0, val =0.5655
+input, x=16, y=16, lay=1, val =0.618571
+input, x=16, y=17, lay=0, val =0.867929
+input, x=16, y=17, lay=1, val =1.22686
+input, x=16, y=17, lay=2, val =0.936786
+input, x=16, y=18, lay=0, val =0.814
+input, x=16, y=18, lay=1, val =1.01207
+input, x=16, y=19, lay=1, val =0.333214
+input, x=17, y=14, lay=0, val =0.194643
+input, x=17, y=15, lay=0, val =0.985929
+input, x=17, y=16, lay=0, val =0.572214
+input, x=17, y=20, lay=2, val =1.54307
+input, x=17, y=21, lay=2, val =1.7025
+input, x=17, y=22, lay=2, val =2.07957
+input, x=17, y=23, lay=2, val =1.43007
+input, x=18, y=19, lay=2, val =0.194143
+input, x=18, y=20, lay=2, val =0.735071
+input, x=27, y=13, lay=0, val =0.134071
+input, x=28, y=10, lay=0, val =0.386643
+input, x=28, y=11, lay=0, val =1.11686
+input, x=28, y=12, lay=0, val =2.50493
+input, x=28, y=13, lay=0, val =1.20086
+input, x=29, y=10, lay=0, val =1.89814
+internal output, prob= 0.920044, x=12, y=11, trk=0, par=0,value=0.0628658
+internal output, prob= 0.920044, x=12, y=11, trk=0, par=1,value=0.838888
+internal output, prob= 0.920044, x=12, y=11, trk=0, par=2,value=0.149412
+internal output, prob= 0.920044, x=12, y=11, trk=0, par=3,value=0.229906
+internal output, prob= 0.949086, x=12, y=13, trk=0, par=0,value=0.170338
+internal output, prob= 0.949086, x=12, y=13, trk=0, par=1,value=-0.803218
+internal output, prob= 0.949086, x=12, y=13, trk=0, par=2,value=0.117185
+internal output, prob= 0.949086, x=12, y=13, trk=0, par=3,value=0.427071
+internal output, prob= 0.984431, x=16, y=17, trk=0, par=0,value=0.0536714
+internal output, prob= 0.984431, x=16, y=17, trk=0, par=1,value=0.536961
+internal output, prob= 0.984431, x=16, y=17, trk=0, par=2,value=-0.286903
+internal output, prob= 0.984431, x=16, y=17, trk=0, par=3,value=0.529399
+----------------------------new prediction -------------------------
+prob success=0.920044
+X pixel=12, Y pixel=11, pred X=0.0628658, pred Y=0.838888, pred eta=0.149412, pred phi=0.229906
+ seed parameters=-0.689371, -3.05161, 1.47459, -0.919073,  (0.0322697,-0.900441,-0.43378) 
+localParam.vector()=1, -0.0743918, 2.0758, -0.689371, -3.05161
+globSeedDir= (0.263828,-0.34581,0.90045) 
+localSeedDir= (0.0322697,-0.900441,-0.43378) 
+track_eta=1.47459 track_theta=0.449993
+----------------------------new prediction -------------------------
+prob success=0.949086
+X pixel=12, Y pixel=13, pred X=0.170338, pred Y=-0.803218, pred eta=0.117185, pred phi=0.427071
+ seed parameters=-0.688297, -3.03803, 1.47427, -0.917101,  (0.0331344,-0.90038,-0.433841) 
+localParam.vector()=1, -0.0763746, 2.07537, -0.688297, -3.03803
+globSeedDir= (0.264586,-0.345389,0.900389) 
+localSeedDir= (0.0331344,-0.90038,-0.433841) 
+track_eta=1.47427 track_theta=0.450133
+----------------------------new prediction -------------------------
+prob success=0.984431
+X pixel=16, Y pixel=17, pred X=0.0536714, pred Y=0.536961, pred eta=-0.286903, pred phi=0.529399
+ seed parameters=-0.649463, -2.96463, 1.47023, -0.916078,  (0.0337007,-0.899612,-0.435388) 
+localParam.vector()=1, -0.0774039, 2.06623, -0.649463, -2.96463
+globSeedDir= (0.265904,-0.346376,0.899621) 
+localSeedDir= (0.0337007,-0.899612,-0.435388) 
+track_eta=1.47023 track_theta=0.451894
+FILL!
+filling (nx, ny,layer)2,17,0, pixel=1.47586
+filling (nx, ny,layer)2,18,0, pixel=0.707786
+filling (nx, ny,layer)1,19,0, pixel=0.423857
+filling (nx, ny,layer)2,19,0, pixel=0.469357
+filling (nx, ny,layer)1,20,0, pixel=0.869143
+filling (nx, ny,layer)3,20,0, pixel=0.5655
+filling (nx, ny,layer)4,19,0, pixel=0.985929
+filling (nx, ny,layer)4,20,0, pixel=0.572214
+filling (nx, ny,layer)3,21,0, pixel=0.867929
+filling (nx, ny,layer)4,18,0, pixel=0.194643
+filling (nx, ny,layer)3,22,0, pixel=0.814
+filling (nx, ny,layer)15,14,0, pixel=0.386643
+filling (nx, ny,layer)16,14,0, pixel=1.89814
+filling (nx, ny,layer)15,15,0, pixel=1.11686
+filling (nx, ny,layer)15,16,0, pixel=2.50493
+filling (nx, ny,layer)14,17,0, pixel=0.134071
+filling (nx, ny,layer)15,17,0, pixel=1.20086
+filling (nx, ny,layer)21,20,0, pixel=0.251214
+filling (nx, ny,layer)15,13,1, pixel=0.347429
+filling (nx, ny,layer)15,14,1, pixel=0.927643
+filling (nx, ny,layer)15,15,1, pixel=0.793143
+filling (nx, ny,layer)15,16,1, pixel=0.966214
+filling (nx, ny,layer)15,17,1, pixel=0.724714
+filling (nx, ny,layer)20,14,2, pixel=0.272214
+filling (nx, ny,layer)19,14,2, pixel=0.262357
+filling (nx, ny,layer)19,15,2, pixel=0.928429
+filling (nx, ny,layer)19,16,2, pixel=1.16436
+filling (nx, ny,layer)19,17,2, pixel=0.945571
+filling (nx, ny,layer)19,18,2, pixel=1.07157
+input, x=1, y=19, lay=0, val =0.423857
+input, x=1, y=20, lay=0, val =0.869143
+input, x=2, y=17, lay=0, val =1.47586
+input, x=2, y=18, lay=0, val =0.707786
+input, x=2, y=19, lay=0, val =0.469357
+input, x=3, y=20, lay=0, val =0.5655
+input, x=3, y=21, lay=0, val =0.867929
+input, x=3, y=22, lay=0, val =0.814
+input, x=4, y=18, lay=0, val =0.194643
+input, x=4, y=19, lay=0, val =0.985929
+input, x=4, y=20, lay=0, val =0.572214
+input, x=14, y=17, lay=0, val =0.134071
+input, x=15, y=13, lay=1, val =0.347429
+input, x=15, y=14, lay=0, val =0.386643
+input, x=15, y=14, lay=1, val =0.927643
+input, x=15, y=15, lay=0, val =1.11686
+input, x=15, y=15, lay=1, val =0.793143
+input, x=15, y=16, lay=0, val =2.50493
+input, x=15, y=16, lay=1, val =0.966214
+input, x=15, y=17, lay=0, val =1.20086
+input, x=15, y=17, lay=1, val =0.724714
+input, x=16, y=14, lay=0, val =1.89814
+input, x=19, y=14, lay=2, val =0.262357
+input, x=19, y=15, lay=2, val =0.928429
+input, x=19, y=16, lay=2, val =1.16436
+input, x=19, y=17, lay=2, val =0.945571
+input, x=19, y=18, lay=2, val =1.07157
+input, x=20, y=14, lay=2, val =0.272214
+input, x=21, y=20, lay=0, val =0.251214
+internal output, prob= 0.956839, x=15, y=16, trk=0, par=0,value=0.224366
+internal output, prob= 0.956839, x=15, y=16, trk=0, par=1,value=-0.542871
+internal output, prob= 0.956839, x=15, y=16, trk=0, par=2,value=0.0213257
+internal output, prob= 0.956839, x=15, y=16, trk=0, par=3,value=0.34235
+----------------------------new prediction -------------------------
+prob success=0.956839
+X pixel=15, Y pixel=16, pred X=0.224366, pred Y=-0.542871, pred eta=0.0213257, pred phi=0.34235
+ seed parameters=-0.657756, -2.99043, 1.47534, -0.957755,  (0.0154604,-0.900582,-0.434412) 
+localParam.vector()=1, -0.0355892, 2.07311, -0.657756, -2.99043
+globSeedDir= (0.250089,-0.355515,0.900591) 
+localSeedDir= (0.0154604,-0.900582,-0.434412) 
+track_eta=1.47534 track_theta=0.449669
+FILL!
+filling (nx, ny,layer)3,13,0, pixel=0.502571
+filling (nx, ny,layer)4,13,0, pixel=0.420714
+filling (nx, ny,layer)3,14,0, pixel=0.613429
+filling (nx, ny,layer)3,15,0, pixel=0.895643
+filling (nx, ny,layer)3,16,0, pixel=0.318857
+filling (nx, ny,layer)5,9,0, pixel=0.994
+filling (nx, ny,layer)5,10,0, pixel=2.59529
+filling (nx, ny,layer)5,11,0, pixel=0.967429
+filling (nx, ny,layer)4,12,0, pixel=0.267357
+filling (nx, ny,layer)6,8,0, pixel=0.553786
+filling (nx, ny,layer)6,10,0, pixel=2.20207
+input, x=3, y=13, lay=0, val =0.502571
+input, x=3, y=14, lay=0, val =0.613429
+input, x=3, y=15, lay=0, val =0.895643
+input, x=3, y=16, lay=0, val =0.318857
+input, x=4, y=12, lay=0, val =0.267357
+input, x=4, y=13, lay=0, val =0.420714
+input, x=5, y=9, lay=0, val =0.994
+input, x=5, y=10, lay=0, val =2.59529
+input, x=5, y=11, lay=0, val =0.967429
+input, x=6, y=8, lay=0, val =0.553786
+input, x=6, y=10, lay=0, val =2.20207
+FILL!
+NEW EVENT, event number5
+event number (iterative)=6, event number (id)=3

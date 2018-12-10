@@ -6,7 +6,7 @@
 #include "RecoTracker/TransientTrackingRecHit/interface/TkTransientTrackingRecHitBuilder.h"
 #include "TrackingTools/TrajectoryFiltering/interface/TrajectoryFilter.h"
 
-  
+
 #include "TrackingTools/DetLayers/interface/NavigationSchool.h"
 #include "TrackingTools/MeasurementDet/interface/LayerMeasurements.h"
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateTransform.h"
@@ -56,7 +56,8 @@ TrajectoryFilter *BaseCkfTrajectoryBuilder::createTrajectoryFilter(const edm::Pa
 void
 BaseCkfTrajectoryBuilder::seedMeasurements(const TrajectorySeed& seed,  TempTrajectory & result) const
 {
-  
+
+
 
   TrajectorySeed::range hitRange = seed.recHits();
 
@@ -67,11 +68,12 @@ BaseCkfTrajectoryBuilder::seedMeasurements(const TrajectorySeed& seed,  TempTraj
 
 
   for (TrajectorySeed::const_iterator ihit = hitRange.first; ihit != hitRange.second; ihit++) {
- 
+    std::cout << "inside rechits loop"<< std::endl;
+
     TrackingRecHit::RecHitPointer recHit = ihit->cloneSH();
     const GeomDet* hitGeomDet = recHit->det();
- 
-    const DetLayer* hitLayer = 
+
+    const DetLayer* hitLayer =
       theMeasurementTracker->geometricSearchTracker()->detLayer(ihit->geographicalId());
 
     TSOS invalidState( hitGeomDet->surface());
@@ -83,10 +85,12 @@ BaseCkfTrajectoryBuilder::seedMeasurements(const TrajectorySeed& seed,  TempTraj
       }
 
       //TSOS updatedState = outerstate;
+      std::cout << "invalidstate" << std::endl;
       result.emplace(invalidState, outerState, recHit, 0, hitLayer);
     }
     else {
       TSOS innerState   = backwardPropagator(seed)->propagate(outerState,hitGeomDet->surface());
+      std::cout <<"try to recover if propagation failed" << std::endl;
 
       // try to recover if propagation failed
       if UNLIKELY(!innerState.isValid())
@@ -111,28 +115,38 @@ BaseCkfTrajectoryBuilder::seedMeasurements(const TrajectorySeed& seed,  TempTraj
 TempTrajectory BaseCkfTrajectoryBuilder::
 createStartingTrajectory( const TrajectorySeed& seed) const
 {
+  std::cout << "--------------------------start here--------------------------------------------------"<<std::endl;
+  std::cout << "--------------------------------------------------------------------------------------"<<std::endl;
+  std::cout << "--------------------------------------------------------------------------------------"<<std::endl;
+  std::cout << "--------------------------------------------------------------------------------------"<<std::endl;
+  std::cout << "--------------------------------------------------------------------------------------"<<std::endl;
+  std::cout << "--------------------------------------------------------------------------------------"<<std::endl;
+
   TempTrajectory result(seed.direction(),seed.nHits());
   seedMeasurements(seed, result);
 
+  std::cout << " initial trajectotrary from the seed: "<<PrintoutHelper::dumpCandidate(result,true)<< std::endl;
+
   LogDebug("CkfPattern")
     <<" initial trajectory from the seed: "<<PrintoutHelper::dumpCandidate(result,true);
-  
+
   return result;
 }
 
 
 bool BaseCkfTrajectoryBuilder::toBeContinued (TempTrajectory& traj, bool inOut) const
 {
+  std::cout << "to be continued" << std::endl;
   if UNLIKELY(traj.measurements().size() > 400) {
     edm::LogError("BaseCkfTrajectoryBuilder_InfiniteLoop");
-    LogTrace("BaseCkfTrajectoryBuilder_InfiniteLoop") << 
+    LogTrace("BaseCkfTrajectoryBuilder_InfiniteLoop") <<
               "Cropping Track After 400 Measurements:\n" <<
               "   Last predicted state: " << traj.lastMeasurement().predictedState() << "\n" <<
               "   Last layer subdetector: " << (traj.lastLayer() ? traj.lastLayer()->subDetector() : -1) << "\n" <<
               "   Found hits: " << traj.foundHits() << ", lost hits: " << traj.lostHits() << "\n\n";
     return false;
   }
-  // Called after each new hit is added to the trajectory, to see if it is 
+  // Called after each new hit is added to the trajectory, to see if it is
   // worth continuing to build this track candidate.
   if (inOut) {
     // if (theInOutFilter == 0) edm::LogError("CkfPattern") << "CkfTrajectoryBuilder error: trying to use dedicated filter for in-out tracking phase, when none specified";
@@ -145,6 +159,7 @@ bool BaseCkfTrajectoryBuilder::toBeContinued (TempTrajectory& traj, bool inOut) 
 
  bool BaseCkfTrajectoryBuilder::qualityFilter( const TempTrajectory& traj, bool inOut) const
 {
+  std::cout << "quality filter" << std::endl;
   // Called after building a trajectory is completed, to see if it is good enough
   // to keep.
   if (inOut) {
@@ -156,8 +171,8 @@ bool BaseCkfTrajectoryBuilder::toBeContinued (TempTrajectory& traj, bool inOut) 
 }
 
 
-void 
-BaseCkfTrajectoryBuilder::addToResult (boost::shared_ptr<const TrajectorySeed> const & seed, TempTrajectory& tmptraj, 
+void
+BaseCkfTrajectoryBuilder::addToResult (boost::shared_ptr<const TrajectorySeed> const & seed, TempTrajectory& tmptraj,
 				       TrajectoryContainer& result,
                                        bool inOut) const
 {
@@ -169,12 +184,13 @@ BaseCkfTrajectoryBuilder::addToResult (boost::shared_ptr<const TrajectorySeed> c
   while (!traj.empty() && !traj.lastMeasurement().recHit()->isValid()) traj.pop();
   LogDebug("CkfPattern")<<inOut<<"=inOut option. pushing a Trajectory with: "<<traj.foundHits()<<" found hits. "<<traj.lostHits()
 			<<" lost hits. Popped :"<<(tmptraj.measurements().size())-(traj.measurements().size())<<" hits.";
+  std::cout << "addToResult" << std::endl;
   result.push_back(std::move(traj));
 }
 
 
-void 
-BaseCkfTrajectoryBuilder::addToResult (TempTrajectory const & tmptraj, 
+void
+BaseCkfTrajectoryBuilder::addToResult (TempTrajectory const & tmptraj,
 				       TempTrajectoryContainer& result,
                                        bool inOut) const
 {
@@ -185,11 +201,13 @@ BaseCkfTrajectoryBuilder::addToResult (TempTrajectory const & tmptraj,
   while (!traj.empty() && !traj.lastMeasurement().recHit()->isValid()) traj.pop();
   LogDebug("CkfPattern")<<inOut<<"=inOut option. pushing a TempTrajectory with: "<<traj.foundHits()<<" found hits. "<<traj.lostHits()
 			<<" lost hits. Popped :"<<(tmptraj.measurements().size())-(traj.measurements().size())<<" hits.";
+      std::cout << "addToResult 2" << std::endl;
+
   result.push_back(std::move(traj));
 }
 
-void 
-BaseCkfTrajectoryBuilder::moveToResult (TempTrajectory&& traj, 
+void
+BaseCkfTrajectoryBuilder::moveToResult (TempTrajectory&& traj,
 				       TempTrajectoryContainer& result,
                                        bool inOut) const
 {
@@ -199,6 +217,7 @@ BaseCkfTrajectoryBuilder::moveToResult (TempTrajectory&& traj,
   while (!traj.empty() && !traj.lastMeasurement().recHitR().isValid()) traj.pop();
   LogDebug("CkfPattern")<<inOut<<"=inOut option. pushing a TempTrajectory with: "<<traj.foundHits()<<" found hits. "<<traj.lostHits();
     //			<<" lost hits. Popped :"<<(ttraj.measurements().size())-(traj.measurements().size())<<" hits.";
+    std::cout << "moveToResult" << std::endl;
   result.push_back(std::move(traj));
 }
 
@@ -212,22 +231,25 @@ BaseCkfTrajectoryBuilder::findStateAndLayers(const TrajectorySeed& seed, const T
       //set the currentState to be the one from the trajectory seed starting point
       PTrajectoryStateOnDet const & ptod = seed.startingState();
       DetId id(ptod.detId());
-      const GeomDet * g = theMeasurementTracker->geomTracker()->idToDet(id);                    
+      const GeomDet * g = theMeasurementTracker->geomTracker()->idToDet(id);
       const Surface * surface=&g->surface();
-      
-      
-      TSOS currentState(trajectoryStateTransform::transientState(ptod,surface,forwardPropagator(seed)->magneticField()));      
-      const DetLayer* lastLayer = theMeasurementTracker->geometricSearchTracker()->detLayer(id);      
+
+
+      TSOS currentState(trajectoryStateTransform::transientState(ptod,surface,forwardPropagator(seed)->magneticField()));
+      const DetLayer* lastLayer = theMeasurementTracker->geometricSearchTracker()->detLayer(id);
+      // std::cout << currentState << std::endl;
+      std::cout << "empty traj, direction=" << traj.direction() << ", last layer=" << lastLayer->seqNum() <<std::endl;
       return StateAndLayers(currentState,theNavigationSchool->nextLayers(*lastLayer,*currentState.freeState(), traj.direction()) );
     }
   else
-    {  
+    {
+      std::cout << "non empty, direction=" << traj.direction() << ", last layer=" << traj.lastLayer() << std::endl;
       TSOS const & currentState = traj.lastMeasurement().updatedState();
       return StateAndLayers(currentState,theNavigationSchool->nextLayers(*traj.lastLayer(), *currentState.freeState(), traj.direction()) );
     }
 }
 
-void BaseCkfTrajectoryBuilder::setData(const MeasurementTrackerEvent *data) 
+void BaseCkfTrajectoryBuilder::setData(const MeasurementTrackerEvent *data)
 {
     // possibly do some sanity check here
     theMeasurementTracker = data;

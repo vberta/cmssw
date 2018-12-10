@@ -368,7 +368,7 @@ int jet_number = 0;
             double track_eta = seedParamNN.first[i][j][o][2]*0.01+bigClustDir.eta();//NOT SURE ABOUT THIS 0.01, only to debug
             double track_theta = 2*std::atan(std::exp(-track_eta));
             double track_phi = seedParamNN.first[i][j][o][3]*0.01+bigClustDir.phi();//NOT SURE ABOUT THIS 0.01, only to debug
-            double normdirR = 1;
+            double normdirR = 10;//1;
 
             const GlobalVector globSeedDir( GlobalVector::Polar(Geom::Theta<double>(track_theta), Geom::Phi<double> (track_phi), normdirR));
             LocalVector localSeedDir = globDet->surface().toLocal(globSeedDir);
@@ -376,7 +376,30 @@ int jet_number = 0;
             //seed creation
             long int detId=globDet->geographicalId();
             LocalTrajectoryParameters localParam(localSeedPoint, localSeedDir, TrackCharge(1));
-            result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam, 3., detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
+
+            //---------------------debug with real track found by default SF
+            // long int detId_true = 304132120;
+            // GlobalPoint globalSeedPoint_true(-5.1418094635, 4.65926742554, 8.42541503906);
+            // GlobalVector globalSeedDir_true(-17.1967315674, 15.3698101044, 16.6719341278);
+            // const GeomDet* det_true = geometry_->idToDet(detId_true);
+            // LocalVector localSeedDir_true = det_true->surface().toLocal(globalSeedDir_true);
+            // LocalPoint localSeedPoint_true = det_true->surface().toLocal(globalSeedPoint_true);
+            // LocalTrajectoryParameters localParam_true(localSeedPoint_true, localSeedDir_true, TrackCharge(1));
+            // result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam_true, 3., detId_true, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
+            //-----------------end of DEBUG
+            float seeErr[15]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+            seeErr[0]=0.15*0.15;
+            seeErr[2]=1e-4;
+            seeErr[5]=1e-4;
+            seeErr[9]=1e-2;
+            seeErr[14]=1;
+            result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam, 10., seeErr, detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
+
+
+
+
+            //coment this line to debug (il debug intendo quello qui sopra)
+            // result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam, 3., detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
             std::cout << "----------------------------new prediction -------------------------" <<std::endl;
             std::cout << "prob success=" << seedParamNN.second[i][j][o]<<  std::endl;
             std::cout << "X pixel=" << i << ", Y pixel=" << j << ", pred X=" << seedParamNN.first[i][j][o][0] << ", pred Y=" << seedParamNN.first[i][j][o][1] << ", pred eta=" << seedParamNN.first[i][j][o][2]<< ", pred phi=" << seedParamNN.first[i][j][o][3] << std::endl;

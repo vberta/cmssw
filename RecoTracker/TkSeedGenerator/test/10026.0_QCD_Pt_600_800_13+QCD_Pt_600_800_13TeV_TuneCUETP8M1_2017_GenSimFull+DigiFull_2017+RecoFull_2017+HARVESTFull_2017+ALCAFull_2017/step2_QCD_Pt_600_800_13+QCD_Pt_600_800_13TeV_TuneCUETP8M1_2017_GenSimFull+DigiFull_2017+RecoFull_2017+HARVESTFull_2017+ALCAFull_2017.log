@@ -1,0 +1,36 @@
+
+!!!!! WARNING: The BMTF Packer returns the entire detector information in one fed (# 1376), instead of the real BMTF which owns 2 feds (1376, 1377)  !!!!!
+
+12-Nov-2018 00:35:09 CET  Initiating request to open file file:step1.root
+12-Nov-2018 00:35:13 CET  Successfully opened file file:step1.root
+Begin processing the 1st record. Run 1, Event 1, LumiSection 1 on stream 0 at 12-Nov-2018 00:37:42.142 CET
+Begin processing the 2nd record. Run 1, Event 2, LumiSection 1 on stream 0 at 12-Nov-2018 00:38:18.920 CET
+Begin processing the 3rd record. Run 1, Event 3, LumiSection 1 on stream 0 at 12-Nov-2018 00:38:24.582 CET
+Begin processing the 4th record. Run 1, Event 4, LumiSection 1 on stream 0 at 12-Nov-2018 00:38:29.127 CET
+Begin processing the 5th record. Run 1, Event 5, LumiSection 1 on stream 0 at 12-Nov-2018 00:38:33.047 CET
+Begin processing the 6th record. Run 1, Event 6, LumiSection 1 on stream 0 at 12-Nov-2018 00:38:37.704 CET
+Begin processing the 7th record. Run 1, Event 7, LumiSection 1 on stream 0 at 12-Nov-2018 00:38:44.663 CET
+Begin processing the 8th record. Run 1, Event 8, LumiSection 1 on stream 0 at 12-Nov-2018 00:38:47.996 CET
+Begin processing the 9th record. Run 1, Event 9, LumiSection 1 on stream 0 at 12-Nov-2018 00:38:52.297 CET
+Begin processing the 10th record. Run 1, Event 10, LumiSection 1 on stream 0 at 12-Nov-2018 00:38:56.519 CET
+12-Nov-2018 00:39:01 CET  Closed file file:step1.root
+
+=============================================
+
+MessageLogger Summary
+
+ type     category        sev    module        subroutine        count    total
+ ---- -------------------- -- ---------------- ----------------  -----    -----
+    1 fileAction           -s file_close                             1        1
+    2 fileAction           -s file_open                              2        2
+
+ type    category    Examples: run/evt        run/evt          run/evt
+ ---- -------------------- ---------------- ---------------- ----------------
+    1 fileAction           PostGlobalEndRun                  
+    2 fileAction           pre-events       pre-events       
+
+Severity    # Occurrences   Total Occurrences
+--------    -------------   -----------------
+System                  3                   3
+
+dropped waiting message count 0
