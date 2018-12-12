@@ -156,7 +156,7 @@ process.SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",
 )
 
 process.TFileService = cms.Service("TFileService",
-      fileName = cms.string("histo_simHit_debug8.root"),
+      fileName = cms.string("histo_simHit_debug50.root"),
       closeFileFast = cms.untracked.bool(True)
   )
 
