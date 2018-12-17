@@ -129,7 +129,7 @@ class NNClustSeedInputSimHit : public edm::one::EDProducer<edm::one::SharedResou
   static const int jetDimY =30;
   static const int Nlayer =4;
   static const int Ntrack = 100;
-  static const int Npar = 4;
+  static const int Npar = 5; //added 1/pt
   static const int Nover = 3;
   static const int NClust = 5;
   double clusterMeas[jetDimX][jetDimY][Nlayer];
@@ -289,7 +289,7 @@ NNClustSeedInputSimHit::NNClustSeedInputSimHit(const edm::ParameterSet& iConfig)
    NNClustSeedInputSimHitTree= fileService->make<TTree>("NNClustSeedInputSimHitTree","NNClustSeedInputSimHitTree");
   //  NNClustSeedInputSimHitTree->SetAutoFlush(10000);
    NNClustSeedInputSimHitTree->Branch("cluster_measured",clusterMeas,"cluster_measured[30][30][4]/D");
-   NNClustSeedInputSimHitTree->Branch("trackPar", trackPar, "trackPar[30][30][3][5]/D"); //NOFLAG
+   NNClustSeedInputSimHitTree->Branch("trackPar", trackPar, "trackPar[30][30][3][6]/D"); //NOFLAG
    NNClustSeedInputSimHitTree->Branch("trackProb", trackProb, "trackProb[30][30][3]/D");
   //  NNClustSeedInputSimHitTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][100][100]/D");
    NNClustSeedInputSimHitTree->Branch("jet_eta",&jet_eta);
@@ -430,9 +430,11 @@ int jet_number = 0;
 
       const reco::Candidate& jet = (*cores)[ji];
       const reco::Vertex& jetVertex = (*vertices)[0];
+      GlobalVector jetDirection(jet.px(), jet.py(), jet.pz());
 
       std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex);
-      std::cout << "numero of cluster da splittare" << splitClustDirSet.size() << std::endl;;
+      std::cout << "numero of cluster da splittare" << splitClustDirSet.size() << "+jetDir" << std::endl;
+      splitClustDirSet.push_back(jetDirection);
       for(int cc=0; cc<(int)splitClustDirSet.size(); cc++){
       GlobalVector bigClustDir = splitClustDirSet.at(cc);
 
@@ -880,19 +882,21 @@ trackMap.clear();
       double xangle;
       double yangle;
       double zero_flag; //useful for CNN training only: 0 if x,y,eta,phi==0
+      double one_over_pt;
       // double jEta;
       // double jPt;
       // double xdist;
       // double ydist;
       // double trknum;
-      trkInfoObj(int pp, double dd, double xx, double yy, double tx, double ty, int zf) : //, double jeta, double jpt) : // double xd, double yd, double n) :
+      trkInfoObj(int pp, double dd, double xx, double yy, double tx, double ty, int zf, double ptInv) : //, double jeta, double jpt) : // double xd, double yd, double n) :
         prob(pp),
         dist(dd),
         xpos(xx),
         ypos(yy),
         xangle(tx),
         yangle(ty),
-        zero_flag(zf) {}
+        zero_flag(zf),
+        one_over_pt(ptInv) {}
         // jEta(jeta),
         // jPt(jpt) {}
         // xdist(xd),
@@ -1096,7 +1100,7 @@ trackMap.clear();
           if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << "PIX x = " << pixX << ", PIX y=" << pixY << std::endl;
 
           // double info[9] = {0,0,0,0,0,0,0,0,-1};
-          double info[7] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+          double info[8] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
 
           if (x==pixX && y==pixY) {
             // if(theCluster.sizeX()==1) std::cout << "PROB1 " << "size x="<< theCluster.sizeX()<< ", size Y="<< theCluster.sizeY()<<", local x ="<<localTrkInter.x()<< ", local y="<<localTrkInter.y() << ", divided by pitch X=" << localTrkInter.x()/pitchX << ", divided by pitch Y=" << localTrkInter.y()/pitchY << ", flipped=" << flip << ", pixel num=" << theCluster.minPixelRow() << "," << theCluster.minPixelCol() << std::endl;
@@ -1176,6 +1180,7 @@ trackMap.clear();
             // info[5] = atan(localJetDir.y()/localJetDir.z())-atan(localTrkDir.y()/localTrkDir.z());
             info[4] = st.momentum().Eta()-jetDir.eta();
             info[5] = deltaPhi(st.momentum().Phi(),jetDir.phi());
+            info[7] = 1/st.momentum().Pt();
             // info[6] = jet.eta();
             // info[7] = jet.pt();
 
@@ -1206,7 +1211,7 @@ trackMap.clear();
             // std::cout << "1-flag=" << "x="<< x << ", y=" << y<< ", " << info[0] << "," << info[1] << "," << info[2] << "," <<info[3] << "," <<info[4] << "," << info[5] << "," << std::endl;
            }
 
-          tracksInfo.push_back(trkInfoObj(info[0],info[1],info[2],info[3],info[4],info[5],info[6]));//,info[6],info[7]));//info[6],info[7],info[8]));
+          tracksInfo.push_back(trkInfoObj(info[0],info[1],info[2],info[3],info[4],info[5],info[6],info[7]));//,info[6],info[7]));//info[6],info[7],info[8]));
           // if(info[0]== 1) std::cout << tracksInfo.at(tracksInfo.size()-1).prob << std::endl;
 
           //---debug lines
@@ -1268,6 +1273,7 @@ trackMap.clear();
             trackPar[x][y][trk][2]=100*tracksInfo.at(trk).xangle;
             trackPar[x][y][trk][3]=100*tracksInfo.at(trk).yangle;
             trackPar[x][y][trk][4]=tracksInfo.at(trk).zero_flag; //NOFLAG
+            trackPar[x][y][trk][5]=tracksInfo.at(trk).one_over_pt;
             //  trackPar[x][y][trk][4]=tracksInfo.at(trk).jEta;
             //  trackPar[x][y][trk][5]=tracksInfo.at(trk).jPt;
             trackProb[x][y][trk]=tracksInfo.at(trk).prob;
