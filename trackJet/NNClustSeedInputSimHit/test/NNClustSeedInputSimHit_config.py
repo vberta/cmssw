@@ -29,7 +29,7 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 
 process.GlobalTag.globaltag="94X_mc2017_realistic_v10"
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200) ) #-1 = tutti
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) #-1 = tutti (numero edi eventi)
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root',' with the source file you want to use
@@ -156,7 +156,7 @@ process.SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",
 )
 
 process.TFileService = cms.Service("TFileService",
-      fileName = cms.string("histo_simHit_debug50.root"),
+      fileName = cms.string("ntuple_simHit_4LayClustPt_4M.root"),
       closeFileFast = cms.untracked.bool(True)
   )
 
