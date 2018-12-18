@@ -1272,8 +1272,8 @@ trackMap.clear();
             else trackPar[x][y][trk][1]=0.0;
             trackPar[x][y][trk][2]=100*tracksInfo.at(trk).xangle;
             trackPar[x][y][trk][3]=100*tracksInfo.at(trk).yangle;
-            trackPar[x][y][trk][4]=tracksInfo.at(trk).zero_flag; //NOFLAG
-            trackPar[x][y][trk][5]=tracksInfo.at(trk).one_over_pt;
+            trackPar[x][y][trk][5]=tracksInfo.at(trk).zero_flag; //NOFLAG
+            trackPar[x][y][trk][4]=tracksInfo.at(trk).one_over_pt;
             //  trackPar[x][y][trk][4]=tracksInfo.at(trk).jEta;
             //  trackPar[x][y][trk][5]=tracksInfo.at(trk).jPt;
             trackProb[x][y][trk]=tracksInfo.at(trk).prob;
