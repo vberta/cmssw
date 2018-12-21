@@ -21,7 +21,9 @@ RNode AngCoeff::defineArmonics(RNode d){
     // A7
     auto d7 = d6.Define("P7", [](float cos_theta, float phi) -> float{ return (sqrt(1.-cos_theta*cos_theta)*sin(phi));}, {"CStheta_preFSR", "CSphi_preFSR"});
 
-    return d7;
+    auto d8 = d7.Define("PUL", [](float cos_theta, float phi) -> float{ return 1+cos_theta*cos_theta;}, {"CStheta_preFSR", "CSphi_preFSR"});
+
+    return d8;
 
 }
 
@@ -37,18 +39,17 @@ RNode AngCoeff::defineArmonicsSqAndW(RNode d, std::string c){
 
 RNode AngCoeff::doSomething(RNode d){
 
-
     // first normalise generator weights
 
     auto dw = d.Filter("GenPart_pdgId[GenPart_preFSRMuonIdx]<0").Define("Generator_weight_norm", [](float w)-> float{ return w/abs(w);}, {"Generator_weight"});
 
     auto dArm = defineArmonics(dw);
     
-    float yArr[] = {-3.5, -3.0, -2.5, -2.0, -1.6, -1.2, -0.8, -0.4, 0, 0.4, 0.8, 1.2 ,1.6, 2.0, 2.5, 3.0, 3.5};
-    float ptArr[] = {0., 4., 8., 12., 16., 20., 24., 32., 40., 60.};
+    float yArr[] = {-6.0, -3.0, -2.5, -2.0, -1.6, -1.2, -0.8, -0.4, 0, 0.4, 0.8, 1.2 ,1.6, 2.0, 2.5, 3.0, 6.0};
+    float ptArr[] = {0., 4., 8., 12., 16., 20., 24., 32., 40., 60., 100., 200.};
     
     int nBinsY = 16;
-    int nBinsPt = 9;
+    int nBinsPt = 11;
 
     std::vector<std::string> coeff = {"0", "1", "2", "3", "4", "5", "6", "7"};
 
@@ -115,8 +116,44 @@ RNode AngCoeff::doSomething(RNode d){
 
     }   
 
-    
-    return d;
+    auto getNorm = [this](float Wpt, float Wrap, float P0, float P1, float P2, float P3, float P4, float P5, float P6, float P7, float PUL){
+
+        float norm = PUL;
+        std::vector<float> arm;
+
+        arm.push_back(P0);
+        arm.push_back(P1);
+        arm.push_back(P2);
+        arm.push_back(P3);
+        arm.push_back(P4);
+        arm.push_back(P5);
+        arm.push_back(P6);
+        arm.push_back(P7);
+
+        
+        for(unsigned int i=0; i<_h2List.size(); i++){ //loop over angular coefficients
+
+            int binPt = _h2List[i]->GetYaxis()->FindBin(Wpt);
+            int binY = _h2List[i]->GetXaxis()->FindBin(Wrap);
+
+            norm+=_h2List[i]->GetBinContent(binY,binPt)*arm[i]; //sum Ai*Pi
+
+        }
+        
+        return norm;
+
+    };
+
+    auto getWeight = [this](float norm, float P, float gen){
+
+        return (P/norm)*gen;
+
+    };
+
+    auto dPw = dArm.Define("Pnorm", getNorm, {"Wpt_preFSR", "Wrap_preFSR", "P0", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "PUL"}).Define("Pweight0", getWeight, {"Pnorm", "P0", "Generator_weight_norm"}).Define("Pweight1", getWeight, {"Pnorm", "P1", "Generator_weight_norm"}).Define("Pweight2", getWeight, {"Pnorm", "P2", "Generator_weight_norm"})
+    .Define("Pweight3", getWeight, {"Pnorm", "P3", "Generator_weight_norm"}).Define("Pweight4", getWeight, {"Pnorm", "P4", "Generator_weight_norm"}).Define("Pweight5", getWeight, {"Pnorm", "P5", "Generator_weight_norm"}).Define("Pweight6", getWeight, {"Pnorm", "P6", "Generator_weight_norm"}).Define("Pweight7", getWeight, {"Pnorm", "P7", "Generator_weight_norm"}).Define("PweightUL", getWeight, {"Pnorm", "PUL", "Generator_weight_norm"});    
+
+    return dPw;
 
 }
 
