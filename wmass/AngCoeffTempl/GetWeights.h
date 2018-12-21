@@ -1,5 +1,5 @@
-#ifndef ANGCOEFF_H
-#define ANGCOEFF_H
+#ifndef GETWEIGHTS_H
+#define GETWEIGHTS_H
 
 
 #include "ROOT/RDataFrame.hxx"
@@ -9,7 +9,7 @@
 #include "TH2D.h"
 #include "TString.h"
 #include "TMath.h"
-#include "../framework/module.h"
+#include "../../framework/module.h"
 
 using namespace ROOT::VecOps;
 using RNode = ROOT::RDF::RNode;
@@ -17,7 +17,7 @@ using rvec_f = const RVec<float> &;
 using rvec_i = const RVec<int> &;
 
 
-class AngCoeff : public Module {
+class GetWeights : public Module {
 
     private:
 
@@ -26,20 +26,12 @@ class AngCoeff : public Module {
     
     public:
     
-    AngCoeff() {};
-    ~AngCoeff() {};
+    GetWeights() {};
+    ~GetWeights() {};
     RNode doSomething(RNode) override;
     std::vector<ROOT::RDF::RResultPtr<TH1D>> getTH1() override;
     std::vector<ROOT::RDF::RResultPtr<TH2D>> getTH2() override;
 
-    // custom functions
-    RNode defineArmonics(RNode);
-    RNode defineArmonicsSqAndWscale(RNode, int, int);
-    RNode defineArmonicsSqAndWPDF(RNode, int, int);
 };
 
 #endif
-
-
-
-    
