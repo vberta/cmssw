@@ -25,7 +25,7 @@ from RDFprocessor import *
 
 
 ROOT.ROOT.EnableImplicitMT(20)
-p = RDFprocessor(outputFile = "test.root", inputFiles ='/scratch/emanca/WMass/RDFprocessor/wmass/data/signalTree*.root', modules=[TemplateProj()], histoFile = 'histo.root', snapshot=False)
+p = RDFprocessor(outputFile = "test.root", inputFiles ='/scratch/emanca/WMass/NanoDevelopment/CMSSW_10_2_6/src/PhysicsTools/NanoAODTools/scripts/nanoPost.root', modules=[ROOT.AngCoeff()], histoFile = 'histo.root', snapshot=True)
 time = p.run()
 
 print "elapsed world time", time, "s"
