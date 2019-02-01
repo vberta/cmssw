@@ -41,6 +41,8 @@ RNode AngCoeff::run(RNode d){
     
     }
 
+    _trigLoop = true;
+
     return dArm;
     
 }
@@ -53,4 +55,7 @@ std::vector<ROOT::RDF::RResultPtr<TH2D>> AngCoeff::getTH2(){
 }
 std::vector<ROOT::RDF::RResultPtr<TH3D>> AngCoeff::getTH3(){ 
     return _h3List;
+}
+bool AngCoeff::triggerLoop(){
+    return _trigLoop;
 }

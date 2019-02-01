@@ -62,8 +62,23 @@ RNode TemplateBuilder::run(RNode d){
 
     }
 
-
-    return d;
+    _trigLoop = true;
+    
+    return d1;
 
 
   }
+
+std::vector<ROOT::RDF::RResultPtr<TH1D>> TemplateBuilder::getTH1(){ 
+    return _h1List;
+}
+std::vector<ROOT::RDF::RResultPtr<TH2D>> TemplateBuilder::getTH2(){ 
+    return _h2List;
+}
+std::vector<ROOT::RDF::RResultPtr<TH3D>> TemplateBuilder::getTH3(){ 
+    return _h3List;
+}
+bool TemplateBuilder::triggerLoop(){
+    return _trigLoop;
+}
+

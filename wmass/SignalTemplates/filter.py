@@ -1,16 +1,18 @@
-class filterMinus:
+class filter:
    
-    def __init__(self):
+    def __init__(self, string):
         
         pass
         
         self.myTH1 = []
         self.myTH2 = []
         self.myTH3 = []
+        self.trigLoop = False
+        self.string = string
 
     def run(self,d):
 
-        self.d = d.Filter("GenPart_pdgId[GenPart_preFSRMuonIdx]>0") # selects W-
+        self.d = d.Filter(self.string) # selects W-
         
         return self.d
 
@@ -24,6 +26,10 @@ class filterMinus:
 
     def getTH3(self):
 
-        return self.myTH3    
+        return self.myTH3
+
+    def triggerLoop(self):
+
+        return self.trigLoop         
 
 

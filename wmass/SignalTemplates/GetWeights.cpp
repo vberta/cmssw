@@ -3,27 +3,23 @@
 
 RNode GetWeights::run(RNode d){
 
-    TFile *fPlus = TFile::Open("coeffWPlus.root");
-    TFile *fMinus = TFile::Open("coeffWMinus.root");
+    TFile *f = TFile::Open(_myString.c_str());
 
-    std::vector<TH2D> hPlus;
-    std::vector<TH2D> hMinus;
-
-    TIter next(fPlus->GetListOfKeys());
+    TIter next(f->GetListOfKeys());
     TKey *key;
+
+    std::vector<TH2D*> hlist;
 
     while ((key = (TKey*)next())) {
 
-        TString name = key.GetName();
-        TH2 *hP = (TH1*) fPlus->Get(name);
-        TH2 *hM = (TH1*) fMinus->Get(name);
+        TString name = key->GetName();
+        TH2D *h = (TH2D*) f->Get(name);
 
-        hPlus.push_back(hP);
-        hMinus.push_back(hM);
+        hlist.push_back(h);
 
     }
 
-    auto getNorm = [hPlus,hMinus](float Wpt, float Wrap, int sign, float P0, float P1, float P2, float P3, float P4, float P5, float P6, float P7, float PUL){
+    auto getNorm = [hlist](float Wpt, float Wrap, float P0, float P1, float P2, float P3, float P4, float P5, float P6, float P7, float PUL){
 
         float norm = PUL;
         std::vector<float> arm;
@@ -37,32 +33,14 @@ RNode GetWeights::run(RNode d){
         arm.push_back(P6);
         arm.push_back(P7);
 
-        if(sign>0){ // W minus
+        for(unsigned int i=0; i<hlist.size(); i++){ //loop over angular coefficients
 
-            for(unsigned int i=0; i<hMinus.size(); i++){ //loop over angular coefficients
+                int binPt = hlist[i]->GetYaxis()->FindBin(Wpt);
+                int binY = hlist[i]->GetXaxis()->FindBin(Wrap);
 
-                int binPt = hMinus[i]->GetYaxis()->FindBin(Wpt);
-                int binY = hMinus[i]->GetXaxis()->FindBin(Wrap);
+                norm+=hlist[i]->GetBinContent(binY,binPt)*arm[i]; //sum Ai*Pi
 
-                norm+=hMinus[i]->GetBinContent(binY,binPt)*arm[i]; //sum Ai*Pi
-
-            }
-
-        } 
-        else{
-
-           for(unsigned int i=0; i<hPlus.size(); i++){ //loop over angular coefficients
-
-            int binPt = hPlus[i]->GetYaxis()->FindBin(Wpt);
-            int binY = hPlus[i]->GetXaxis()->FindBin(Wrap);
-
-                norm+=hPlusus[i]->GetBinContent(binY,binPt)*arm[i]; //sum Ai*Pi
-
-            } 
         }
-
-
-
 
         return norm;
 
@@ -74,7 +52,7 @@ RNode GetWeights::run(RNode d){
 
     };
 
-    auto dPw = d.Define("Pnorm", getNorm, {"Wpt_preFSR", "Wrap_preFSR", "GenPart_pdgId[GenPart_preFSRMuonIdx]", "P0", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "PUL"})
+    auto dPw = d.Define("Pnorm", getNorm, {"Wpt_preFSR", "Wrap_preFSR", "P0", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "PUL"})
     .Define("Pweight0", getWeight, {"Pnorm", "P0", "Generator_weight_norm"})
     .Define("Pweight1", getWeight, {"Pnorm", "P1", "Generator_weight_norm"})
     .Define("Pweight2", getWeight, {"Pnorm", "P2", "Generator_weight_norm"})
@@ -87,4 +65,17 @@ RNode GetWeights::run(RNode d){
 
     return dPw;
     
+}
+
+std::vector<ROOT::RDF::RResultPtr<TH1D>> GetWeights::getTH1(){ 
+    return _h1List;
+}
+std::vector<ROOT::RDF::RResultPtr<TH2D>> GetWeights::getTH2(){ 
+    return _h2List;
+}
+std::vector<ROOT::RDF::RResultPtr<TH3D>> GetWeights::getTH3(){ 
+    return _h3List;
+}
+bool GetWeights::triggerLoop(){
+    return _trigLoop;
 }

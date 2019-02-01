@@ -7,6 +7,7 @@ class defineHarmonics:
         self.myTH1 = []
         self.myTH2 = []
         self.myTH3 = []
+        self.trigLoop = False
 
     def run(self,d):
 
@@ -34,6 +35,10 @@ class defineHarmonics:
 
     def getTH3(self):
 
-        return self.myTH3    
+        return self.myTH3
+
+    def triggerLoop(self):
+
+        return self.trigLoop        
 
 

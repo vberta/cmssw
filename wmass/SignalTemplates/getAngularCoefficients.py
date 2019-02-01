@@ -1,67 +1,96 @@
+from math import sqrt
 import ROOT
-import math
+import copy
 
-files = ["histosWPlus.root", "histosWMinus.root"]
-fOut = ["coeffWPlus.root", "coeffWMinus.root"]
+class getAngularCoefficients:
+
+    def __init__(self, string):
+
+        pass
+        
+        self.myTH1 = []
+        self.myTH2 = []
+        self.myTH3 = []
+        self.trigLoop = True
+        self.string = string
+
+    def run(self,d):
+
+        self.d = d
+
+        fIn = ROOT.TFile.Open(self.string)
+
+        hNum =[]
+        hNum2 =[]
+        hDen =[]
 
 
-for idx,f in enumerate(files):
+        for key in fIn.GetListOfKeys():
 
-	fIn = ROOT.TFile.Open(f)
+            hname = key.GetName()
+            h = fIn.Get(hname)
 
-	hNum =[]
-	hNum2 =[]
-	hDen =[]
+            if "denom" in hname:
+                hDen.append(h)
+            elif "A" in hname:
+                hNum.append(h)
+            else: 
+                hNum2.append(h)
 
-	out = ROOT.TFile(fOut[idx], "recreate")
+        for p,h in enumerate(hNum):
 
-	for key in fIn.GetListOfKeys():
+            h.SetName('A{p}'.format(p=p))
+            for n in range(1,h.GetNbinsY()+1):
+                        
+                for m in range(1, h.GetNbinsX()+1):
 
-		name = key.GetName()
-		h = fIn.Get(name)
 
-		if "denom" in name:
-			hDen.append(h)
-		elif "A" in name:
-			hNum.append(h)
-		else: 
-			hNum2.append(h)
+                    h.SetBinContent(m,n,h.GetBinContent(m,n)/hDen[0].GetBinContent(m,n))
 
-	for k,h in enumerate(hNum):
-		
-		for j in range(1,h.GetNbinsY()+1):
-			for in in range(1, GetNbinsX()+1):
+                    # error propagation
+                     
+                    stdErr2 = hNum2[p].GetBinContent(m,n)/hDen[0].GetBinContent(m,n) - h.GetBinContent(m,n)*h.GetBinContent(m,n)
+                    sqrtneff = hDen[0].GetBinContent(m,n)/hDen[0].GetBinError(m,n)
 
-				h.SetBinContent(i,j,h.GetBinContent(i,j)/hDen[0].GetBinContent(i,j))
+                    coefferr = sqrt(stdErr2)/sqrtneff
 
-				# error propagation
+                    h.SetBinError(m,n,coefferr)
 
-				stdErr2 = hNum2[k].GetBinContent(i,j)/hDen[0].GetBinContent(i,j) - h.GetBinContent(i,j)*h.GetBinContent(i,j)
-				sqrtneff = hDen[0].GetBinContent(i,j)/hDen[0].GetBinError(i,j)
+                    cont = h.GetBinContent(m,n)
+                    err = h.GetBinError(m,n)
 
-				coefferr = math.sqrt(stdErr2)/sqrtneff
+                    if p == 0:  
+                        h.SetBinContent(m,n, 20./3.*cont + 2./3.)
+                        h.SetBinError(m,n, 20./3.*err)
 
-				h.SetBinError(i,j,coefferr)
+                    elif p == 1 or p == 5 or p == 6:        
+                        h.SetBinContent(m,n, 5*cont)
+                        h.SetBinError(m,n, 5*err)
 
-                cont = h.GetBinContent(i,j)
-                err = h.GetBinError(i,j)
-                    
-                if k == 0  
-                    h.SetBinContent(i,j, 20./3.*cont + 2./3.)
-                    h.SetBinError(i,j, 20./3.*err)
-                
-                elif k == 1 || k == 5 || k == 6        
-                    h.SetBinContent(i,j, 5*cont)
-                    h.SetBinError(i,j, 5*err)
-                
-                elif(k == 2)         
-                    h.SetBinContent(i,j, 10*cont)
-                    h.SetBinError(i,j, 10*err)
-                
-                else       
-                    h.SetBinContent(i,j, 4*cont)
-                    h.SetBinError(i,j, 4*err)
+                    elif p == 2:         
+                        h.SetBinContent(m,n, 10*cont)
+                        h.SetBinError(m,n, 10*err)
 
-    	out.cd()
+                    else:       
+                        h.SetBinContent(m,n, 4*cont)
+                        h.SetBinError(m,n, 4*err)
 
-    	h.Write()
+            self.myTH2.append(copy.deepcopy(h))
+
+        return self.d
+
+    def getTH1(self):
+
+        return self.myTH1
+
+    def getTH2(self):
+
+        return self.myTH2  
+
+    def getTH3(self):
+
+        return self.myTH3
+
+    def triggerLoop(self):
+
+        return self.trigLoop         
