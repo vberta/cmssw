@@ -1,32 +1,34 @@
 import ROOT
 from array import array
-
-import sys
-sys.path.append('../../framework')
-
-from header import *
+import copy
 
 class TemplateProj:
-    def __init__(self):
+    def __init__(self, string):
+
         pass
         
         self.myTH1 = []
         self.myTH2 = []
+        self.myTH3 = []
+        self.trigLoop = False
+        self.string = string
         
-    def doSomething(self,d):
+    def run(self,d):
+
+        self.d = d
 
         ROOT.TH3.SetDefaultSumw2(True)
         ROOT.gROOT.SetBatch()
 
         ROOT.gStyle.SetPalette(ROOT.kRainBow)
 
-        self.fIn = ROOT.TFile.Open("templates.root")
+        fIn = ROOT.TFile.Open(self.string)
 
-        for key in self.fIn.GetListOfKeys():
+        for key in fIn.GetListOfKeys():
             
             th3=ROOT.TH3D
 
-            th3 = self.fIn.Get(key.GetName())
+            th3 = fIn.Get(key.GetName())
 
             name = key.GetName()
 
@@ -34,7 +36,7 @@ class TemplateProj:
 
                 nameUL = name.replace(name.split('_')[0], 'AUL')
 
-                th3UL = self.fIn.Get(nameUL)
+                th3UL = fIn.Get(nameUL)
 
                 th3.Add(th3, th3UL)
 
@@ -47,16 +49,9 @@ class TemplateProj:
                 
                 proj = th3.Project3D("_y_{:0.1f}_to_{:0.1f}_yxe".format(lowEdgeY, upEdgeY))
 
+                self.myTH2.append(copy.deepcopy(proj))
 
-                c = ROOT.TCanvas(proj.GetName())
-                c.cd()
-
-                proj.Draw("colz")
-
-                c.SaveAs('./Templ_png/{c}.png'.format(c=proj.GetName()))
-                
-
-        return d
+        return self.d
      
 
     def getTH1(self):
@@ -65,7 +60,15 @@ class TemplateProj:
 
     def getTH2(self):
 
-        return self.myTH2     
+        return self.myTH2
+
+    def getTH3(self):
+
+        return self.myTH3
+
+    def triggerLoop(self):
+
+        return self.trigLoop              
 
 
 

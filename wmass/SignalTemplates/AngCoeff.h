@@ -23,17 +23,19 @@ class AngCoeff : public Module {
 
     std::vector<ROOT::RDF::RResultPtr<TH1D>> _h1List;
     std::vector<ROOT::RDF::RResultPtr<TH2D>> _h2List;
+    std::vector<ROOT::RDF::RResultPtr<TH3D>> _h3List;
+    bool _trigLoop = false;
+    std::string _myString;
     
     public:
     
-    AngCoeff() {};
+    AngCoeff(std::string s): _myString(s) {};
     ~AngCoeff() {};
-    RNode doSomething(RNode) override;
+    RNode run(RNode) override;
     std::vector<ROOT::RDF::RResultPtr<TH1D>> getTH1() override;
-    std::vector<ROOT::RDF::RResultPtr<TH2D>> getTH2() override;
-
-    // custom functions
-    RNode defineArmonics(RNode);
+  	std::vector<ROOT::RDF::RResultPtr<TH2D>> getTH2() override;
+  	std::vector<ROOT::RDF::RResultPtr<TH3D>> getTH3() override;
+    bool triggerLoop() override;
     RNode defineArmonicsSqAndW(RNode, std::string);
 };
 
