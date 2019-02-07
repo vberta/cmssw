@@ -881,7 +881,7 @@ trackMap.clear();
       double ypos;
       double xangle;
       double yangle;
-      double zero_flag; //useful for CNN training only: 0 if x,y,eta,phi==0
+      int zero_flag; //useful for CNN training only: 0 if x,y,eta,phi==0
       double one_over_pt;
       // double jEta;
       // double jPt;
@@ -921,6 +921,7 @@ trackMap.clear();
         if(st.trackId()==(*it).trackId()) {
           std::cout << "matched track " << st.trackId() << std::endl;
           // if(st.momentum().Pt()>100){
+          if(st.momentum().Pt()<1 or st.momentum().Pt()>100000) continue; //Pt CUT ON TRACKS!!!!!!!! (1 GeV)
           goodSimTrk.push_back(st);
           // for(uint v =0; v<svVector->size(); v++) {
           //   SimVertex sv = svVector->at(v);

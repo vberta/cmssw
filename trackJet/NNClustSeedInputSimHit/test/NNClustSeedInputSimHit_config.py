@@ -29,13 +29,14 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 
 process.GlobalTag.globaltag="94X_mc2017_realistic_v10"
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) #-1 = tutti (numero edi eventi)
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) ) #-1 = tutti (numero edi eventi)
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root',' with the source file you want to use
     fileNames = cms.untracked.vstring(
         # 'file:../../NNClustSeedInput/test/909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root'
-        'file:/scratch/arizzi/jetCoreNN/slc6/clean/CMSSW_10_2_5/src/RecoTracker/TkSeedGenerator/test/3000/step3_1800_debug.root'
+        # 'file:/scratch/arizzi/jetCoreNN/slc6/clean/CMSSW_10_2_5/src/RecoTracker/TkSeedGenerator/test/3000/step3_1800_debug.root'
+        'root://cms-xrd-global.cern.ch//store/user/arizzi/TrainJetCore/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/TrainJetCoreAll/181026_130638/0005/step3_5435.root'
         # 'file:step3.root'
         # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/510000/909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root'
         ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/50000/44048461-9FE4-E711-A2F8-0CC47A4D7606.root',
@@ -156,7 +157,7 @@ process.SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",
 )
 
 process.TFileService = cms.Service("TFileService",
-      fileName = cms.string("ntuple_simHit_4LayClustPt_4M.root"),
+      fileName = cms.string("ntuple_simHit_4LayClustPt.root"),
       closeFileFast = cms.untracked.bool(True)
   )
 
