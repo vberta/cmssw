@@ -26,7 +26,6 @@ class Module {
   	virtual std::vector<ROOT::RDF::RResultPtr<TH1D>> getTH1();
   	virtual std::vector<ROOT::RDF::RResultPtr<TH2D>> getTH2();
   	virtual std::vector<ROOT::RDF::RResultPtr<TH3D>> getTH3();
-    virtual bool triggerLoop();
     
 };
 

@@ -10,6 +10,3 @@ std::vector<ROOT::RDF::RResultPtr<TH2D>> Module::getTH2(){
 std::vector<ROOT::RDF::RResultPtr<TH3D>> Module::getTH3(){ 
 	return _h3List;
 }
-bool Module::triggerLoop(){
-	return _trigLoop;
-}
