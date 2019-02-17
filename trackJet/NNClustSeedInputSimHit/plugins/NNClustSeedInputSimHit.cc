@@ -230,7 +230,7 @@ class NNClustSeedInputSimHit : public edm::one::EDProducer<edm::one::SharedResou
 
   const GeomDet* DetectorSelector(int ,const reco::Candidate& jet, GlobalVector,  const reco::Vertex& jetVertex, const TrackerTopology* const, const PixelClusterParameterEstimator*, const auto &);
 
-  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex );
+  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex, int );
 
 
   // template<typename Cluster>
@@ -315,7 +315,7 @@ NNClustSeedInputSimHit::NNClustSeedInputSimHit(const edm::ParameterSet& iConfig)
          for(int k=0; k<jetDimY; k++){
            if(j<jetDimX && k<jetDimY && i< Nlayer) clusterMeas[j][k][i] = 0.0;
            for(int m=0; m<Nover; m++){
-             if(j<jetDimX && k<jetDimY && i< Npar && m<Nover) trackPar[j][k][m][i] =0.0;
+             if(j<jetDimX && k<jetDimY && i< Npar+1 && m<Nover) trackPar[j][k][m][i] =0.0;
              if(j<jetDimX && k<jetDimY && m<Nover) trackProb[j][k][m] =0.0;
            }
          }
@@ -432,8 +432,12 @@ int jet_number = 0;
       const reco::Vertex& jetVertex = (*vertices)[0];
       GlobalVector jetDirection(jet.px(), jet.py(), jet.pz());
 
-      std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex);
+      std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex, 1);
       std::cout << "numero of cluster da splittare" << splitClustDirSet.size() << "+jetDir" << std::endl;
+      if(splitClustDirSet.size()==0) {//if layer 1 is broken find direcitons on layer 2
+        splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex, 2);
+        std::cout << "split on lay2, in numero=" << splitClustDirSet.size() << "+jetDir" << std::endl;
+      }
       splitClustDirSet.push_back(jetDirection);
       for(int cc=0; cc<(int)splitClustDirSet.size(); cc++){
       GlobalVector bigClustDir = splitClustDirSet.at(cc);
@@ -1015,12 +1019,12 @@ trackMap.clear();
         // std::cout << flipp << std::endl;
         // flipp=-1;
         // LocalPoint Jinter(flipp*jti.x(),jti.y(),jti.z());
-        if (evt_counter==9 && ((jet_pt-2001)<3))std::cout << "x=" << x << ", y=" << y << std::endl;
+        // if (evt_counter==9 && ((jet_pt-2001)<3))std::cout << "x=" << x << ", y=" << y << std::endl;
         // std::vector<double *> tracksInfo
         std::vector<trkInfoObj> tracksInfo;
         for(uint j=0; j<goodSimTrk.size(); j++){
           // std::cout << "IN THE LOOP ---------------------------------------- O_O_O_O_" << std::endl;
-          if (evt_counter==9 && ((jet_pt-2001)<3))std::cout << "------------------------------:track,x,y" << x << y << std::endl;
+          // if (evt_counter==9 && ((jet_pt-2001)<3))std::cout << "------------------------------:track,x,y" << x << y << std::endl;
           SimTrack st = goodSimTrk.at(j);
           // SimVertex sv = goodSimVtx.at(j);
           GlobalVector trkMom(st.trackerSurfaceMomentum().x(),st.trackerSurfaceMomentum().y(), st.trackerSurfaceMomentum().z());
@@ -1064,7 +1068,7 @@ trackMap.clear();
             if(goodSimHit[sh].trackId()==st.trackId() && (int)goodSimHit[sh].detUnitId()==(int)det->geographicalId()){
               theSimHit = goodSimHit[sh];
               // if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << "found: detsimHit="<<goodSimHit[sh].detUnitId() << " detID_layer2=" << (int)det->geographicalId()  << std::endl;
-              if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << "found: detsimHit="<<goodSimHit[sh].detUnitId() << " trackID=" << st.trackId() << std::endl;
+              // if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << "found: detsimHit="<<goodSimHit[sh].detUnitId() << " trackID=" << st.trackId() << std::endl;
             }
           }
 
@@ -1088,17 +1092,17 @@ trackMap.clear();
 
           // if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << "localTrkInter=" << localTrkInter << ", Jinter=" << Jinter << ", pixJInter=" << pixJInter << ", pixTrkInter" << pixTrkInter <<std:endl;
 
-          if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << "Jinter.x()=" << Jinter.x() << ",Jinter.y()=" << Jinter.y();
-          if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << ", localTrkInter.x()=" << localTrkInter.x() << ",localTrkInter.y()=" << localTrkInter.y();
-          if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << ", pixel Xj=" << pixJInter.first ;
-          if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << ", pixel Xtrk=" << pixTrkInter.first ;
-          if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << ", pixel Yj=" << pixJInter.second ;
-          if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << ", pixel Ytrk=" << pixTrkInter.second << std::endl;
+          // if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << "Jinter.x()=" << Jinter.x() << ",Jinter.y()=" << Jinter.y();
+          // if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << ", localTrkInter.x()=" << localTrkInter.x() << ",localTrkInter.y()=" << localTrkInter.y();
+          // if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << ", pixel Xj=" << pixJInter.first ;
+          // if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << ", pixel Xtrk=" << pixTrkInter.first ;
+          // if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << ", pixel Yj=" << pixJInter.second ;
+          // if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << ", pixel Ytrk=" << pixTrkInter.second << std::endl;
 
           // pixX=pixX;
           pixX = pixX+jetDimX/2;
           pixY = pixY+jetDimY/2;
-          if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << "PIX x = " << pixX << ", PIX y=" << pixY << std::endl;
+          // if (evt_counter==9 && ((jet_pt-2001)<3)) std::cout << "PIX x = " << pixX << ", PIX y=" << pixY << std::endl;
 
           // double info[9] = {0,0,0,0,0,0,0,0,-1};
           double info[8] = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
@@ -1120,6 +1124,7 @@ trackMap.clear();
             // std::cout << "pixel Yj=" << pixJInter.second << std::endl;
             // std::cout << "pixel Ytrk=" << pixTrkInter.second << std::endl;
           }
+          else info[0] = 0;
 
           // double distX = flip*(Jinter.x()-localTrkInter.x())-(x+0.5)*pitchX;
           // double distY = Jinter.y()-localTrkInter.y()-(x+0.5)*pitchY;
@@ -1273,11 +1278,24 @@ trackMap.clear();
             else trackPar[x][y][trk][1]=0.0;
             trackPar[x][y][trk][2]=100*tracksInfo.at(trk).xangle;
             trackPar[x][y][trk][3]=100*tracksInfo.at(trk).yangle;
+            // if(tracksInfo.at(trk).zero_flag!=0 && tracksInfo.at(trk).zero_flag!=1) std::cout << "zero_flag=" << tracksInfo.at(trk).zero_flag << std::endl;
             trackPar[x][y][trk][5]=tracksInfo.at(trk).zero_flag; //NOFLAG
+            // if(tracksInfo.at(trk).zero_flag!=0 && tracksInfo.at(trk).zero_flag!=1) std::cout << "assigned zero_flag=" << trackPar[x][y][trk][5]<< std::endl;
             trackPar[x][y][trk][4]=tracksInfo.at(trk).one_over_pt;
             //  trackPar[x][y][trk][4]=tracksInfo.at(trk).jEta;
             //  trackPar[x][y][trk][5]=tracksInfo.at(trk).jPt;
             trackProb[x][y][trk]=tracksInfo.at(trk).prob;
+            // for(int q=0; q<6; q++){
+              // if(trackPar[x][y][trk][q]>10000) {
+                // std::cout << "we have a problem with par " << q << ". value=" << trackPar[x][y][trk][q] << std::endl;
+                // if(q==0) std::cout << "internal="<< tracksInfo.at(trk).xpos << std::endl;
+                // if(q==1) std::cout << "internal="<< tracksInfo.at(trk).ypos << std::endl;
+                // if(q==2) std::cout << "internal="<< tracksInfo.at(trk).xangle << std::endl;
+                // if(q==3) std::cout << "internal="<< tracksInfo.at(trk).yangle << std::endl;
+                // if(q==4) std::cout << "internal="<< tracksInfo.at(trk).one_over_pt << std::endl;
+                // if(q==5) std::cout << "internal="<< tracksInfo.at(trk).zero_flag << std::endl;
+              // }
+            // }
 
             if(oneHitInfo){
               if(trackProb[x][y][trk]==0) {
@@ -1716,7 +1734,7 @@ trackMap.clear();
 //   else return track4detSet.begin()->second;
 // }
 
-std::vector<GlobalVector> NNClustSeedInputSimHit::splittedClusterDirections(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex ){
+std::vector<GlobalVector> NNClustSeedInputSimHit::splittedClusterDirections(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex , int layer){
   std::vector<GlobalVector> clustDirs;
 
   edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt_int = inputPixelClusters->begin();
@@ -1728,7 +1746,7 @@ std::vector<GlobalVector> NNClustSeedInputSimHit::splittedClusterDirections(cons
     const GeomDet* det_int = geometry_->idToDet(detset_int.id());
     int lay = tTopo->layer(det_int->geographicalId());
     // std::cout<< "LAYYYYYYYYYYYY=" << lay <<std::endl;
-    // if(lay != 1) continue; //NB: saved bigclusetr on all the layers!!
+    if(lay != layer) continue; //NB: saved bigclusetr on all the layers!!
 
     for (auto cluster = detset_int.begin(); cluster != detset_int.end(); cluster++) {
       const SiPixelCluster& aCluster = *cluster;

@@ -36,7 +36,8 @@ process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
         # 'file:../../NNClustSeedInput/test/909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root'
         # 'file:/scratch/arizzi/jetCoreNN/slc6/clean/CMSSW_10_2_5/src/RecoTracker/TkSeedGenerator/test/3000/step3_1800_debug.root'
-        'root://cms-xrd-global.cern.ch//store/user/arizzi/TrainJetCore/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/TrainJetCoreAll/181026_130638/0005/step3_5435.root'
+        'root://cms-xrd-global.cern.ch//store/user/arizzi/TrainJetCore/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/TrainJetCoreAll/181026_130638/0005/step3_5435.root' #GOOD ONE
+        # 'root://cms-xrd-global.cern.ch//store/user/arizzi/TrainJetCore/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/TrainJetCoreAll/181026_130638/0001/step3_1321.root' #NAN ONE
         # 'file:step3.root'
         # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/510000/909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root'
         ##'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/50000/44048461-9FE4-E711-A2F8-0CC47A4D7606.root',
@@ -128,7 +129,8 @@ process.source = cms.Source("PoolSource",
         # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/F624C980-BBDC-E711-AE51-FA163E4825B4.root',
         # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/F6379B43-48DA-E711-BD39-002590FD5A78.root',
         # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/60000/F647219F-FCD9-E711-BAD0-24BE05C4D801.root'
-    )
+    ),
+    # eventsToProcess = cms.untracked.VEventRange('1:1062143-1:1062143')
 )
 
 # process.remerge = cms.EDProducer("ClusterReMerger",
@@ -157,7 +159,7 @@ process.SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",
 )
 
 process.TFileService = cms.Service("TFileService",
-      fileName = cms.string("ntuple_simHit_4LayClustPt.root"),
+      fileName = cms.string("ntuple_simHit_1LayClustPt_cutPt_100ev.root"),
       closeFileFast = cms.untracked.bool(True)
   )
 
