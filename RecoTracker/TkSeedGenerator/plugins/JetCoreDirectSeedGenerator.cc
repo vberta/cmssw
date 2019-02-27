@@ -23,7 +23,7 @@
 #define jetDimY 30
 #define Nlayer 4
 #define Nover 3
-#define Npar 4
+#define Npar 5
 
 #include "JetCoreDirectSeedGenerator.h"
 
@@ -194,7 +194,7 @@ void JetCoreDirectSeedGenerator::produce(edm::Event& iEvent, const edm::EventSet
   //-----------------end of TF setup (1/2)----------------------//
 
   evt_counter++;
-  std::cout << "event number (iterative)=" << evt_counter<< ", event number (id)="<< iEvent.id().event() << std::endl;
+//  std::cout << "event number (iterative)=" << evt_counter<< ", event number (id)="<< iEvent.id().event() << std::endl;
 
 
   using namespace edm;
@@ -241,15 +241,21 @@ int jet_number = 0;
     jet_number++;
 
     if ((*cores)[ji].pt() > ptMin_) {
-       std::cout << "|____________________NEW JET_______________________________| jet number=" << jet_number  << " " << (*cores)[ji].pt() << " " << (*cores)[ji].eta() << " " << (*cores)[ji].phi() <<  std::endl;
+//       std::cout << "|____________________NEW JET_______________________________| jet number=" << jet_number  << " " << (*cores)[ji].pt() << " " << (*cores)[ji].eta() << " " << (*cores)[ji].phi() <<  std::endl;
 
       std::set<long long int> ids;
       const reco::Candidate& jet = (*cores)[ji];
       const reco::Vertex& jetVertex = (*vertices)[0];
 
-      std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex);
+      std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex, 1);
+      //std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex);
+      bool l2off=(splitClustDirSet.size()==0);
+      if(splitClustDirSet.size()==0) {//if layer 1 is broken find direcitons on layer 2
+        splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex, 2);
+        std::cout << "split on lay2, in numero=" << splitClustDirSet.size() << "+jetDir" << std::endl;
+      }
       splitClustDirSet.push_back(GlobalVector(jet.px(),jet.py(),jet.pz()));
-      std::cout << "splitted cluster number=" << splitClustDirSet.size() << std::endl;;
+  //    std::cout << "splitted cluster number=" << splitClustDirSet.size() << std::endl;;
       for(int cc=0; cc<(int)splitClustDirSet.size(); cc++){
 
       //-------------------TensorFlow setup - tensor (2/2)----------------------//
@@ -358,8 +364,8 @@ int jet_number = 0;
     for(int i=0; i<jetDimX; i++){
       for(int j=0; j<jetDimY; j++){
         for(int o=0; o<Nover; o++){
-          if(seedParamNN.second[i][j][o]>(0.75-o*0.1)){//0.99=probThr (doesn't work the variable, SOLVE THIS ISSUE!!)
-            std::cout << "prob success=" << seedParamNN.second[i][j][o]<< ", for (x,y)=" << i <<"," <<j << ", threshold="<< probThr << std::endl;
+          if(seedParamNN.second[i][j][o]>(0.75-o*0.1-(l2off?0.25:0))){//0.99=probThr (doesn't work the variable, SOLVE THIS ISSUE!!)
+        //    std::cout << "prob success=" << seedParamNN.second[i][j][o]<< ", for (x,y)=" << i <<"," <<j << ", threshold="<< probThr << std::endl;
 	    /*seedParamNN.first[i][j][o][0]=0; 
 	    seedParamNN.first[i][j][o][1]=0; 
 	    seedParamNN.first[i][j][o][2]=0; 
@@ -386,19 +392,25 @@ int jet_number = 0;
             double track_eta = seedParamNN.first[i][j][o][2]*0.01+bigClustDir.eta();//NOT SURE ABOUT THIS 0.01, only to debug
             double track_theta = 2*std::atan(std::exp(-track_eta));
             double track_phi = seedParamNN.first[i][j][o][3]*0.01+bigClustDir.phi();//NOT SURE ABOUT THIS 0.01, only to debug
-            double normdirR = 10.;
+
+            double pt =  1./ seedParamNN.first[i][j][o][4];
+//	    double pt=10;
+            double normdirR =  pt/sin(track_theta);
+
             const GlobalVector globSeedDir( GlobalVector::Polar(Geom::Theta<double>(track_theta), Geom::Phi<double> (track_phi), normdirR));
             LocalVector localSeedDir = globDet->surface().toLocal(globSeedDir);
-            double normdirR2 = 2.;
-            const GlobalVector globSeedDir2( GlobalVector::Polar(Geom::Theta<double>(track_theta), Geom::Phi<double> (track_phi), normdirR2));
-            LocalVector localSeedDir2 = globDet->surface().toLocal(globSeedDir2);
+//	    double pt2=2;
+ //           double normdirR2 = pt2/sin(track_theta);
+;
+   //       const GlobalVector globSeedDir2( GlobalVector::Polar(Geom::Theta<double>(track_theta), Geom::Phi<double> (track_phi), normdirR2));
+     //     LocalVector localSeedDir2 = globDet->surface().toLocal(globSeedDir2);
 	    int64_t  seedid=  (int64_t(xx*200.)<<0)+(int64_t(yy*200.)<<16)+(int64_t(track_eta*400.)<<32)+(int64_t(track_phi*400.)<<48); 
 	    if(ids.count(seedid)!=0) { 
-		std::cout << "Rejecting seed" << xx << " " << yy << " " << track_eta << " " << track_phi << " " << seedid << std::endl;
+//		std::cout << "Rejecting seed" << xx << " " << yy << " " << track_eta << " " << track_phi << " " << seedid << std::endl;
 		continue; 
             }
 	    ids.insert(seedid); 
-	    std::cout << "Creating seed" << xx << " " << yy << " " << track_eta << " " << track_phi << " " << seedid << std::endl;
+//nn	    std::cout << "Creating seed" << xx << " " << yy << " " << track_eta << " " << track_phi << " " << seedid << std::endl;
 
 	    //seed creation
             float em[15]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -413,9 +425,9 @@ int jet_number = 0;
             em[14]=2e-5;*/
             long int detId=globDet->geographicalId();
             LocalTrajectoryParameters localParam(localSeedPoint, localSeedDir, TrackCharge(1));
-           result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam, 10., em, detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
-            LocalTrajectoryParameters localParam2(localSeedPoint, localSeedDir2, TrackCharge(1));
-           result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam2, 2., em, detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
+           result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam, pt, em, detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
+     //       LocalTrajectoryParameters localParam2(localSeedPoint, localSeedDir2, TrackCharge(1));
+       //    result->push_back(TrajectorySeed( PTrajectoryStateOnDet (localParam2, pt2, em, detId, /*surfaceSide*/ 0), edm::OwnVector< TrackingRecHit >() , PropagationDirection::alongMomentum));
 
            GlobalPoint globalSeedPoint = globDet->surface().toGlobal(localSeedPoint);
 	   reco::Track::CovarianceMatrix mm;
@@ -428,7 +440,7 @@ int jet_number = 0;
 
 
 
-    std::cout << "FILL!" << std::endl;
+//    std::cout << "FILL!" << std::endl;
 
     // for(int i=0; i<Nlayer; i++){
     //   for(int j=0; j<jetDimX; j++){
@@ -511,7 +523,7 @@ void JetCoreDirectSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster,
         // std::cout << "prefill" << std::endl;
 
         // input_tensors(0,nx,ny,layer-1) += (pix.adc)/(float)(14000);
-        std::cout << "filling (nx, ny,layer)" << nx<<","<<ny<<"," << layer-1 << ", pixel=" << (pix.adc)/(float)(14000) << std::endl;
+//        std::cout << "filling (nx, ny,layer)" << nx<<","<<ny<<"," << layer-1 << ", pixel=" << (pix.adc)/(float)(14000) << std::endl;
         // input_tensors[1].second.matrix<float>()(0,0) = 2;
 
         // auto input_matrix_cluster = input_tensors[2].second.tensor<float,4>();
@@ -642,8 +654,65 @@ const GeomDet* JetCoreDirectSeedGenerator::DetectorSelector(int llay, const reco
   // std::cout << "OK DET= layer =" << llay << " selected det=" << output->gdetIndex() << std::endl;
   return output;
 }
+std::vector<GlobalVector> JetCoreDirectSeedGenerator::splittedClusterDirections(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex , int layer){
+  std::vector<GlobalVector> clustDirs;
 
-std::vector<GlobalVector> JetCoreDirectSeedGenerator::splittedClusterDirections(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex ){
+  edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt_int = inputPixelClusters->begin();
+
+
+  for (; detIt_int != inputPixelClusters->end(); detIt_int++) {
+
+    const edmNew::DetSet<SiPixelCluster>& detset_int = *detIt_int;
+    const GeomDet* det_int = geometry_->idToDet(detset_int.id());
+    int lay = tTopo->layer(det_int->geographicalId());
+    // std::cout<< "LAYYYYYYYYYYYY=" << lay <<std::endl;
+    if(lay != layer) continue; //NB: saved bigclusetr on all the layers!!
+
+    for (auto cluster = detset_int.begin(); cluster != detset_int.end(); cluster++) {
+      const SiPixelCluster& aCluster = *cluster;
+      // bool hasBeenSplit = false;
+      // bool shouldBeSplit = false;
+      GlobalPoint cPos = det_int->surface().toGlobal(pp->localParametersV(aCluster,(*geometry_->idToDetUnit(detIt_int->id())))[0].first);
+      GlobalPoint ppv(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
+      GlobalVector clusterDir = cPos - ppv;
+      GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
+      // std::cout <<"deltaR" << Geom::deltaR(jetDir, clusterDir)<<", jetDir="<< jetDir << ", clusterDir=" <<clusterDir << ", X=" << aCluster.sizeX()<< ", Y=" << aCluster.sizeY()<<std::endl;
+      if (Geom::deltaR(jetDir, clusterDir) < deltaR_) {
+            // check if the cluster has to be splitted
+/*
+            bool isEndCap =
+                (std::abs(cPos.z()) > 30.f);  // FIXME: check detID instead!
+            float jetZOverRho = jet.momentum().Z() / jet.momentum().Rho();
+            if (isEndCap)
+              jetZOverRho = jet.momentum().Rho() / jet.momentum().Z();
+            float expSizeY =
+                std::sqrt((1.3f*1.3f) + (1.9f*1.9f) * jetZOverRho*jetZOverRho);
+            if (expSizeY < 1.f) expSizeY = 1.f;
+            float expSizeX = 1.5f;
+            if (isEndCap) {
+              expSizeX = expSizeY;
+              expSizeY = 1.5f;
+            }  // in endcap col/rows are switched
+            float expCharge =
+                std::sqrt(1.08f + jetZOverRho * jetZOverRho) * centralMIPCharge_;
+            // std::cout <<"jDir="<< jetDir << ", cDir=" <<clusterDir <<  ", carica=" << aCluster.charge() << ", expChar*cFracMin_=" << expCharge * chargeFracMin_ <<", X=" << aCluster.sizeX()<< ", expSizeX+1=" <<  expSizeX + 1<< ", Y="<<aCluster.sizeY() <<", expSizeY+1="<< expSizeY + 1<< std::endl;
+ 
+           if (aCluster.charge() > expCharge * chargeFracMin_ && (aCluster.sizeX() > expSizeX + 1 ||  aCluster.sizeY() > expSizeY + 1)) {
+*/
+	if(1){
+              // shouldBeSplit = true;
+              std::cout << "trovato cluster con deltaR=" << Geom::deltaR(jetDir, clusterDir)<< ", on layer=" <<lay << std::endl;
+              clustDirs.push_back(clusterDir);
+            }
+          }
+        }
+      }
+      return clustDirs;
+
+}
+
+
+std::vector<GlobalVector> JetCoreDirectSeedGenerator::splittedClusterDirectionsOld(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex ){
   std::vector<GlobalVector> clustDirs;
 
   edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt_int = inputPixelClusters->begin();
@@ -682,7 +751,7 @@ std::vector<GlobalVector> JetCoreDirectSeedGenerator::splittedClusterDirections(
                 std::sqrt(1.08f + jetZOverRho * jetZOverRho) * centralMIPCharge_;
           //  if (aCluster.charge() > expCharge * chargeFracMin_ && (aCluster.sizeX() > expSizeX + 1 ||  aCluster.sizeY() > expSizeY + 1)) {
  */           if (1) { //aCluster.charge() > expCharge * chargeFracMin_ && (aCluster.sizeX() > expSizeX + 1 ||  aCluster.sizeY() > expSizeY + 1)) {
-              std::cout << "trovato cluster con deltaR=" << Geom::deltaR(jetDir, clusterDir)<< std::endl;
+//              std::cout << "trovato cluster con deltaR=" << Geom::deltaR(jetDir, clusterDir)<< std::endl;
               clustDirs.push_back(clusterDir);
             }
           }
