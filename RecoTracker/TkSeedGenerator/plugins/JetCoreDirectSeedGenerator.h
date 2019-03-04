@@ -5,7 +5,7 @@
 #define jetDimY 30
 #define Nlayer 4
 #define Nover 3
-#define Npar 4
+#define Npar 5
 
 
 #include <memory>
@@ -181,8 +181,9 @@ class JetCoreDirectSeedGenerator : public edm::one::EDProducer<edm::one::SharedR
 
   const GeomDet* DetectorSelector(int ,const reco::Candidate& jet, GlobalVector,  const reco::Vertex& jetVertex, const TrackerTopology* const);
 
-  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex );
-
+  std::vector<GlobalVector> splittedClusterDirectionsOld(const reco::Candidate&, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex );
+  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex, int );
+  
   std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]> SeedEvaluation(tensorflow::NamedTensorList);
 
 
