@@ -17,9 +17,9 @@ firstStepGoodPrimaryVertices = cms.EDFilter("PrimaryVertexObjectFilter",
 
 # SEEDING LAYERS
 jetCoreRegionalStepSeedLayers = cms.EDProducer("SeedingLayersEDProducer",
-    layerList = cms.vstring('BPix1+BPix2', 'BPix1+BPix3', 'BPix2+BPix3', 
-                            'BPix1+FPix1_pos', 'BPix1+FPix1_neg', 
-                            'BPix2+FPix1_pos', 'BPix2+FPix1_neg', 
+    layerList = cms.vstring('BPix1+BPix2', 'BPix1+BPix3', 'BPix2+BPix3',
+                            'BPix1+FPix1_pos', 'BPix1+FPix1_neg',
+                            'BPix2+FPix1_pos', 'BPix2+FPix1_neg',
                             'FPix1_pos+FPix2_pos', 'FPix1_neg+FPix2_neg',
                             #'BPix2+TIB1','BPix2+TIB2',
                             'BPix3+TIB1','BPix3+TIB2'),
@@ -87,9 +87,18 @@ jetCoreRegionalStepSeeds = _seedCreatorFromRegionConsecutiveHitsEDProducer.clone
 # QUALITY CUTS DURING TRACK BUILDING
 import TrackingTools.TrajectoryFiltering.TrajectoryFilter_cff
 jetCoreRegionalStepTrajectoryFilter = TrackingTools.TrajectoryFiltering.TrajectoryFilter_cff.CkfBaseTrajectoryFilter_block.clone(
-    minimumNumberOfHits = 4,
-    seedPairPenalty = 0,
-    minPt = 0.1
+    minPt = 0.1,
+    maxCCCLostHits = cms.int32(9999),
+    maxConsecLostHits = cms.int32(2),
+    maxLostHits = cms.int32(999),
+    maxLostHitsFraction = cms.double(1.1),
+    maxNumberOfHits = cms.int32(100),
+    minimumNumberOfHits = cms.int32(2),
+    pixelSeedExtension = cms.bool(False),
+    seedExtension = cms.int32(0),
+    seedPairPenalty = cms.int32(0),
+    strictSeedExtension = cms.bool(False)
+
 )
 
 from Configuration.Eras.Modifier_pp_on_XeXe_2017_cff import pp_on_XeXe_2017
@@ -111,19 +120,66 @@ CkfBaseTrajectoryFilter_block = RecoTracker.CkfPattern.GroupedCkfTrajectoryBuild
 jetCoreRegionalStepTrajectoryBuilder = RecoTracker.CkfPattern.GroupedCkfTrajectoryBuilder_cfi.GroupedCkfTrajectoryBuilder.clone(
     MeasurementTrackerName = '',
     trajectoryFilter = cms.PSet(refToPSet_ = cms.string('jetCoreRegionalStepTrajectoryFilter')),
-    #clustersToSkip = cms.InputTag('jetCoreRegionalStepClusters'),
     maxCand = 50,
     estimator = cms.string('jetCoreRegionalStepChi2Est'),
     maxDPhiForLooperReconstruction = cms.double(2.0),
-    maxPtForLooperReconstruction = cms.double(0.7)
+    maxPtForLooperReconstruction = cms.double(0),
+    keepOriginalIfRebuildFails = True,
+    lockHits = False,
+    requireSeedHitsInRebuild = False,
+
     )
+
+
+#customized cleaner
+trajectoryCleanerBySharedHits_JetCore = cms.ESProducer("TrajectoryCleanerESProducer",
+    ComponentName = cms.string('jetCoreTrajectoryCleanerBySharedHits'),
+    ComponentType = cms.string('TrajectoryCleanerBySharedHits'),
+    MissingHitPenalty = cms.double(20.0),
+    ValidHitBonus = cms.double(5.0),
+    allowSharedFirstHit = cms.bool(True),
+    fractionShared = cms.double(0.45)
+)
+
+CkfBaseTrajectoryFilter_blockLoose = cms.PSet(
+    ComponentType = cms.string('CkfBaseTrajectoryFilter'),
+    chargeSignificance = cms.double(-1.0),
+    constantValueForLostHitsFractionFilter = cms.double(2.0),
+    extraNumberOfHitsBeforeTheFirstLoop = cms.int32(4),
+    maxCCCLostHits = cms.int32(9999),
+    maxConsecLostHits = cms.int32(2),
+    maxLostHits = cms.int32(999),
+    maxLostHitsFraction = cms.double(1.1),
+    maxNumberOfHits = cms.int32(100),
+    minGoodStripCharge = cms.PSet(
+        refToPSet_ = cms.string('SiStripClusterChargeCutNone')
+    ),
+    minHitsMinPt = cms.int32(3),
+    minNumberOfHitsForLoopers = cms.int32(13),
+    minNumberOfHitsPerLoop = cms.int32(4),
+    minPt = cms.double(0.9),
+    minimumNumberOfHits = cms.int32(2),
+    nSigmaMinPt = cms.double(5.0),
+    pixelSeedExtension = cms.bool(False),
+    seedExtension = cms.int32(0),
+    seedPairPenalty = cms.int32(0),
+    strictSeedExtension = cms.bool(False)
+)
+
+
+import RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi
+jetCoreSeeds  = RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi.jetCoreDirectSeedGenerator.clone(
+ vertices="firstStepPrimaryVertices"
+)
 
 # MAKING OF TRACK CANDIDATES
 import RecoTracker.CkfPattern.CkfTrackCandidates_cfi
 jetCoreRegionalStepTrackCandidates = RecoTracker.CkfPattern.CkfTrackCandidates_cfi.ckfTrackCandidates.clone(
-    src = cms.InputTag('jetCoreRegionalStepSeeds'),
+    # src = cms.InputTag('jetCoreRegionalStepSeeds'),
+    src = cms.InputTag('jetCoreSeeds'),
     maxSeedsBeforeCleaning = cms.uint32(10000),
     TrajectoryBuilderPSet = cms.PSet( refToPSet_ = cms.string('jetCoreRegionalStepTrajectoryBuilder')),
+    TrajectoryCleaner = 'jetCoreTrajectoryCleanerBySharedHits',
     NavigationSchool = cms.string('SimpleNavigationSchool'),
     ### these two parameters are relevant only for the CachingSeedCleanerBySharedInput
     #numHitsForSeedCleaner = cms.int32(50),
@@ -198,19 +254,22 @@ trackingPhase1.toReplaceWith(jetCoreRegionalStep, TrackLwtnnClassifier.clone(
 ))
 (trackingPhase1 & fastSim).toModify(jetCoreRegionalStep,vertices = "firstStepPrimaryVerticesBeforeMixing")
 
+
+
 # Final sequence
-JetCoreRegionalStepTask = cms.Task(jetsForCoreTracking,                 
+JetCoreRegionalStepTask = cms.Task(jetsForCoreTracking,
                                    firstStepGoodPrimaryVertices,
                                    #jetCoreRegionalStepClusters,
                                    jetCoreRegionalStepSeedLayers,
                                    jetCoreRegionalStepTrackingRegions,
                                    jetCoreRegionalStepHitDoublets,
                                    jetCoreRegionalStepSeeds,
+                                   jetCoreSeeds,
                                    jetCoreRegionalStepTrackCandidates,
                                    jetCoreRegionalStepTracks,
 #                                   jetCoreRegionalStepClassifier1,jetCoreRegionalStepClassifier2,
                                    jetCoreRegionalStep)
 JetCoreRegionalStep = cms.Sequence(JetCoreRegionalStepTask)
-fastSim.toReplaceWith(JetCoreRegionalStepTask, 
+fastSim.toReplaceWith(JetCoreRegionalStepTask,
                       cms.Task(jetCoreRegionalStepTracks,
                                    jetCoreRegionalStep))
