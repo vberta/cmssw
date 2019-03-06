@@ -3,8 +3,8 @@
 
 RNode reweightSample::run(RNode d){
 
-    TFile *f = TFile::Open("TEST/testData.root");
-    TFile *f1 = TFile::Open("TEST/test.root");
+    TFile *f = TFile::Open("TEST/beforeCalibData.root");
+    TFile *f1 = TFile::Open("TEST/gen.root");
 
     TH1D *hTarget = (TH1D*)f->Get("ptRes");
     TH1D *h = (TH1D*)f1->Get("ptRes");
@@ -15,8 +15,9 @@ RNode reweightSample::run(RNode d){
 
       int bin = hTarget->FindBin(ptRes);
 
+      auto w = hTarget->GetBinContent(bin); 
       
-      return hTarget->GetBinContent(bin); 
+      return w;
 
     };
 

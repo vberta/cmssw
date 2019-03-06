@@ -3,14 +3,14 @@
 
 RNode applyCalibration::run(RNode d){
 
-    auto correctedPtPos = [*this](float pt, float eta, float phi){
+    auto correctedPtPos = [this](float pt, float eta, float phi){
 
     	float ptcorr = calib_->getCorrectedPt(pt,eta,phi,1);
     	return ptcorr;
     
 	};
 
-	auto correctedPtNeg = [*this](float pt, float eta, float phi){
+	auto correctedPtNeg = [this](float pt, float eta, float phi){
 
     	float ptcorr = calib_->getCorrectedPt(pt,eta,phi,-1);
     	return ptcorr;

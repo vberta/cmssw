@@ -14,7 +14,7 @@ RNode AngCoeff::defineArmonicsSqAndW(RNode d, std::string c){
 RNode AngCoeff::run(RNode d){
 
     // first normalise generator weights
-
+    /*
     auto dArm = d.Define("Generator_weight_norm", [](float w)-> float{ return w/abs(w);}, {"Generator_weight"});
     
     float yArr[] = {-6.0, -3.0, -2.5, -2.0, -1.6, -1.2, -0.8, -0.4, 0, 0.4, 0.8, 1.2 ,1.6, 2.0, 2.5, 3.0, 6.0};
@@ -40,10 +40,10 @@ RNode AngCoeff::run(RNode d){
         _h2List.push_back(hP2);
     
     }
+    */
+    auto c = d.Count().OnPartialResult(10, [] (ULong64_t entry) { std::cout << "entry " << entry << std::endl; });
 
-    _trigLoop = true;
-
-    return dArm;
+    return d;
     
 }
 
@@ -55,7 +55,4 @@ std::vector<ROOT::RDF::RResultPtr<TH2D>> AngCoeff::getTH2(){
 }
 std::vector<ROOT::RDF::RResultPtr<TH3D>> AngCoeff::getTH3(){ 
     return _h3List;
-}
-bool AngCoeff::triggerLoop(){
-    return _trigLoop;
 }

@@ -1,66 +1,65 @@
 from header import *
+import copy
 
 class RDFtree:
-    def __init__(self, outputDir, outputFile, inputFile, modules=[],treeName='Events'):
+    def __init__(self, outputDir, inputFile,treeName='Events'):
 
         self.outputDir = outputDir # output directory
-        self.outputFile = outputFile
         self.inputFile = inputFile
-        self.modules = modules
+        
         self.treeName = treeName
 
         RDF = ROOT.ROOT.RDataFrame
         self.d = RDF(self.treeName, self.inputFile)
         self.entries = self.d.Count() #stores lazily the number of events
 
-        self.objs = [] # objects to be received from modules
+        self.modules = []
 
-    def run(self):
+        self.objs = {} # objects to be received from modules
+        
+        self.node = {} # dictionary branchName - RDF
+        self.node['input'] = self.d # assign input RDF to a branch called 'input'
+
+        self.graph = {} # save the graph to write it in the end 
+
 
         #start analysis
         self.start = time.time()
+        
+    def branch(self, nodeToStart, nodeToEnd, outputFile, modules=[]):
+
+        self.outputFile = outputFile
+        self.objs[self.outputFile] = []
+
+        if nodeToStart in self.graph:
+            self.graph[nodeToStart].append(nodeToEnd)
+        else: 
+            self.graph[nodeToStart]=[nodeToEnd]
+
+        branchRDF = self.node[nodeToStart]
+
+        lenght = len(self.modules)
+
+        self.modules.extend(modules)
 
         # modify RDF according to modules
-        for i, m in enumerate(self.modules): 
+        for i, m in enumerate(self.modules[lenght:]): 
 
-            print 'analysing module', i+1
-
-            self.d = m.run(CastToRNode(self.d))
+            branchRDF = m.run(CastToRNode(branchRDF))
             tmp_th1 = m.getTH1()
             tmp_th2 = m.getTH2()
             tmp_th3 = m.getTH3()
 
             for obj in tmp_th1:
-                print obj.GetName()
-                self.objs.append(ROOT.RDF.RResultPtr('TH1D')(obj))
+                self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH1D')(obj))
 
             for obj in tmp_th2:
-                self.objs.append(ROOT.RDF.RResultPtr('TH2D')(obj))
+                self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH2D')(obj))
 
             for obj in tmp_th3:
-                self.objs.append(ROOT.RDF.RResultPtr('TH3D')(obj))
+                self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH3D')(obj))
 
-    def branch(self, mlist):
-
-        self.start = time.time()
-
-        self.d1 = self.d
-
-        for m in mlist:
-
-            self.d1 = m.run(CastToRNode(self.d1))
-            tmp_th1 = m.getTH1()
-            tmp_th2 = m.getTH2()
-            tmp_th3 = m.getTH3()
-
-            for obj in tmp_th1:
-                self.objs.append(ROOT.RDF.RResultPtr('TH1D')(obj))
-
-            for obj in tmp_th2:
-                self.objs.append(ROOT.RDF.RResultPtr('TH2D')(obj))
-
-            for obj in tmp_th3:
-                self.objs.append(ROOT.RDF.RResultPtr('TH3D')(obj))
+        self.node[nodeToEnd] = branchRDF
 
 
     def takeSnapshot(self):
@@ -69,7 +68,7 @@ class RDFtree:
         opts.fLazy = True
 
         print time.time()-self.start, "before snapshot"
-        out = self.d.Snapshot(self.treeName,self.outputFiles[i], "", opts)
+        out = self.d.Snapshot(self.treeName,self.outputFile[i], "", opts)
 
         # dummy histogram to trigger snapshot
 
@@ -77,10 +76,7 @@ class RDFtree:
         self.objs.append(ROOT.RDF.RResultPtr('TH1D')(h))
                     
 
-    def getOutput(self, outputFile=''):
-
-        if not  outputFile=='':
-            self.outputFile = outputFile
+    def getOutput(self):
 
         # now write all the outputs together
 
@@ -90,22 +86,35 @@ class RDFtree:
             os.system("mkdir -p " + self.outputDir)
    
         os.chdir(self.outputDir) 
+    
+        for outfile, hList in self.objs.iteritems():
 
-        fout = ROOT.TFile(self.outputFile, "recreate")
-        fout.cd()
-        
-        for obj in self.objs:
+            fout = ROOT.TFile(outfile, "recreate")
+            fout.cd()
+            
+            for h in hList:
+                
+                h.Write()
 
-            obj.Write()
         
         os.chdir('..')
-        self.objs = [] # re-initialise object list
+        self.objs = {} # re-initialise object list
 
         print self.entries.GetValue(), " events processed in ", time.time()-self.start, " s"
 
     def saveGraph(self):
 
-        from graphviz import Source
+        from graphviz import Digraph
 
-        RDF = ROOT.ROOT.RDataFrame(1000)
-        Source(ROOT.ROOT.RDF.SaveGraph(CastToRNode(self.d))).render()
+        dot = Digraph(name='my analysis', filename = 'graph.pdf')
+
+        for node, nodelist in self.graph.iteritems():
+            for n in nodelist:
+                
+                dot.node(node, n)
+
+
+        print(dot.source)  
+
+        #dot.render(view=True)  
+
