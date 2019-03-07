@@ -11,7 +11,6 @@ class getAngularCoefficients:
         self.myTH1 = []
         self.myTH2 = []
         self.myTH3 = []
-        self.trigLoop = True
         self.string = string
 
     def run(self,d):
@@ -52,6 +51,7 @@ class getAngularCoefficients:
                     stdErr2 = hNum2[p].GetBinContent(m,n)/hDen[0].GetBinContent(m,n) - h.GetBinContent(m,n)*h.GetBinContent(m,n)
                     sqrtneff = hDen[0].GetBinContent(m,n)/hDen[0].GetBinError(m,n)
 
+                    print stdErr2, sqrtneff
                     coefferr = sqrt(stdErr2)/sqrtneff
 
                     h.SetBinError(m,n,coefferr)
@@ -91,6 +91,3 @@ class getAngularCoefficients:
 
         return self.myTH3
 
-    def triggerLoop(self):
-
-        return self.trigLoop         

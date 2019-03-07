@@ -24,3 +24,20 @@ def CastToRNode(node):
    return ROOT.NodeCaster(node.__cppname__).Cast(node)
 
 # end code for casting
+"""
+NSlots = 64
+ROOT.gInterpreter.ProcessLine('''
+                std::vector<TRandom3> myRndGens({NSlots});
+                int seed = 1; // not 0 because seed 0 has a special meaning
+                for (auto &&gen : myRndGens) gen.SetSeed(seed++);
+                '''.format(NSlots = NSlots))
+                """
+
+getVector_code ='''
+float getVector (std::vector<float> vec, int idx)
+{
+   return vec[idx];
+}
+'''
+
+ROOT.gInterpreter.Declare(getVector_code)

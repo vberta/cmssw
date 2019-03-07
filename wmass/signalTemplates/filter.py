@@ -12,7 +12,7 @@ class filter:
 
     def run(self,d):
 
-        self.d = d.Filter(self.string) # selects W-
+        self.d = d.Filter(self.string)
         
         return self.d
 

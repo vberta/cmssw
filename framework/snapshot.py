@@ -9,6 +9,7 @@ class input:
         self.myTH1 = []
         self.myTH2 = []
         self.myTH3 = []
+        self.trigLoop = False
 
     def doSomething(self,d):
 

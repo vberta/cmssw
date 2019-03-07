@@ -1,5 +1,5 @@
-#ifndef GETWEIGHTS_H
-#define GETWEIGHTS_H
+#ifndef APPLYCALIBRATION_H
+#define APPLYCALIBRATION_H
 
 
 #include "ROOT/RDataFrame.hxx"
@@ -9,7 +9,9 @@
 #include "TH2D.h"
 #include "TString.h"
 #include "TMath.h"
+#include "TLorentzVector.h"
 #include "../../framework/module.h"
+#include "/scratch/emanca/WMass/MuonCalibration/KaMuCaSLC7/CMSSW_8_0_20/src/KaMuCa/Calibration/interface/KalmanMuonCalibrator.h"
 
 using namespace ROOT::VecOps;
 using RNode = ROOT::RDF::RNode;
@@ -17,25 +19,27 @@ using rvec_f = const RVec<float> &;
 using rvec_i = const RVec<int> &;
 
 
-class GetWeights : public Module {
+class applyCalibration : public Module {
 
     private:
 
     std::vector<ROOT::RDF::RResultPtr<TH1D>> _h1List;
     std::vector<ROOT::RDF::RResultPtr<TH2D>> _h2List;
     std::vector<ROOT::RDF::RResultPtr<TH3D>> _h3List;
-    bool _trigLoop;
-    std::string _myString;
+    std::string name_;
+    KalmanMuonCalibrator *calib_;
     
     public:
     
-    GetWeights(std::string s): _myString(s) {};
-    ~GetWeights() {};
+    applyCalibration(std::string calibName): name_(calibName) {
+
+        calib_ = new KalmanMuonCalibrator(name_);
+    };
+    ~applyCalibration() {};
     RNode run(RNode) override;
     std::vector<ROOT::RDF::RResultPtr<TH1D>> getTH1() override;
     std::vector<ROOT::RDF::RResultPtr<TH2D>> getTH2() override;
     std::vector<ROOT::RDF::RResultPtr<TH3D>> getTH3() override;
-    bool triggerLoop() override;
 
 };
 
