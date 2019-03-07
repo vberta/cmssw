@@ -111,6 +111,7 @@ variables =  {
                 'variables': { 
                                 'corrected_pt': ('muon pt', 100, 20, 100), # variable to plot: (title of x axis, number of bins, xLow, xUp)
                                 'eta': ('muon eta', 100, -2.5, 2.5),
+                                #'corrected_MET_nom_mt':('mt',100, 30, 100), #not working in this version of samples
 
         },
 
@@ -129,7 +130,7 @@ from RDFtreeV2 import RDFtree
 ROOT.ROOT.EnableImplicitMT(48)
 
 from controlPlots import *
-"""
+
 inputDir = '/gpfs/ddn/cms/user/bianchi/NanoAOD2016-TEST/'
 
 # mc samples
@@ -160,10 +161,10 @@ p = RDFtree(outputDir = 'TEST', inputFile = inputDir+'SingleMuon'+'/tree.root')
 p.branch(nodeToStart = 'input', nodeToEnd = 'controlPlotsPlus',outputFile="data_plus.root", modules = [controlPlots(selections = selections['signalplus'], variables = variables, dataType = 'data', xsec = 1, file = inputDir+'SingleMuon'+'/tree.root')])
 p.branch(nodeToStart = 'input', nodeToEnd = 'controlPlotsMinus',outputFile="data_minus.root", modules = [controlPlots(selections = selections['signalminus'], variables = variables, dataType = 'data', xsec = 1, file = inputDir+'SingleMuon'+'/tree.root')])
 p.getOutput()
-"""
+
 from plotter import plotter
 
-plt = plotter(outdir= 'TESTstack', folder = 'TEST', fileList = ['W_plus.root', 'DY_plus.root', 'ttbar_plus.root', 'diboson_plus.root', 'QCD_plus.root', 'data_plus.root'], norm = 2.7)
+plt = plotter(outdir= 'TESTstack', folder = 'TEST', fileList = ['DY_plus.root', 'ttbar_plus.root', 'diboson_plus.root','W_plus.root','QCD_plus.root', 'data_plus.root'], norm = 2.7)
 plt.plotStack()
 
 
