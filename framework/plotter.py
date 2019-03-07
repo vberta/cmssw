@@ -85,8 +85,8 @@ class plotter:
             c.SetTicks(0, 1)
             c.cd()
 
-            hs.Draw("HIST")
-            hdata.Draw("same")
+            hdata.Draw("")
+            hs.Draw("HIST same")
 
             legend.Draw()
 

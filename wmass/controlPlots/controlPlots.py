@@ -30,7 +30,9 @@ class controlPlots(module):
         runs = RDF('Runs', self.file)
 
         if self.dataType == 'mc': 
-            genEventSumw = runs.Mean("genEventSumw").GetValue()
+            genEventSumw = runs.Sum("genEventSumw").GetValue()
+            print (1.*self.xsec)/genEventSumw, 'lumiweight', genEventSumw, 'genEventSumw', self.xsec, 'xsec'
+            #genEventSumw=1
 
         self.d = d.Filter(self.selections[self.dataType]['cut'])
 
@@ -38,9 +40,8 @@ class controlPlots(module):
 
         if self.dataType == 'mc':
             
-            self.d = self.d.Define('lumiweight', '{L}/({genEventSumw}/{xsec})'.format(L=self.targetLumi, genEventSumw = genEventSumw, xsec = self.xsec))\
-            .Define("Generator_weight_norm","Generator_weight/fabs(Generator_weight)")\
-            .Define('totweight', 'lumiweight*Generator_weight_norm*{}'.format(self.selections[self.dataType]['weight']))
+            self.d = self.d.Define('lumiweight', '({L}*{xsec})/({genEventSumw})'.format(L=self.targetLumi, genEventSumw = genEventSumw, xsec = self.xsec))\
+            .Define('totweight', 'lumiweight*Generator_weight*{}'.format(self.selections[self.dataType]['weight']))
 
         else:
             self.d = self.d.Define('totweight', '1')
