@@ -1,97 +1,40 @@
 import os
 import copy
+import argparse
+import sys
+sys.path.append('../../framework')
+import ROOT
+from RDFtreeV2 import RDFtree
 
+from controlPlots import *
+from plotter import *
 
-selections = {
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
-    'signal' : {
-        'mc' : {
-            'cut': 'Vtype==0 && ' \
-                #'Muon_HLT && ' \
-                #('Muon_pt%s[Idx_mu1]>25. && ' % muon) \
-                #('Muon%s_MET%s_mt[Idx_mu1]>40.' % (muon, met)) \
-                #'MET_filters==1 && ' \
-                #'nVetoElectrons==0 && ', \
-                '1',            
-            'weight' : \
-                'puWeight*' \
-                'Muon_effSF[Idx_mu1]',
-            },
-        'data' : {
-            'cut': 'Vtype==0 && ' \
-                #'Muon_HLT && ' \
-                #('Muon_pt%s[Idx_mu1]>25. && ' % muon_pt) \
-                #('Muon%s_MET%s_mt[Idx_mu1]>40. ' % (muon, met)) \
-                #'MET_filters==1 && ' \
-                #'nVetoElectrons==0 && ', \
-                '1',
-            'weight' : '',
-            },
-        },
+parser = argparse.ArgumentParser("")
+parser.add_argument('-tag', '--tag', type=str, default="TEST",      help="")
+parser.add_argument('-dataYear', '--dataYear',type=int, default=2016, help="")
+parser.add_argument('-hadd', '--hadd',type=int, default=False, help="")
+parser.add_argument('-plot', '--plot',type=int, default=False, help="")
+parser.add_argument('-tdf', '--tdf',type=int, default=True, help="")
+args = parser.parse_args()
+tag = args.tag
+dataYear = args.dataYear
+hadd = args.hadd
+plot = args.plot
+tdf = args.tdf
+print "tag =", bcolors.OKGREEN, tag, bcolors.ENDC, \
+    ", dataYear =", bcolors.OKGREEN, str(dataYear), bcolors.ENDC
 
-    'control' : {
-        'mc' : {
-            'cut': 'Vtype==1 && ' \
-                #'Muon_HLT && ' \
-                #('Muon_pt%s[Idx_mu1]>25. && ' % muon_pt) \
-                #('Muon%s_MET%s_mt[Idx_mu1]<40. ' % (muon, met)) \
-                #'MET_filters==1 && ' \
-                #'nVetoElectrons==0 && ', \
-                '1',
-            'weight' : \
-                'puWeight*' \
-                'Muon_effSF[Idx_mu1]',
-            },
-        'data' : {
-            'cut': 'Vtype==1 && ' \
-                #'Muon_HLT && ' \
-                #('Muon_pt%s[Idx_mu1]>25. && ' % muon_pt) \
-                #('Muon%s_MET%s_mt[Idx_mu1]<40.' % (muon, met)) \
-                #'MET_filters==1 && ' \
-                #'nVetoElectrons==0 && ', \
-                '1',
-            'weight' : '',
-            },
-        },
-
-    'dimuon' : {
-        'mc' : {
-            'cut': 'Vtype==2 && ' \
-                #'Muon_HLT && ' \
-                #('Muon_pt%s[Idx_mu1]>25. && Muon_pt%s[Muon_idx2]>20.' % (muon_pt, muon_pt)) \
-                #'MET_filters==1 && ' \
-                #'nVetoElectrons==0 && ', \
-                '1',
-            'weight' : \
-                'puWeight*' \
-                'Muon_effSF[Idx_mu1]*Muon_effSF[Muon_idx2]',
-            },
-        'data' : {
-            'cut': 'Vtype==2 && ' \
-                #'Muon_HLT && ' \
-                #('Muon_pt%s[Idx_mu1]>25. && Muon_pt%s[Muon_idx2]>20.' % (muon_pt, muon_pt)) \
-                #'MET_filters==1 && ' \
-                #'nVetoElectrons==0 && ', \
-                '1',
-            'weight' : '',
-            },
-        },
-    }
-
-selections['signalplus'] = copy.deepcopy(selections['signal'])
-selections['signalminus'] = copy.deepcopy(selections['signal'])
-selections['signalplus']['mc']['cut']  += ' && Muon_charge[Idx_mu1]>0'
-selections['signalminus']['mc']['cut'] += ' && Muon_charge[Idx_mu1]<0'
-
-selections['controlplus'] = copy.deepcopy(selections['control'])
-selections['controlminus'] = copy.deepcopy(selections['control'])
-selections['controlplus']['mc']['cut']  += ' && Muon_charge[Idx_mu1]>0'
-selections['controlminus']['mc']['cut'] += ' && Muon_charge[Idx_mu1]<0'
-
-
-# respect nanoAOD structure: Collection_modifiers_variable
-
-# modifiers:
+ROOT.ROOT.EnableImplicitMT(48)
 
 # corrected = Rochester
 muon = '_corrected'
@@ -99,83 +42,188 @@ muon = '_corrected'
 # nom = MET w/ jet smearing
 met = '_nom'
 
-
-variables =  {
-    
-
-        'Muon': { # collection we want to take
-
-                'newCollection': 'SelectedMuon', # if we want to define a new subcollection, what is it called?
-                'modifiers': '', # modifiers we have added to the original collection
-                'index': 'Idx_mu1', # cuts or idx for defining the new collection
-                'variables': { 
-                                'corrected_pt': ('muon pt', 100, 20, 100), # variable to plot: (title of x axis, number of bins, xLow, xUp)
-                                'eta': ('muon eta', 100, -2.5, 2.5),
-                                #'corrected_MET_nom_mt':('mt',100, 30, 100), #not working in this version of samples
-
+selections = {
+    'Signal' : {
+        'MC' : {
+            'cut': \
+                'Vtype==0 && ' + \
+                'HLT_SingleMu24 && '+ \
+                ('Muon%s_pt[Idx_mu1]>25. && ' % muon) + \
+                ('Muon%s_MET%s_mt[Idx_mu1]>0. && ' % (muon, met) ) + \
+                'MET_filters==1 && ' + \
+                'nVetoElectrons==0 && ' + \
+                '1',            
+            'weight' : \
+                'puWeight*' + \
+                'Muon_Trigger_SF[Idx_mu1]*' + \
+                'Muon_ID_SF[Idx_mu1]*' + \
+                'Muon_ISO_SF[Idx_mu1]',
+            },
+        'DATA' : {
+            'cut': \
+                'Vtype==0 && ' + \
+                'HLT_SingleMu24 && ' + \
+                ('Muon%s_pt[Idx_mu1]>25. && ' % muon) + \
+                ('Muon%s_MET%s_mt[Idx_mu1]>0. && ' % (muon, met)) +\
+                'MET_filters==1 && ' + \
+                'nVetoElectrons==0 && ' + \
+                '1',
+            'weight' : '',
+            },
         },
 
+    'Sideband' : {
+        'MC' : {
+            'cut': \
+                'Vtype==1 && ' +\
+                'HLT_SingleMu24 && ' +\
+                ('Muon%s_pt[Idx_mu1]>25. && ' % muon) + \
+                ('Muon%s_MET%s_mt[Idx_mu1]>0. && ' % (muon, met)) + \
+                'MET_filters==1 && ' +\
+                'nVetoElectrons==0 && ' +\
+                '1',
+            'weight' : \
+                'puWeight*' + \
+                'Muon_Trigger_SF[Idx_mu1]*' + \
+                'Muon_ID_SF[Idx_mu1]*' + \
+                'Muon_ISO_SF[Idx_mu1]',
+            },
+        'DATA' : {
+            'cut': \
+                'Vtype==1 && ' +\
+                'HLT_SingleMu24 && '+ \
+                ('Muon%s_pt[Idx_mu1]>25. && ' % muon) + \
+                ('Muon%s_MET%s_mt[Idx_mu1]>0. && ' % (muon, met)) + \
+                'MET_filters==1 && ' +\
+                'nVetoElectrons==0 && ' + \
+                '1',
+            'weight' : '',
+            },
+        },
+
+    'Dimuon' : {
+        'MC' : {
+            'cut': \
+                'Vtype==2 && '+ \
+                'HLT_SingleMu24 && '+ \
+                ('Muon%s_pt[Idx_mu1]>25. && Muon%s_pt[Idx_mu2]>20. && ' % (muon, muon) ) + \
+                'MET_filters==1 && '+ \
+                'nVetoElectrons==0 && '+ \
+                '1',
+            'weight' : \
+                'puWeight*' +\
+                'Muon_Trigger_SF[Idx_mu1]*Muon_ISO_SF[Idx_mu1]*Muon_ID_SF[Idx_mu1]*' +\
+                'Muon_Trigger_SF[Idx_mu2]*Muon_ISO_SF[Idx_mu2]*Muon_ID_SF[Idx_mu2]',
+            },
+        'DATA' : {
+            'cut': \
+                'Vtype==2 && '+ \
+                'HLT_SingleMu24 && '+ \
+                ('Muon%s_pt[Idx_mu1]>25. && Muon%s_pt[Idx_mu2]>20. && ' % (muon, muon))+ \
+                'MET_filters==1 && '+ \
+                'nVetoElectrons==0 && '+ \
+                '1',
+            'weight' : '',
+            },
+        },
+    }
+
+myselections = {}
+myselections['SignalPlus'] = copy.deepcopy(selections['Signal'])
+#myselections['SignalMinus'] = copy.deepcopy(selections['Signal'])
+myselections['SignalPlus']['MC']['cut']  += ' && Muon_charge[Idx_mu1]>0'
+#myselections['SignalMinus']['MC']['cut'] += ' && Muon_charge[Idx_mu1]<0'
+#myselections['SidebandPlus'] = copy.deepcopy(selections['Sideband'])
+#myselections['SidebandMinus'] = copy.deepcopy(selections['Sideband'])
+#myselections['SidebandPlus']['MC']['cut']  += ' && Muon_charge[Idx_mu1]>0'
+#myselections['SidebandMinus']['MC']['cut'] += ' && Muon_charge[Idx_mu1]<0'
+
+# respect nanoAOD structure: Collection_modifiers_variable
+variables =  {    
+    'Muon': { 
+        'newCollection': 'SelectedMuon', 'modifiers': '', 'index': 'Idx_mu1',
+        'variables': { 
+            'corrected_pt': ('muon pt',  100, 20, 100),
+            'eta':          ('muon eta', 100, -2.5, 2.5),
+            },
     },
-            
 }
 
+inputDir, outDir = ('/gpfs/ddn/cms/user/bianchi/NanoAOD%s-%s/' % (str(dataYear), tag)), ('%s/' % tag)
+if not os.path.isdir(outDir): os.system('mkdir '+outDir)
 
-import sys
-sys.path.append('../../framework')
+# full production
+production_file = open('/home/users/bianchini/wmass/CMSSW_10_2_9/src/PhysicsTools/NanoAODTools/crab/mcsamples_%s.txt' % str(dataYear), 'r')
+production_content = [x.strip() for x in production_file.readlines()]
 
-import ROOT
+restrict_to = ['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'SingleMuon_Run2016B_ver2' ]
 
-from RDFtreeV2 import RDFtree
+# available filed
+samples = os.listdir(inputDir)
 
-ROOT.ROOT.EnableImplicitMT(48)
+samples_dict = {}
+for sample in samples:    
+    if '_ext' in sample: sample_stripped = sample[:-5]
+    else: sample_stripped = sample        
+    xsec = -1
+    accept = len(restrict_to)==0 or sample_stripped in restrict_to
+    if not accept: continue
+    # add each Run period separately
+    if 'Run' in sample:
+        samples_dict[sample] = {'dir' : [sample], 'xsec' : xsec}
+        continue
+    # match for '_ext' to identify extensions of same process
+    for prod in production_content:
+        if sample_stripped in prod: xsec = float(prod.split(',')[-1])
+    if sample_stripped not in samples_dict.keys():
+        samples_dict[sample_stripped] = {'dir' : [sample], 'xsec' : xsec}
+    else:
+        samples_dict[sample_stripped]['dir'].append(sample)
 
-from controlPlots import *
-
-inputDir = '/gpfs/ddn/cms/user/bianchi/NanoAOD2016-TEST/'
-
-# mc samples
-
-samples = {
-    
-    'W' : ['WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8', 61526.7],
-    'DY' : ['DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_ext2', 6025.2],
-    'ttbar': ['TTJets_SingleLeptFromT_TuneCUETP8M1_13TeV-madgraphMLM-pythia8', 182.0],
-    'diboson': ['WW_TuneCUETP8M1_13TeV-pythia8', 115.0],
-    'QCD' : ['QCD_Pt-30to50_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 1655000.0],
-
-}
-
-for sample, mylist in samples.iteritems():
-
-    print 'analysing', sample
-
-    p = RDFtree(outputDir = 'TEST', inputFile = inputDir+mylist[0]+'/tree.root')
-    p.branch(nodeToStart = 'input', nodeToEnd = 'controlPlotsPlus',outputFile="{}_plus.root".format(sample), modules = [controlPlots(selections = selections['signalplus'], variables = variables, dataType = 'mc', xsec = mylist[1], file = inputDir+mylist[0]+'/tree.root')])
-    p.branch(nodeToStart = 'input', nodeToEnd = 'controlPlotsMinus',outputFile="{}_minus.root".format(sample), modules = [controlPlots(selections = selections['signalminus'], variables = variables, dataType = 'mc', xsec = mylist[1], file = inputDir+mylist[0]+'/tree.root')])
+for sample_key, sample in samples_dict.iteritems():
+    dataType = 'MC' if 'Run' not in sample_key else 'DATA'
+    print 'Analysing sample', bcolors.OKBLUE, sample_key, bcolors.ENDC
+    print '\tdirectories =', bcolors.OKBLUE, sample['dir'] , bcolors.ENDC
+    print '\txsec = '+'{:0.3f}'.format(sample['xsec'])+' pb', \
+        ', (data type is', bcolors.OKBLUE, dataType, bcolors.ENDC, ')'
+    if not tdf: continue
+    inputFile = ROOT.std.vector("std::string")()
+    for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree.root")
+    p = RDFtree(outputDir=outDir, inputFile=inputFile  )
+    for sel_key, sel in myselections.iteritems():
+        print '\tBranching:', bcolors.OKBLUE, sel_key, bcolors.ENDC
+        p.branch(nodeToStart='input', 
+                 nodeToEnd='controlPlots'+sel_key, 
+                 outputFile="%s_%s.root" % (sample_key, sel_key), 
+                 modules = [controlPlots(selections=sel, variables=variables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile)])    
     p.getOutput()
 
-# data
-print 'analysing data'
+samples_merging = {
+    'WJets'  : [x for x in samples_dict.keys() if 'WJetsToLNu' in x],
+    'DYJets' : [x for x in samples_dict.keys() if 'DYJetsToLL' in x],
+    'QCD' : [x for x in samples_dict.keys() if 'QCD_' in x],
+    'Top' : [x for x in samples_dict.keys() if ('TTJets' in x or 'ST_' in x)],
+    'Diboson' : [x for x in samples_dict.keys() if ('WW_' in x or 'WZ_' in x or 'ZZ_' in x)],
+    'Data' : [x for x in samples_dict.keys() if 'Run' in x],
+}
 
-p = RDFtree(outputDir = 'TEST', inputFile = inputDir+'SingleMuon'+'/tree.root')
-p.branch(nodeToStart = 'input', nodeToEnd = 'controlPlotsPlus',outputFile="data_plus.root", modules = [controlPlots(selections = selections['signalplus'], variables = variables, dataType = 'data', xsec = 1, file = inputDir+'SingleMuon'+'/tree.root')])
-p.branch(nodeToStart = 'input', nodeToEnd = 'controlPlotsMinus',outputFile="data_minus.root", modules = [controlPlots(selections = selections['signalminus'], variables = variables, dataType = 'data', xsec = 1, file = inputDir+'SingleMuon'+'/tree.root')])
-p.getOutput()
+fileList = []
+for sel_key, sel in myselections.iteritems():
+    for sample_merging_key, sample_merging in samples_merging.iteritems():
+        if len(sample_merging)>0:
+            fileList.append( '%s_%s.root' % (sample_merging_key,sel_key))
+            cmd = 'hadd -f %s/%s_%s.root' % (outDir,sample_merging_key,sel_key)
+            for isample in sample_merging:
+                cmd += ' %s/%s_%s.root' % (outDir,isample,sel_key)
+            if hadd:
+                print bcolors.OKGREEN, cmd, bcolors.ENDC
+                os.system(cmd)
 
-from plotter import plotter
-
-plt = plotter(outdir= 'TESTstack', folder = 'TEST', fileList = ['DY_plus.root', 'ttbar_plus.root', 'diboson_plus.root','W_plus.root','QCD_plus.root', 'data_plus.root'], norm = 2.7)
-plt.plotStack()
-
-
-
-
-
-
-
-
-
-
+print fileList
+#from plotter import plotter
+if plot:
+    plt = plotter(outdir=outDir, folder=outDir, fileList=fileList, norm = 2.7)
+    plt.plotStack()
 
 
 

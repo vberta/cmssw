@@ -80,7 +80,7 @@ class RDFtree:
 
         # now write all the outputs together
 
-        print "writing output files in "+ self.outputDir
+        print "Writing output files in "+ self.outputDir
    
         if not os.path.exists(self.outputDir):
             os.system("mkdir -p " + self.outputDir)
@@ -100,7 +100,7 @@ class RDFtree:
         os.chdir('..')
         self.objs = {} # re-initialise object list
 
-        print self.entries.GetValue(), " events processed in ", time.time()-self.start, " s"
+        print self.entries.GetValue(), "events processed in "+"{:0.1f}".format(time.time()-self.start), "s"
 
     def saveGraph(self):
 
