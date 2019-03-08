@@ -6,7 +6,7 @@ RDF based mini-framework
 ```
 git clone https://github.com/emanca/RDFprocessor.git RDFprocessor
 cd RDFprocessor
-git checkout origin/master
+git checkout origin/wmass
 ```
 ## source root 6.16
 
