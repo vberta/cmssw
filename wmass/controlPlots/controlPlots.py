@@ -7,7 +7,7 @@ from module import *
 
 class controlPlots(module):
    
-    def __init__(self, selections, variables, dataType, xsec, file, targetLumi = 1.):
+    def __init__(self, selections, variables, dataType, xsec, inputFile, targetLumi = 1.):
         
         # TH lists
         self.myTH1 = []
@@ -22,12 +22,12 @@ class controlPlots(module):
         # pb to fb conversion
         self.xsec = xsec / 0.001
         self.targetLumi = targetLumi
-        self.file = file
+        self.inputFile = inputFile
 
     def run(self,d):
 
         RDF = ROOT.ROOT.RDataFrame
-        runs = RDF('Runs', self.file)
+        runs = RDF('Runs', self.inputFile)
 
         if self.dataType == 'MC': 
             genEventSumw = runs.Sum("genEventSumw").GetValue()
