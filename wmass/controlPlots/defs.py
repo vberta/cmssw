@@ -153,10 +153,11 @@ inputDir, outDir = ('/gpfs/ddn/cms/user/bianchi/NanoAOD%s-%s/' % (str(dataYear),
 if not os.path.isdir(outDir): os.system('mkdir '+outDir)
 
 # full production
-production_file = open('/home/users/bianchini/wmass/CMSSW_10_2_9/src/PhysicsTools/NanoAODTools/crab/mcsamples_%s.txt' % str(dataYear), 'r')
+production_file = open('/scratch/bianchini/NanoAOD%s-%s/mcsamples_%s.txt' % (str(dataYear), tag, str(dataYear)), 'r')
 production_content = [x.strip() for x in production_file.readlines()]
 
-restrict_to = ['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'SingleMuon_Run2016B_ver2' ]
+restrict_to = []
+restrict_to.extend(['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'SingleMuon_Run2016B_ver2' ])
 
 # available filed
 samples = os.listdir(inputDir)
