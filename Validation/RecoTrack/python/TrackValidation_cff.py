@@ -1,6 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
-import SimTracker.TrackAssociatorProducers.trackAssociatorByChi2_cfi
+# import SimTracker.TrackAssociatorProducers.trackAssociatorByChi2_cfi
+from SimTracker.TrackAssociatorProducers.trackAssociatorByChi2_cfi import *
 from SimTracker.TrackAssociatorProducers.quickTrackAssociatorByHits_cfi import *
 from SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi import *
 import Validation.RecoTrack.MultiTrackValidator_cfi
@@ -355,10 +356,39 @@ highPtJetsForTrk = highPtJetsForTrk = highPtJets.clone(src = "ak4CaloJetsForTrk"
 # Select B-hadron TPs
 trackingParticlesBHadron = _trackingParticleBHadronRefSelector.clone()
 
+# MTVtrackAssociatorByChi2 = SimTracker.TrackAssociatorProducers.trackAssociatorByChi2_cfi.trackAssociatorByChi2.clone() #maybe modification needed
+
+MTVTrackAssociationByChi2 = trackingParticleRecoTrackAsssociation.clone(
+    associator = cms.InputTag('trackAssociatorByChi2'),
+    # UseAssociators = cms.bool(True)
+)
+
+# associatorByHitLoose = SimTracker.TrackAssociatorProducers.quickTrackAssociatorByHits_cfi.quickTrackAssociatorByHits.clone(
+associatorByHitLoose = quickTrackAssociatorByHits.clone(
+    # AbsoluteNumberOfHits = cms.bool(False),
+	Cut_RecoToSim = cms.double(0.5),
+	# SimToRecoDenominator = cms.string('reco'), # either "sim" or "reco"
+	Quality_SimToReco = cms.double(0.3),
+	Purity_SimToReco = cms.double(0.5),
+	# ThreeHitTracksAreSpecial = cms.bool(True),
+    # PixelHitWeight = cms.double(1.0),
+    # useClusterTPAssociation = cms.bool(True),
+    # cluster2TPSrc = cms.InputTag("tpClusterProducer")
+    usePixels = cms.bool(False)
+)
+
+
+MTVTrackAssociationByHitsLoose = trackingParticleRecoTrackAsssociation.clone(
+    associator = cms.InputTag('associatorByHitLoose'),
+    # UseAssociators = cms.bool(True)
+)
+
+
 ## MTV instances
 trackValidator = Validation.RecoTrack.MultiTrackValidator_cfi.multiTrackValidator.clone(
     useLogPt = cms.untracked.bool(True),
     dodEdxPlots = True,
+    associators=cms.untracked.VInputTag('MTVTrackAssociationByHitsLoose'),
     doPVAssociationPlots = True
     #,minpT = cms.double(-1)
     #,maxpT = cms.double(3)
@@ -559,6 +589,10 @@ tracksValidationSelectors = cms.Task(
 tracksValidationTruth = cms.Task(
     tpClusterProducer,
     tpClusterProducerPreSplitting,
+    trackAssociatorByChi2,
+    associatorByHitLoose,
+    MTVTrackAssociationByHitsLoose,
+    MTVTrackAssociationByChi2,
     quickTrackAssociatorByHits,
     quickTrackAssociatorByHitsPreSplitting,
     trackingParticleRecoTrackAsssociation,
@@ -819,9 +853,9 @@ tracksValidationLite = cms.Sequence(
 
 ## customization for timing
 from Configuration.Eras.Modifier_phase2_timing_layer_cff import phase2_timing_layer
-phase2_timing_layer.toModify( generalTracksFromPV, 
-                              timesTag  = cms.InputTag('trackTimeValueMapProducer:generalTracksConfigurableFlatResolutionModel'), 
-                              timeResosTag = cms.InputTag('trackTimeValueMapProducer:generalTracksConfigurableFlatResolutionModelResolution'), 
+phase2_timing_layer.toModify( generalTracksFromPV,
+                              timesTag  = cms.InputTag('trackTimeValueMapProducer:generalTracksConfigurableFlatResolutionModel'),
+                              timeResosTag = cms.InputTag('trackTimeValueMapProducer:generalTracksConfigurableFlatResolutionModelResolution'),
                               nSigmaDtVertex = cms.double(3) )
 phase2_timing_layer.toModify( trackValidatorStandalone,
                               label_vertex = cms.untracked.InputTag('offlinePrimaryVertices4D') )
@@ -836,6 +870,6 @@ phase2_timing_layer.toModify( trackValidatorGsfTracks,
 
 from Configuration.Eras.Modifier_phase2_timing_layer_tile_cff import phase2_timing_layer_tile
 from Configuration.Eras.Modifier_phase2_timing_layer_bar_cff import phase2_timing_layer_bar
-(phase2_timing_layer_tile | phase2_timing_layer_bar).toModify( generalTracksFromPV, 
-                              timesTag  = cms.InputTag('tofPID:t0'), 
+(phase2_timing_layer_tile | phase2_timing_layer_bar).toModify( generalTracksFromPV,
+                              timesTag  = cms.InputTag('tofPID:t0'),
                               timeResosTag = cms.InputTag('tofPID:sigmat0') )
