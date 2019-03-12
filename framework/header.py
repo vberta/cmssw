@@ -41,3 +41,7 @@ float getVector (std::vector<float> vec, int idx)
 '''
 
 ROOT.gInterpreter.Declare(getVector_code)
+
+ROOT.gInterpreter.ProcessLine('''
+  gErrorIgnoreLevel = kPrint, kInfo, kWarning, kError, kBreak, kSysError, kFatal;
+  ''')

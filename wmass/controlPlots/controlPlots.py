@@ -31,9 +31,9 @@ class controlPlots(module):
 
         if self.dataType == 'MC': 
             genEventSumw = runs.Sum("genEventSumw").GetValue()
-            #print 'genEventSumw : '+'{:1.1f}'.format(genEventSumw)+' weighted events'
-            #print 'xsec         : '+'{:1.1f}'.format(self.xsec)+' pb'
-            #print 'lumiweight   : '+'{:1.8f}'.format((1.*self.xsec)/genEventSumw)+' (|Generator_weight| not accounted for)'
+            print 'genEventSumw : '+'{:1.1f}'.format(genEventSumw)+' weighted events'
+            print 'xsec         : '+'{:1.1f}'.format(self.xsec)+' pb'
+            print 'lumiweight   : '+'{:1.8f}'.format((1.*self.xsec)/genEventSumw)+' (|Generator_weight| not accounted for)'
             #genEventSumw=1
 
         self.d = d.Filter(self.selections[self.dataType]['cut'])

@@ -68,7 +68,7 @@ class plotter:
             hdata = ROOT.TH1D()
             for i,tup in enumerate(group):
 
-                if 'data' in tup[1]: 
+                if 'Data' in tup[1]: 
                     legend.AddEntry(tup[1], "Data", "PE1")
                     hdata = tup[0]
                     hdata.SetMarkerStyle(20)
@@ -85,8 +85,12 @@ class plotter:
             c.SetTicks(0, 1)
             c.cd()
 
-            hdata.Draw("")
-            hs.Draw("HIST same")
+            maxdata = hdata.GetMaximum()
+            maxstack = hs.GetMaximum()
+
+            hs.SetMaximum(1.5*max(maxdata,maxstack))
+            hs.Draw("HIST")
+            hdata.Draw("same")
 
             legend.Draw()
 

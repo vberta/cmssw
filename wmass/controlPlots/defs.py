@@ -34,7 +34,10 @@ tdf = args.tdf
 print "tag =", bcolors.OKGREEN, tag, bcolors.ENDC, \
     ", dataYear =", bcolors.OKGREEN, str(dataYear), bcolors.ENDC
 
-ROOT.ROOT.EnableImplicitMT(48)
+ROOT.ROOT.EnableImplicitMT()
+ROOT.gInterpreter.ProcessLine('''
+  gErrorIgnoreLevel = kWarning;
+  ''')
 
 # corrected = Rochester
 muon = '_corrected'
@@ -132,6 +135,7 @@ myselections = {}
 myselections['SignalPlus'] = copy.deepcopy(selections['Signal'])
 #myselections['SignalMinus'] = copy.deepcopy(selections['Signal'])
 myselections['SignalPlus']['MC']['cut']  += ' && Muon_charge[Idx_mu1]>0'
+myselections['SignalPlus']['DATA']['cut']  += ' && Muon_charge[Idx_mu1]>0'
 #myselections['SignalMinus']['MC']['cut'] += ' && Muon_charge[Idx_mu1]<0'
 #myselections['SidebandPlus'] = copy.deepcopy(selections['Sideband'])
 #myselections['SidebandMinus'] = copy.deepcopy(selections['Sideband'])
@@ -149,7 +153,8 @@ variables =  {
     },
 }
 
-inputDir, outDir = ('/gpfs/ddn/cms/user/bianchi/NanoAOD%s-%s/' % (str(dataYear), tag)), ('%s/' % tag)
+inputDir, outDir = ('/scratch/bertacch/NanoAOD%s-%s/' % (str(dataYear), tag)), ('%s/' % tag)
+
 if not os.path.isdir(outDir): os.system('mkdir '+outDir)
 
 # full production
@@ -157,7 +162,7 @@ production_file = open('/scratch/bianchini/NanoAOD%s-%s/mcsamples_%s.txt' % (str
 production_content = [x.strip() for x in production_file.readlines()]
 
 restrict_to = []
-restrict_to.extend(['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'SingleMuon_Run2016B_ver2' ])
+#restrict_to.extend(['WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8'])
 
 # available filed
 samples = os.listdir(inputDir)
@@ -181,26 +186,72 @@ for sample in samples:
     else:
         samples_dict[sample_stripped]['dir'].append(sample)
 
-for sample_key, sample in samples_dict.iteritems():
+for sample_key, sample in samples_dict.copy().iteritems():
     dataType = 'MC' if 'Run' not in sample_key else 'DATA'
+
     print 'Analysing sample', bcolors.OKBLUE, sample_key, bcolors.ENDC
     print '\tdirectories =', bcolors.OKBLUE, sample['dir'] , bcolors.ENDC
     print '\txsec = '+'{:0.3f}'.format(sample['xsec'])+' pb', \
         ', (data type is', bcolors.OKBLUE, dataType, bcolors.ENDC, ')'
     if not tdf: continue
     inputFile = ROOT.std.vector("std::string")()
-    for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree.root")
+    for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
     p = RDFtree(outputDir=outDir, inputFile=inputFile  )
-    for sel_key, sel in myselections.iteritems():
-        print '\tBranching:', bcolors.OKBLUE, sel_key, bcolors.ENDC
-        p.branch(nodeToStart='input', 
-                 nodeToEnd='controlPlots'+sel_key, 
-                 outputFile="%s_%s.root" % (sample_key, sel_key), 
-                 modules = [controlPlots(selections=sel, variables=variables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile)])    
-    p.getOutput()
+    for sel_key, sel in myselections.copy().iteritems():
+
+        if 'WJets' in sample_key:
+
+            print sample_key, 'sample key'
+
+            process = [('WMu',14), ('WTau',16), ('WEle',12)]
+
+            for proc in process:
+
+                samples_dict['{p}{key}'.format(key=sample_key,p=proc[0])] = samples_dict[sample_key]
+
+                print '\tBranching:', bcolors.OKBLUE, '{p}{key}'.format(key=sample_key,p=proc[0]), bcolors.ENDC
+
+                wsel = {}
+                wsel[sel_key] = copy.deepcopy(myselections[sel_key])
+
+                wsel[sel_key]['MC']['cut']  += ' && genVtype == {}'.format(proc[1])
+
+                print wsel
+
+                p.branch(nodeToStart='input', 
+                     nodeToEnd='controlPlots'+sel_key, 
+                     outputFile="%s_%s.root" % ('{p}{key}'.format(key=sample_key,p=proc[0]), sel_key), 
+                     modules = [controlPlots(selections=wsel[sel_key], variables=variables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile)])    
+
+            del samples_dict[sample_key]
+
+        else:
+
+            print '\tBranching:', bcolors.OKBLUE, sel_key, bcolors.ENDC
+            p.branch(nodeToStart='input', 
+                     nodeToEnd='controlPlots'+sel_key, 
+                     outputFile="%s_%s.root" % (sample_key, sel_key), 
+                     modules = [controlPlots(selections=sel, variables=variables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile)])    
+        p.getOutput()
+
+if tdf == 0:
+
+    for sample_key, sample in samples_dict.copy().iteritems():
+
+            if 'WJets' in sample_key:
+
+                process = [('WMu',14), ('WTau',16), ('WEle',12)]
+
+                for proc in process:
+
+                    samples_dict['{p}{key}'.format(key=sample_key,p=proc[0])] = samples_dict[sample_key]
+
+                del samples_dict[sample_key]
 
 samples_merging = {
-    'WJets'  : [x for x in samples_dict.keys() if 'WJetsToLNu' in x],
+    'WJetsMu'  : [x for x in samples_dict.keys() if ('WJets' and 'WMu') in x],
+    'WJetsEle'  : [x for x in samples_dict.keys() if ('WJets' and 'WEle') in x],
+    'WJetsTau'  : [x for x in samples_dict.keys() if ('WJets' and 'WTau') in x],
     'DYJets' : [x for x in samples_dict.keys() if 'DYJetsToLL' in x],
     'QCD' : [x for x in samples_dict.keys() if 'QCD_' in x],
     'Top' : [x for x in samples_dict.keys() if ('TTJets' in x or 'ST_' in x)],
@@ -209,6 +260,9 @@ samples_merging = {
 }
 
 fileList = []
+
+print samples_merging
+
 for sel_key, sel in myselections.iteritems():
     for sample_merging_key, sample_merging in samples_merging.iteritems():
         if len(sample_merging)>0:
@@ -223,7 +277,7 @@ for sel_key, sel in myselections.iteritems():
 print fileList
 #from plotter import plotter
 if plot:
-    plt = plotter(outdir=outDir, folder=outDir, fileList=fileList, norm = 2.7)
+    plt = plotter(outdir=outDir, folder=outDir, fileList=fileList, norm = 2.57)
     plt.plotStack()
 
 
