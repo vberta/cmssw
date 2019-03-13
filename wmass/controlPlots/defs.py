@@ -154,8 +154,7 @@ selections = {
     }
 
 myselections = {}
-for cut in ['Signal', 'Sideband', 
-            'Dimuon']:
+for cut in ['Signal', 'Sideband', 'Dimuon']:
     if cut=='Dimuon':
         myselections['%s' % cut] = copy.deepcopy(selections['%s' % cut])
         continue
