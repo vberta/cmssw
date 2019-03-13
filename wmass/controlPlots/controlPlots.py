@@ -47,13 +47,17 @@ class controlPlots(module):
 
         # loop over variables
         for Collection,dic in self.variables.iteritems():
-            if not dic['newCollection'] == '':
+            collectionName = ''
+            if dic.has_key('newCollection') and dic['newCollection'] != '':
                 if 'index' in dic:                    
                     # define a new subcollection with all the columns of the original collection                    
-                    self.d = self.defineSubcollectionFromIndex(Collection, dic['newCollection'], dic['index'], self.d)                
+                    self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d)                 
+                    collectionName = dic['newCollection']
+            else:
+                collectionName = dic['inputCollection']
             for var,tools in dic['variables'].iteritems():
                 columns = list(self.d.GetDefinedColumnNames())
-                h = self.d.Histo1D((var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), dic['newCollection']+dic['modifiers']+'_'+var, 'totweight')  
+                h = self.d.Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')  
                 self.myTH1.append(h)
 
         return self.d
