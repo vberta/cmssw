@@ -154,7 +154,8 @@ selections = {
     }
 
 myselections = {}
-for cut in ['Signal', 'Sideband', 'Dimuon']:
+for cut in ['Signal', 'Sideband', 
+            'Dimuon']:
     if cut=='Dimuon':
         myselections['%s' % cut] = copy.deepcopy(selections['%s' % cut])
         continue
@@ -198,6 +199,7 @@ variables =  {
             'corrected_pt':   ('muon pt (Rochester corr.)',  100, 20, 100),
             'corrected_MET_uPar':   ('uPar (Rochester corr./smear MET)',  100, -100, 100),
             'corrected_MET_uPer':   ('uPer (Rochester corr./smear MET)',  100, -100, 100),
+            'corrected_MET_nom_Wlikemt':   ('W-like Mt (Rochester corr./smear MET)',  100, 0, 200),
             'pfRelIso04_all': ('muon pfRelIso04', 100, 0., 0.5),
             'eta':            ('muon eta', 100, -2.5, 2.5),
             'dxy':            ('muon dxy', 100, -0.04, 0.04),
@@ -212,7 +214,7 @@ variables =  {
         'index': 'Idx_mu2',
         'variables': { 
             'corrected_pt':   ('muon pt (Rochester corr.)',  100, 20, 100),
-            'corrected_MET_nom_Wlikemt':   ('W-like Mt (Rochester corr./smear MET)',  100, 0, 100),
+            'corrected_MET_nom_Wlikemt':   ('W-like Mt (Rochester corr./smear MET)',  100, 0, 200),
             'corrected_MET_uPar':   ('uPar (Rochester corr./smear MET)',  100, -100, 100),
             'corrected_MET_uPer':   ('uPer (Rochester corr./smear MET)',  100, -100, 100),
             'eta':            ('muon eta', 100, -2.5, 2.5),
@@ -236,7 +238,8 @@ production_file = open('/scratch/bianchini/NanoAOD%s-%s/mcsamples_%s.txt' % (str
 production_content = [x.strip() for x in production_file.readlines()]
 
 restrict_to = []
-restrict_to.extend(['QCD_Pt-30to50_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'])
+#restrict_to.extend(['QCD_Pt-30to50_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'])
+restrict_to = ['DYJetsToLL']
 
 # available filed
 samples = os.listdir(inputDir)
@@ -246,8 +249,12 @@ for sample in samples:
     if '_ext' in sample: sample_stripped = sample[:-5]
     else: sample_stripped = sample        
     xsec = -1
-    accept = len(restrict_to)==0 or sample_stripped in restrict_to
+    accept = False
+    for r in restrict_to: 
+        if r in sample_stripped: accept = True
+    accept |= (len(restrict_to)==0)
     if not accept: continue
+
     # add each Run period separately
     if 'Run' in sample:
         samples_dict[sample] = {'dir' : [sample], 'xsec' : xsec, 'subsel' : {'none' : ''}}
