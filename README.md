@@ -8,9 +8,9 @@ git clone https://github.com/emanca/RDFprocessor.git RDFprocessor
 cd RDFprocessor
 git checkout origin/wmass
 ```
-## source root 6.16
+## source root master nightlies
 
-`. /cvmfs/sft.cern.ch/lcg/app/releases/ROOT/6.16.00/x86_64-centos7-gcc48-opt/bin/thisroot.sh`
+`source /cvmfs/sft-nightlies.cern.ch/lcg/views/dev3/latest/x86_64-slc6-gcc7-opt/setup.sh`
 
 ## how to run control plots
 
