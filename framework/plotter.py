@@ -8,6 +8,7 @@ class plotter:
     
     def __init__(self, outdir, folder = '', fileList = [], norm = 1):
 
+        print 'IN PLOTTER'
         self.folder = folder # folder containig the various outputs
         self.fileList = fileList # list of files in each folders
         self.canvas = []
@@ -22,11 +23,15 @@ class plotter:
 
     def getHistos(self):
 
+        print 'IN GET HISTOS'
+
         self.histos = []
 
         os.chdir(self.folder)
 
         for f in self.fileList:
+
+            print f
 
             hlist = []
             
@@ -37,6 +42,8 @@ class plotter:
                 if key.InheritsFrom(ROOT.TH2D.Class()): continue
 
                 h = fIn.Get(key.GetName())
+
+                print h.GetName()
                 
                 h.Sumw2()
                     
@@ -44,9 +51,13 @@ class plotter:
 
             self.histos.append(hlist)
 
+            print self.histos, '1'
+
         os.chdir('..')
 
         self.histos = zip(*self.histos) # now in the right order
+
+        print self.histos, '2'
 
     def plotStack(self):
 
@@ -55,6 +66,8 @@ class plotter:
         self.stacks = []
 
         for group in self.histos: 
+
+            print (group[0])[0].GetName()
 
             hs = ROOT.THStack((group[0])[0].GetName(),"")
 

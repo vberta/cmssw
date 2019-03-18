@@ -100,7 +100,7 @@ class RDFtree:
         os.chdir('..')
         self.objs = {} # re-initialise object list
 
-        print self.entries.GetValue(), "events processed in "+"{:0.1f}".format(time.time()-self.start), "s"
+        print self.entries.GetValue(), "events processed in "+"{:0.1f}".format(time.time()-self.start), "s", "rate", self.entries.GetValue()/(time.time()-self.start)
 
     def saveGraph(self):
 

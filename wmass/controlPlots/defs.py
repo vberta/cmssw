@@ -35,11 +35,7 @@ rdf = args.rdf
 print "tag =", bcolors.OKGREEN, tag, bcolors.ENDC, \
     ", dataYear =", bcolors.OKGREEN, str(dataYear), bcolors.ENDC
 
-ROOT.ROOT.EnableImplicitMT()
-ROOT.gInterpreter.ProcessLine('''
-  gErrorIgnoreLevel = kWarning;
-  ''')
-
+#ROOT.ROOT.EnableImplicitMT(48)
 
 def filterVariables(variables={}, selection='Signal', verbose=False):
     if verbose: print '>>', variables
@@ -60,6 +56,36 @@ def filterVariables(variables={}, selection='Signal', verbose=False):
         del new_variables[ivar]  
     if verbose: print '<<', new_variables
     return new_variables
+
+def RDFprocess(outDir, inputFile, selections, sample):
+
+    outDir = outDir
+    inputFile = inputFile
+    myselections = selections
+    sample = sample
+
+    p = RDFtree(outputDir=outDir, inputFile=inputFile)
+
+      # create branches
+    for subsel_key, subsel in sample['subsel'].iteritems(): 
+        outputFiles.append("%s%s" % (sample_key, ('_'+subsel_key if subsel_key!='none' else '')) )
+        for sel_key, sel in myselections.iteritems():
+            if len(sample['subsel'])>1 and subsel_key=='none': continue
+            myvariables = filterVariables(variables, sel_key)
+            print '\tBranching: subselection', bcolors.OKBLUE, subsel_key, bcolors.ENDC, 'with selection' , bcolors.OKBLUE, sel_key, bcolors.ENDC
+            print '\tAdding variables for collections', bcolors.OKBLUE, myvariables.keys(), bcolors.ENDC
+           
+            outputFile = "%s%s_%s.root" % (sample_key, ('_'+subsel_key if subsel_key!='none' else ''), sel_key) 
+            myselection = copy.deepcopy(sel)
+            myselection[dataType]['cut'] += subsel if subsel_key!='none' else ''
+            p.branch(nodeToStart='input',
+                        nodeToEnd='controlPlots'+sel_key,
+                        outputFile=outputFile,
+                        modules = [controlPlots(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile)])
+    
+    p.getOutput()
+
+
 
 # corrected = Rochester
 muon = '_corrected'
@@ -154,6 +180,15 @@ selections = {
     }
 
 myselections = {}
+'''
+myselections['SignalPlus'] = copy.deepcopy(selections['Signal'])
+myselections['SignalPlus']['MC']['cut']  += ' && Muon_charge[Idx_mu1]>0'
+myselections['SignalPlus']['DATA']['cut']  += ' && Muon_charge[Idx_mu1]>0'
+
+myselections['SignalMinus'] = copy.deepcopy(selections['Signal'])
+myselections['SignalMinus']['MC']['cut']  += ' && Muon_charge[Idx_mu1]<0'
+myselections['SignalMinus']['DATA']['cut']  += ' && Muon_charge[Idx_mu1]<0'
+'''
 for cut in ['Signal', 'Sideband', 'Dimuon']:
     if cut=='Dimuon':
         myselections['%s' % cut] = copy.deepcopy(selections['%s' % cut])
@@ -236,9 +271,10 @@ if not os.path.isdir(outDir): os.system('mkdir '+outDir)
 production_file = open('/scratch/bianchini/NanoAOD%s-%s/mcsamples_%s.txt' % (str(dataYear), tag, str(dataYear)), 'r')
 production_content = [x.strip() for x in production_file.readlines()]
 
-restrict_to = []
-#restrict_to.extend(['QCD_Pt-30to50_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'])
-restrict_to = ['DYJetsToLL']
+restrict_to = ['QCD_Pt-1000toInf_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-120to170_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-15to20_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-170to300_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'\
+, 'QCD_Pt-20to30_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-30to50_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8',\
+'QCD_Pt-50to80_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-600to800_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8']
+#restrict_to.extend(['SingleMuon_Run2016C'])
 
 # available filed
 samples = os.listdir(inputDir)
@@ -270,7 +306,13 @@ for sample in samples:
         samples_dict[sample_stripped]['dir'].append(sample)
 
 outputFiles = []
+
+from multiprocessing import Process
+
+procs = []
+
 for sample_key, sample in samples_dict.iteritems():
+    
     dataType = 'MC' if 'Run' not in sample_key else 'DATA'
 
     print 'Analysing sample', bcolors.OKBLUE, sample_key, bcolors.ENDC
@@ -281,27 +323,16 @@ for sample_key, sample in samples_dict.iteritems():
 
     inputFile = ROOT.std.vector("std::string")()
     for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
-    if rdf:
-        p = RDFtree(outputDir=outDir, inputFile=inputFile  )
-    
-    # create branches
-    for subsel_key, subsel in sample['subsel'].iteritems(): 
-        outputFiles.append("%s%s" % (sample_key, ('_'+subsel_key if subsel_key!='none' else '')) )
-        for sel_key, sel in myselections.iteritems():
-            if len(sample['subsel'])>1 and subsel_key=='none': continue
-            myvariables = filterVariables(variables, sel_key)
-            print '\tBranching: subselection', bcolors.OKBLUE, subsel_key, bcolors.ENDC, 'with selection' , bcolors.OKBLUE, sel_key, bcolors.ENDC
-            print '\tAdding variables for collections', bcolors.OKBLUE, myvariables.keys(), bcolors.ENDC
-            if not rdf: continue
-            outputFile = "%s%s_%s.root" % (sample_key, ('_'+subsel_key if subsel_key!='none' else ''), sel_key) 
-            myselection = copy.deepcopy(sel)
-            myselection[dataType]['cut'] += subsel if subsel_key!='none' else ''
-            p.branch(nodeToStart='input',
-                     nodeToEnd='controlPlots'+sel_key,
-                     outputFile=outputFile,
-                     modules = [controlPlots(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile)])
-    if rdf:
-        p.getOutput()
+            
+    p = Process(target=RDFprocess, args=(outDir, inputFile, selections, sample))
+    p.start()
+        
+    procs.append(p)
+
+for p in procs:  
+    p.join()
+
+       
 
 samples_merging = {
     'WToMuNu'  : [x for x in outputFiles if ('WJets' and 'WToMuNu') in x],
@@ -321,7 +352,7 @@ for sel_key, sel in myselections.iteritems():
     for sample_merging_key, sample_merging in samples_merging.iteritems():
         if len(sample_merging)>0:
             outputMergedFiles.append( '%s_%s.root' % (sample_merging_key,sel_key))
-            cmd = 'hadd -f %s/%s_%s.root' % (outDir,sample_merging_key,sel_key)
+            cmd = 'hadd -f -k %s/%s_%s.root' % (outDir,sample_merging_key,sel_key)
             for isample in sample_merging:
                 cmd += ' %s/%s_%s.root' % (outDir,isample,sel_key)
             if hadd:
@@ -331,54 +362,14 @@ for sel_key, sel in myselections.iteritems():
 print 'Final samples:'
 print bcolors.OKBLUE, outputMergedFiles, bcolors.ENDC
 
+selected = [s for s in outputMergedFiles if 'SignalPlus' in s]
+
+
+
 if plot:
-    plt = plotter(outdir=outDir, folder=outDir, fileList=fileList, norm = 2.57)
+
+    print selected
+    plt = plotter(outdir=outDir, folder=outDir, fileList=selected, norm = 30.172)
     plt.plotStack()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
