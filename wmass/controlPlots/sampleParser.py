@@ -39,14 +39,15 @@ class sampleParser:
                 self.samples_dict[sample] = {'dir' : [sample], 'xsec' : xsec, 'subsel' : {'none' : ''}}
                 continue
 
+            found = False
             # match for '_ext' to identify extensions of same process
             for prod in production_content:
+
                 if sample_stripped in prod: 
-                    print xsec
                     xsec = float(prod.split(',')[-1])
-                else: 
-                    print 'ERROR: the sample', sample_stripped, 'is not in the sample table'
-                    continue
+                    found = True
+            if not found: print 'sample not found in sample table!', sample_stripped        
+                        
 
             if sample_stripped not in self.samples_dict.keys():
                 self.samples_dict[sample_stripped] = {'dir' : [sample], 'xsec' : xsec,  'subsel' : {'none' : ''} }
