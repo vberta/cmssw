@@ -6,14 +6,14 @@ ROOT.gInterpreter.Declare('TH1D *Obj2TH1D(TObject *p) { return (TH1D*)p; }')
 
 class plotter:
     
-    def __init__(self, outdir, folder = '', fileList = [], norm = 1):
+    def __init__(self, outdir, folder = '', fileList = [], norm = 1, tag =''):
 
-        print 'IN PLOTTER'
         self.folder = folder # folder containig the various outputs
         self.fileList = fileList # list of files in each folders
         self.canvas = []
         self.outdir = outdir
         self.norm = norm
+        self.tag = tag
         self.colours =[ROOT.kRed, ROOT.kGreen+2, ROOT.kBlue, ROOT.kMagenta+1, ROOT.kOrange+7, ROOT.kCyan+1, ROOT.kGray+2, ROOT.kViolet+5, ROOT.kSpring+5, ROOT.kAzure+1, ROOT.kPink+7, ROOT.kOrange+3, ROOT.kBlue+3, ROOT.kMagenta+3, ROOT.kRed+2]
         
         ROOT.gROOT.SetBatch()
@@ -23,7 +23,6 @@ class plotter:
 
     def getHistos(self):
 
-        print 'IN GET HISTOS'
 
         self.histos = []
 
@@ -31,7 +30,6 @@ class plotter:
 
         for f in self.fileList:
 
-            print f
 
             hlist = []
             
@@ -42,8 +40,6 @@ class plotter:
                 if key.InheritsFrom(ROOT.TH2D.Class()): continue
 
                 h = fIn.Get(key.GetName())
-
-                print h.GetName()
                 
                 h.Sumw2()
                     
@@ -51,13 +47,10 @@ class plotter:
 
             self.histos.append(hlist)
 
-            print self.histos, '1'
 
         os.chdir('..')
 
         self.histos = zip(*self.histos) # now in the right order
-
-        print self.histos, '2'
 
     def plotStack(self):
 
@@ -103,12 +96,19 @@ class plotter:
 
             hs.SetMaximum(1.5*max(maxdata,maxstack))
             hs.Draw("HIST")
-            hdata.Draw("same")
+            hs.GetXaxis().SetTitle(hs.GetName())
+            #hdata.Draw("same")
+
+            rp = ROOT.TRatioPlot(hs, hdata)
+            rp.Draw()
+            rp.GetLowerRefYaxis().SetRangeUser(0,2)
+            rp.GetLowYaxis().SetNdivisions(505)
+            rp.GetLowerRefYaxis().SetTitle("MC / DATA")
 
             legend.Draw()
 
             c.Update()
-            c.SaveAs("{dir}/{c}.pdf".format(dir=self.outdir,c=c.GetName()))
+            c.SaveAs("{dir}/{c}_{t}.pdf".format(dir=self.outdir,c=c.GetName(), t=self.tag))
        
 
             

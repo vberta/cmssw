@@ -170,6 +170,7 @@ if rdf:
         RDFprocess(outDir, inputFile, myselections, sample)
         
 
+
 samples_merging = {
     'WToMuNu'  : [x for x in outputFiles if ('WJets' and 'WToMuNu') in x],
     'WToETauNu'  : [x for x in outputFiles if ('WJets' and 'WToETauNu') in x],
@@ -198,12 +199,16 @@ for sel_key, sel in myselections.iteritems():
 print 'Final samples:'
 print bcolors.OKBLUE, outputMergedFiles, bcolors.ENDC
 
-selected = [s for s in outputMergedFiles if 'SignalPlus' in s]
+   
 
 if plot:
 
-    print selected
-    plt = plotter(outdir=outDir, folder=outDir, fileList=selected, norm = 35.922)
-    plt.plotStack()
+    for sel_key, sel in myselections.iteritems():
+
+        print sel_key
+        selected = [s for s in outputMergedFiles if sel_key in s]
+
+        plt = plotter(outdir=outDir+'/'+sel_key, folder=outDir, tag = sel_key, fileList=selected, norm = 35.922)
+        plt.plotStack()
 
 
