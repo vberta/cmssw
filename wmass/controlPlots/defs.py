@@ -10,6 +10,10 @@ from RDFtreeV2 import RDFtree
 from controlPlots import *
 from plotter import *
 
+from sampleParser import *
+from selections import *
+from variables import *
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -35,7 +39,6 @@ rdf = args.rdf
 print "tag =", bcolors.OKGREEN, tag, bcolors.ENDC, \
     ", dataYear =", bcolors.OKGREEN, str(dataYear), bcolors.ENDC
 
-#ROOT.ROOT.EnableImplicitMT(48)
 
 def filterVariables(variables={}, selection='Signal', verbose=False):
     if verbose: print '>>', variables
@@ -86,109 +89,8 @@ def RDFprocess(outDir, inputFile, selections, sample):
     p.getOutput()
 
 
-
-# corrected = Rochester
-muon = '_corrected'
-
-# nom = MET w/ jet smearing
-met = '_nom'
-
-selections = {
-    'Signal' : {
-        'MC' : {
-            'cut': \
-                'Vtype==0 && ' + \
-                'HLT_SingleMu24 && '+ \
-                ('Muon%s_pt[Idx_mu1]>25. && ' % muon) + \
-                ('Muon%s_MET%s_mt[Idx_mu1]>0. && ' % (muon, met) ) + \
-                'MET_filters==1 && ' + \
-                'nVetoElectrons==0 && ' + \
-                '1',            
-            'weight' : \
-                'puWeight*' + \
-                'Muon_Trigger_SF[Idx_mu1]*' + \
-                'Muon_ID_SF[Idx_mu1]*' + \
-                'Muon_ISO_SF[Idx_mu1]',
-            },
-        'DATA' : {
-            'cut': \
-                'Vtype==0 && ' + \
-                'HLT_SingleMu24 && ' + \
-                ('Muon%s_pt[Idx_mu1]>25. && ' % muon) + \
-                ('Muon%s_MET%s_mt[Idx_mu1]>0. && ' % (muon, met)) +\
-                'MET_filters==1 && ' + \
-                'nVetoElectrons==0 && ' + \
-                '1',
-            'weight' : '',
-            },
-        },
-
-    'Sideband' : {
-        'MC' : {
-            'cut': \
-                'Vtype==1 && ' +\
-                'HLT_SingleMu24 && ' +\
-                ('Muon%s_pt[Idx_mu1]>25. && ' % muon) + \
-                ('Muon%s_MET%s_mt[Idx_mu1]>0. && ' % (muon, met)) + \
-                'MET_filters==1 && ' +\
-                'nVetoElectrons==0 && ' +\
-                '1',
-            'weight' : \
-                'puWeight*' + \
-                'Muon_Trigger_SF[Idx_mu1]*' + \
-                'Muon_ID_SF[Idx_mu1]*' + \
-                'Muon_ISO_SF[Idx_mu1]',
-            },
-        'DATA' : {
-            'cut': \
-                'Vtype==1 && ' +\
-                'HLT_SingleMu24 && '+ \
-                ('Muon%s_pt[Idx_mu1]>25. && ' % muon) + \
-                ('Muon%s_MET%s_mt[Idx_mu1]>0. && ' % (muon, met)) + \
-                'MET_filters==1 && ' +\
-                'nVetoElectrons==0 && ' + \
-                '1',
-            'weight' : '',
-            },
-        },
-
-    'Dimuon' : {
-        'MC' : {
-            'cut': \
-                'Vtype==2 && '+ \
-                'HLT_SingleMu24 && '+ \
-                ('Muon%s_pt[Idx_mu1]>25. && Muon%s_pt[Idx_mu2]>20. && ' % (muon, muon) ) + \
-                'MET_filters==1 && '+ \
-                'nVetoElectrons==0 && '+ \
-                '1',
-            'weight' : \
-                'puWeight*' +\
-                'Muon_Trigger_SF[Idx_mu1]*Muon_ISO_SF[Idx_mu1]*Muon_ID_SF[Idx_mu1]*' +\
-                'Muon_ISO_SF[Idx_mu2]*Muon_ID_SF[Idx_mu2]',
-            },
-        'DATA' : {
-            'cut': \
-                'Vtype==2 && '+ \
-                'HLT_SingleMu24 && '+ \
-                ('Muon%s_pt[Idx_mu1]>25. && Muon%s_pt[Idx_mu2]>20. && ' % (muon, muon))+ \
-                'MET_filters==1 && '+ \
-                'nVetoElectrons==0 && '+ \
-                '1',
-            'weight' : '',
-            },
-        },
-    }
-
 myselections = {}
-'''
-myselections['SignalPlus'] = copy.deepcopy(selections['Signal'])
-myselections['SignalPlus']['MC']['cut']  += ' && Muon_charge[Idx_mu1]>0'
-myselections['SignalPlus']['DATA']['cut']  += ' && Muon_charge[Idx_mu1]>0'
 
-myselections['SignalMinus'] = copy.deepcopy(selections['Signal'])
-myselections['SignalMinus']['MC']['cut']  += ' && Muon_charge[Idx_mu1]<0'
-myselections['SignalMinus']['DATA']['cut']  += ' && Muon_charge[Idx_mu1]<0'
-'''
 for cut in ['Signal', 'Sideband', 'Dimuon']:
     if cut=='Dimuon':
         myselections['%s' % cut] = copy.deepcopy(selections['%s' % cut])
@@ -199,140 +101,74 @@ for cut in ['Signal', 'Sideband', 'Dimuon']:
         myselections['%sPlus' % cut][d]['cut']    += ' && Muon_charge[Idx_mu1]>0'
         myselections['%sMinus' % cut][d]['cut']   += ' && Muon_charge[Idx_mu1]<0'
 
-# respect nanoAOD structure: Collection_modifiers_variable
-variables =  {        
-    'PV' : {
-        'appliesTo' : ['Signal*','Sideband*','Dimuon'],
-        'inputCollection' : 'PV',
-        'modifiers': '',
-        'variables': {
-            'npvsGood' :  ('Number of good primary vertexes',  100, 0, 100),
-            },
-        },
-    'RecoZ' : {
-        'appliesTo' : ['Dimuon'],
-        'inputCollection' : 'RecoZ',
-        'modifiers': '',
-         'variables': {
-            'Muon_corrected_mass' :  ('Dimuon mass (Rochester corr.)',  100, 50, 150),
-            'Muon_corrected_pt' :  ('Dimuon pT (Rochester corr.)',  100, 00, 100),
-            'Muon_corrected_y' :  ('Dimuon y (Rochester corr.)',  100, -3, 3),
-            'Muon_corrected_CStheta' :  ('Dimuon CS cosTheta (Rochester corr.)',  100, -1, 1),
-            'Muon_corrected_CSphi' :  ('Dimuon CS phi (Rochester corr.)',  100, -math.pi, math.pi),
-            'Muon_corrected_MET_nom_uPar' :  ('uPar on Z (Rochester corr./smear MET)',  100, -100, 100),
-            'Muon_corrected_MET_nom_uPer' :  ('uPer on Z (Rochester corr./smear MET)',  100, -100, 100),
-            },
-        },
-    'Muon1': { 
-        'appliesTo' : ['Signal*','Sideband*','Dimuon'],
-        'inputCollection' : 'Muon',
-        'newCollection': 'SelectedMuon1', 
-        'modifiers': '', 
-        'index': 'Idx_mu1',
-        'variables': { 
-            'corrected_pt':   ('muon pt (Rochester corr.)',  100, 20, 100),
-            'corrected_MET_uPar':   ('uPar (Rochester corr./smear MET)',  100, -100, 100),
-            'corrected_MET_uPer':   ('uPer (Rochester corr./smear MET)',  100, -100, 100),
-            'corrected_MET_nom_Wlikemt':   ('W-like Mt (Rochester corr./smear MET)',  100, 0, 200),
-            'pfRelIso04_all': ('muon pfRelIso04', 100, 0., 0.5),
-            'eta':            ('muon eta', 100, -2.5, 2.5),
-            'dxy':            ('muon dxy', 100, -0.04, 0.04),
-            'dz':             ('muon dz', 100, -0.2, 0.2),
-            },
-    },
-    'Muon2': { 
-        'appliesTo' : ['Dimuon'],
-        'inputCollection' : 'Muon',
-        'newCollection': 'SelectedMuon2', 
-        'modifiers': '', 
-        'index': 'Idx_mu2',
-        'variables': { 
-            'corrected_pt':   ('muon pt (Rochester corr.)',  100, 20, 100),
-            'corrected_MET_nom_Wlikemt':   ('W-like Mt (Rochester corr./smear MET)',  100, 0, 200),
-            'corrected_MET_uPar':   ('uPar (Rochester corr./smear MET)',  100, -100, 100),
-            'corrected_MET_uPer':   ('uPer (Rochester corr./smear MET)',  100, -100, 100),
-            'eta':            ('muon eta', 100, -2.5, 2.5),
-            'dxy':            ('muon dxy', 100, -0.04, 0.04),
-            'dz':             ('muon dz', 100, -0.2, 0.2),
-            'pfRelIso04_all': ('muon pfRelIso04', 100, 0., 0.5),
-            },
-    },    
-}
-#del variables['Muon1']
-#del variables['Muon2']
-
 
 inputDir = ('/scratch/bertacch/NanoAOD%s-%s/' % (str(dataYear), tag))
-outDir =  'NanoAOD%s-%s/' % (str(dataYear), tag)
 
-if not os.path.isdir(outDir): os.system('mkdir '+outDir)
-
-# full production
-production_file = open('/scratch/bianchini/NanoAOD%s-%s/mcsamples_%s.txt' % (str(dataYear), tag, str(dataYear)), 'r')
-production_content = [x.strip() for x in production_file.readlines()]
-
-restrict_to = ['QCD_Pt-1000toInf_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-120to170_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-15to20_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-170to300_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'\
-, 'QCD_Pt-20to30_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-30to50_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8',\
-'QCD_Pt-50to80_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-600to800_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8']
-#restrict_to.extend(['SingleMuon_Run2016C'])
-
-# available filed
-samples = os.listdir(inputDir)
-
-samples_dict = {}
-for sample in samples:    
-    if '_ext' in sample: sample_stripped = sample[:-5]
-    else: sample_stripped = sample        
-    xsec = -1
-    accept = False
-    for r in restrict_to: 
-        if r in sample_stripped: accept = True
-    accept |= (len(restrict_to)==0)
-    if not accept: continue
-
-    # add each Run period separately
-    if 'Run' in sample:
-        samples_dict[sample] = {'dir' : [sample], 'xsec' : xsec, 'subsel' : {'none' : ''}}
-        continue
-    # match for '_ext' to identify extensions of same process
-    for prod in production_content:
-        if sample_stripped in prod: xsec = float(prod.split(',')[-1])
-    if sample_stripped not in samples_dict.keys():
-        samples_dict[sample_stripped] = {'dir' : [sample], 'xsec' : xsec,  'subsel' : {'none' : ''} }
-        if 'WJets' in sample_stripped:
-            samples_dict[sample_stripped]['subsel']['WToMuNu']  = ' && genVtype == 14'
-            samples_dict[sample_stripped]['subsel']['WToETauNu'] = ' && (genVtype == 12 || genVtype == 16)'        
-    else:
-        samples_dict[sample_stripped]['dir'].append(sample)
+outDir =  'NanoAOD%s-%s/' % (str(dataYear), tag) 
+if not os.path.isdir(outDir): os.system('mkdir '+outDir) 
 
 outputFiles = []
 
-from multiprocessing import Process
-
-procs = []
+parser = sampleParser()
+samples_dict = parser.getSampleDict()
 
 for sample_key, sample in samples_dict.iteritems():
+    for subsel_key, subsel in sample['subsel'].iteritems(): 
+        outputFiles.append("%s%s" % (sample_key, ('_'+subsel_key if subsel_key!='none' else '')) )
+
+if rdf:
+
+    from multiprocessing import Process
+
+    procs = []
+
+    for sample_key, sample in samples_dict.iteritems():
+
+        print 'doing multiprocessing'
+
+        if not sample['multiprocessing']: continue
     
-    dataType = 'MC' if 'Run' not in sample_key else 'DATA'
+        dataType = 'MC' if 'Run' not in sample_key else 'DATA'
 
-    print 'Analysing sample', bcolors.OKBLUE, sample_key, bcolors.ENDC
-    print '\tdirectories =', bcolors.OKBLUE, sample['dir'] , bcolors.ENDC
-    print '\txsec = '+'{:0.3f}'.format(sample['xsec'])+' pb', \
+        print 'Analysing sample', bcolors.OKBLUE, sample_key, bcolors.ENDC
+        print '\tdirectories =', bcolors.OKBLUE, sample['dir'] , bcolors.ENDC
+        print '\txsec = '+'{:0.3f}'.format(sample['xsec'])+' pb', \
         ', (data type is', bcolors.OKBLUE, dataType, bcolors.ENDC, ')'
-    print '\tsubselections =', bcolors.OKBLUE, sample['subsel'] , bcolors.ENDC
+        print '\tsubselections =', bcolors.OKBLUE, sample['subsel'] , bcolors.ENDC
 
-    inputFile = ROOT.std.vector("std::string")()
-    for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
+        inputFile = ROOT.std.vector("std::string")()
+        for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
             
-    p = Process(target=RDFprocess, args=(outDir, inputFile, selections, sample))
-    p.start()
+        p = Process(target=RDFprocess, args=(outDir, inputFile, myselections, sample))
+        p.start()
         
-    procs.append(p)
+        procs.append(p)
 
-for p in procs:  
-    p.join()
+    for p in procs:  
+        p.join()
+    
+    
+    ROOT.ROOT.EnableImplicitMT()
 
-       
+    for sample_key, sample in samples_dict.iteritems():
+
+        print 'doing multithreading'
+
+        if sample['multiprocessing']: continue
+
+        dataType = 'MC' if 'Run' not in sample_key else 'DATA'
+
+        print 'Analysing sample', bcolors.OKBLUE, sample_key, bcolors.ENDC
+        print '\tdirectories =', bcolors.OKBLUE, sample['dir'] , bcolors.ENDC
+        print '\txsec = '+'{:0.3f}'.format(sample['xsec'])+' pb', \
+        ', (data type is', bcolors.OKBLUE, dataType, bcolors.ENDC, ')'
+        print '\tsubselections =', bcolors.OKBLUE, sample['subsel'] , bcolors.ENDC
+
+        inputFile = ROOT.std.vector("std::string")()
+        for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
+            
+        RDFprocess(outDir, inputFile, myselections, sample)
+        
 
 samples_merging = {
     'WToMuNu'  : [x for x in outputFiles if ('WJets' and 'WToMuNu') in x],
@@ -364,12 +200,10 @@ print bcolors.OKBLUE, outputMergedFiles, bcolors.ENDC
 
 selected = [s for s in outputMergedFiles if 'SignalPlus' in s]
 
-
-
 if plot:
 
     print selected
-    plt = plotter(outdir=outDir, folder=outDir, fileList=selected, norm = 30.172)
+    plt = plotter(outdir=outDir, folder=outDir, fileList=selected, norm = 35.922)
     plt.plotStack()
 
 

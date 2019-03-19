@@ -10,10 +10,6 @@ class sampleParser:
         self.restrict = restrict
         self.samples_dict = {}
 
-
-        #outDir =  'NanoAOD%s-%s/' % (str(dataYear), tag) ############ put somewhere else
-        #if not os.path.isdir(outDir): os.system('mkdir '+outDir) ############ put somewhere else
-
     def parse(self):
 
         production_file = open('/scratch/bianchini/NanoAOD%s-%s/mcsamples_%s.txt' % (str(self.dataYear), self.tag, str(self.dataYear)), 'r')
@@ -21,6 +17,8 @@ class sampleParser:
 
         # available files
         samples = os.listdir(self.inputDir)
+
+        print samples
 
         for sample in samples:    
             
@@ -34,9 +32,11 @@ class sampleParser:
             accept |= (len(self.restrict)==0)
             if not accept: continue
 
+            multiprocess = False
+
             # add each Run period separately
             if 'Run' in sample:
-                self.samples_dict[sample] = {'dir' : [sample], 'xsec' : xsec, 'subsel' : {'none' : ''}}
+                self.samples_dict[sample] = {'dir' : [sample], 'xsec' : xsec, 'subsel' : {'none' : ''}, 'multiprocessing': multiprocess}
                 continue
 
             found = False
@@ -48,9 +48,11 @@ class sampleParser:
                     found = True
             if not found: print 'sample not found in sample table!', sample_stripped        
                         
-
             if sample_stripped not in self.samples_dict.keys():
-                self.samples_dict[sample_stripped] = {'dir' : [sample], 'xsec' : xsec,  'subsel' : {'none' : ''} }
+
+                if 'WW' in sample_stripped or 'WZ' in sample_stripped or 'ZZ' in sample_stripped or 'QCD'in sample_stripped or 'ST 'in sample_stripped: multiprocess = True
+
+                self.samples_dict[sample_stripped] = {'dir' : [sample], 'xsec' : xsec,  'subsel' : {'none' : ''} ,'multiprocessing': multiprocess}
                 if 'WJets' in sample_stripped:
                     self.samples_dict[sample_stripped]['subsel']['WToMuNu']  = ' && genVtype == 14'
                     self.samples_dict[sample_stripped]['subsel']['WToETauNu'] = ' && (genVtype == 12 || genVtype == 16)'        
@@ -62,8 +64,3 @@ class sampleParser:
         self.parse()
 
         return self.samples_dict
-
-
-sample = sampleParser()
-
-print sample.getSampleDict()

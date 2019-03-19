@@ -12,7 +12,7 @@ class RDFtree:
         RDF = ROOT.ROOT.RDataFrame
         self.d = RDF(self.treeName, self.inputFile)
         self.entries = self.d.Count() #stores lazily the number of events
-
+        
         self.modules = []
 
         self.objs = {} # objects to be received from modules
