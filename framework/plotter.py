@@ -54,6 +54,28 @@ class plotter:
 
     def plotStack(self):
 
+        pave_cms = ROOT.TPaveText(0.16,0.82,0.42,0.89, "NDC")
+        pave_cms.SetFillStyle(0);
+        pave_cms.SetBorderSize(0);
+        pave_cms.SetTextAlign(12)
+        pave_cms.SetTextSize(0.06)
+        #pave_cms.SetTextFont(61)
+        pave_cms.AddText("CMS")
+        pave_prel = ROOT.TPaveText(0.16,0.75,0.42,0.82, "NDC")
+        pave_prel.SetFillStyle(0);
+        pave_prel.SetBorderSize(0);
+        pave_prel.SetTextAlign(12)
+        pave_prel.SetTextSize(0.045)
+        pave_prel.SetTextFont(52)
+        pave_prel.AddText("Preliminary")
+        pave_lumi = ROOT.TPaveText(0.484,0.90,0.92,0.96, "NDC")
+        pave_lumi.SetFillStyle(0);
+        pave_lumi.SetBorderSize(0);
+        pave_lumi.SetTextAlign(32)
+        pave_lumi.SetTextSize(0.05)
+        pave_lumi.SetTextFont(42)
+        pave_lumi.AddText(("%.2f fb^{-1} (2016)" % self.norm))
+
         self.getHistos()
 
         self.stacks = []
@@ -96,7 +118,7 @@ class plotter:
 
             hs.SetMaximum(1.5*max(maxdata,maxstack))
             hs.Draw("HIST")
-            hs.GetXaxis().SetTitle(hs.GetName())
+            hs.GetXaxis().SetTitle(hdata.GetXaxis().GetTitle())
             #hdata.Draw("same")
 
             rp = ROOT.TRatioPlot(hs, hdata)
@@ -106,9 +128,14 @@ class plotter:
             rp.GetLowerRefYaxis().SetTitle("MC / DATA")
 
             legend.Draw()
+            pave_cms.Draw("same")
+            pave_prel.Draw("same")
+            pave_lumi.Draw("same")
+
 
             c.Update()
             c.SaveAs("{dir}/{c}_{t}.pdf".format(dir=self.outdir,c=c.GetName(), t=self.tag))
+            c.SaveAs("{dir}/{c}_{t}.png".format(dir=self.outdir,c=c.GetName(), t=self.tag))
        
 
             

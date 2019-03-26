@@ -61,6 +61,49 @@ class RDFtree:
 
         self.node[nodeToEnd] = branchRDF
 
+    def branchWithSystematics(self,nodeToStart, nodeToEnd, outputFile, modules=[], syst):
+
+        for syst_type, variations in syst.iteritems():
+
+            for var in variations:
+
+                mysyst = {syst_type: var}
+
+                self.outputFile = outputFile
+                self.objs[self.outputFile] = []
+
+                if nodeToStart in self.graph:
+                    self.graph[nodeToStart].append(nodeToEnd)
+                else: 
+                    self.graph[nodeToStart]=[nodeToEnd]
+
+                branchRDF = self.node[nodeToStart]
+
+                lenght = len(self.modules)
+
+                self.modules.extend(modules)
+
+                # modify RDF according to modules
+                for i, m in enumerate(self.modules[lenght:]): 
+
+                    m.getSyst(mysyst) #get the syst dictionary to run the module doing the variations
+
+                    branchRDF = m.run(CastToRNode(branchRDF))
+                    tmp_th1 = m.getTH1()
+                    tmp_th2 = m.getTH2()
+                    tmp_th3 = m.getTH3()
+
+                    for obj in tmp_th1:
+                        self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH1D')(obj))
+
+                    for obj in tmp_th2:
+                        self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH2D')(obj))
+
+                    for obj in tmp_th3:
+                        self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH3D')(obj))
+
+                self.node[nodeToEnd] = branchRDF
+
 
     def takeSnapshot(self):
 

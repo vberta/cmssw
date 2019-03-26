@@ -148,7 +148,7 @@ if rdf:
         p.join()
     
     
-    ROOT.ROOT.EnableImplicitMT()
+    ROOT.ROOT.EnableImplicitMT(24)
 
     for sample_key, sample in samples_dict.iteritems():
 

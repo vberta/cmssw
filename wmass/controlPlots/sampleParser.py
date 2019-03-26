@@ -50,7 +50,7 @@ class sampleParser:
                         
             if sample_stripped not in self.samples_dict.keys():
 
-                if 'WW' in sample_stripped or 'WZ' in sample_stripped or 'ZZ' in sample_stripped or 'QCD'in sample_stripped or 'ST 'in sample_stripped: multiprocess = True
+                if 'WW' in sample_stripped or 'WZ' in sample_stripped or 'ZZ' in sample_stripped or 'QCD'in sample_stripped or 'ST'in sample_stripped: multiprocess = True
 
                 self.samples_dict[sample_stripped] = {'dir' : [sample], 'xsec' : xsec,  'subsel' : {'none' : ''} ,'multiprocessing': multiprocess}
                 if 'WJets' in sample_stripped:
