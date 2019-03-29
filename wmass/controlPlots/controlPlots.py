@@ -51,33 +51,37 @@ class controlPlots(module):
 
         # loop over variables
         for Collection,dic in self.variables.iteritems():
-            
             collectionName = ''
-            
             if dic.has_key('newCollection') and dic['newCollection'] != '':
-            
-                if 'index' in dic:
-
-                    for syst_type, variations in self.syst: #loop over systematics (in fact only one per time is passed)           
-
-                        if variations == []: # if "nominal"         
-
-                            # define a new subcollection with all the columns of the original collection                    
-                            self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d)                 
-                            collectionName = dic['newCollection']
-
-                        else:
-
-                            self.d = self.defineSubcollectionFromIndexWithSyst(dic['inputCollection'], dic['newCollection'], dic['index'], self.d, syst_type, variations)
-
+                if 'index' in dic:                    
+                    # define a new subcollection with all the columns of the original collection                    
+                    self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d, self.syst)                 
+                    collectionName = dic['newCollection']
             else:
                 collectionName = dic['inputCollection']
-            
+
             for var,tools in dic['variables'].iteritems():
-               
-                columns = list(self.d.GetDefinedColumnNames())
-                h = self.d.Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')  
-                self.myTH1.append(h)
+
+                print collectionName+'_'+var
+
+                for nom, variations in self.syst.iteritems():
+                    
+                    if len(variations)==0:
+                        h = self.d.Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')
+                        self.myTH1.append(h)  
+                    else:
+                        #variations = ['jerDown']
+                        for v in variations:
+                            if not nom in var: continue
+                            print var.replace(nom,v), "after substitution"
+                            h = self.d.Histo1D(collectionName+'_'+var.replace(nom,v))
+                            #h = self.d.Histo1D((Collection+'_'+var.replace(nom,v), " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var.replace(nom,v), 'totweight')
+                            print h
+                            print h.GetName(), "in loop"
+                            self.myTH1.append(h)
+
+        for h in self.myTH1:
+            print h.GetName(), "in control plots"
+                    
 
         return self.d
-

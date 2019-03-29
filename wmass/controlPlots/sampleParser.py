@@ -18,8 +18,6 @@ class sampleParser:
         # available files
         samples = os.listdir(self.inputDir)
 
-        print samples
-
         for sample in samples:    
             
             if '_ext' in sample: sample_stripped = sample[:-5]

@@ -2,7 +2,7 @@ from header import *
 import copy
 
 class RDFtree:
-    def __init__(self, outputDir, inputFile,treeName='Events'):
+    def __init__(self, outputDir, inputFile,treeName='Events',syst = {}, pretend=False):
 
         self.outputDir = outputDir # output directory
         self.inputFile = inputFile
@@ -21,57 +21,35 @@ class RDFtree:
         self.node['input'] = self.d # assign input RDF to a branch called 'input'
 
         self.graph = {} # save the graph to write it in the end 
+        self.syst = syst
+
+        self.pretend = pretend
+        if self.pretend:
+
+            ROOT.ROOT.DisableImplicitMT()
+            self.d=self.d.Range(10)
 
 
         #start analysis
         self.start = time.time()
         
-    def branch(self, nodeToStart, nodeToEnd, outputFile, modules=[]):
+    def branch(self,nodeToStart, nodeToEnd, outputFile, modules=[]):
 
         self.outputFile = outputFile
-        self.objs[self.outputFile] = []
+        self.objs[self.outputFile] = {}
 
-        if nodeToStart in self.graph:
-            self.graph[nodeToStart].append(nodeToEnd)
-        else: 
-            self.graph[nodeToStart]=[nodeToEnd]
-
-        branchRDF = self.node[nodeToStart]
-
-        lenght = len(self.modules)
-
-        self.modules.extend(modules)
-
-        # modify RDF according to modules
-        for i, m in enumerate(self.modules[lenght:]): 
-
-            branchRDF = m.run(CastToRNode(branchRDF))
-            tmp_th1 = m.getTH1()
-            tmp_th2 = m.getTH2()
-            tmp_th3 = m.getTH3()
-
-            for obj in tmp_th1:
-                self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH1D')(obj))
-
-            for obj in tmp_th2:
-                self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH2D')(obj))
-
-            for obj in tmp_th3:
-                self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH3D')(obj))
-
-        self.node[nodeToEnd] = branchRDF
-
-    def branchWithSystematics(self,nodeToStart, nodeToEnd, outputFile, modules=[], syst):
-
-        for syst_type, variations in syst.iteritems():
+        for syst_type, variations in self.syst.iteritems():
 
             for var in variations:
 
                 mysyst = {syst_type: var}
 
-                self.outputFile = outputFile
-                self.objs[self.outputFile] = []
+                if len(var)>0:
+                    systDir = var[0].replace("Up", "")
+                else: systDir = "nom"
 
+                self.objs[self.outputFile][systDir] = []
+               
                 if nodeToStart in self.graph:
                     self.graph[nodeToStart].append(nodeToEnd)
                 else: 
@@ -94,13 +72,16 @@ class RDFtree:
                     tmp_th3 = m.getTH3()
 
                     for obj in tmp_th1:
-                        self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH1D')(obj))
+                        print obj.GetName()
+                        self.objs[self.outputFile][systDir].append(ROOT.RDF.RResultPtr('TH1D')(obj))
 
                     for obj in tmp_th2:
-                        self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH2D')(obj))
+                        self.objs[self.outputFile][systDir].append(ROOT.RDF.RResultPtr('TH2D')(obj))
 
                     for obj in tmp_th3:
-                        self.objs[self.outputFile].append(ROOT.RDF.RResultPtr('TH3D')(obj))
+                        self.objs[self.outputFile][systDir].append(ROOT.RDF.RResultPtr('TH3D')(obj))
+
+                    m.reset()
 
                 self.node[nodeToEnd] = branchRDF
 
@@ -130,14 +111,23 @@ class RDFtree:
    
         os.chdir(self.outputDir) 
     
-        for outfile, hList in self.objs.iteritems():
+        for outfile, systDic in self.objs.iteritems():
 
             fout = ROOT.TFile(outfile, "recreate")
             fout.cd()
+
+            for syst, hList in systDic.iteritems():
+
+                # make directory if it does not exist
+                dir = fout.GetDirectory(syst)
+                if not dir:
+                    print ">>> created dir"
+                    dir = fout.mkdir(syst)
             
-            for h in hList:
-                
-                h.Write()
+                dir.cd()
+                for h in hList:
+                    print h.GetName()
+                    h.Write()
 
         
         os.chdir('..')

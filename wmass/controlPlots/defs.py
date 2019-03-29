@@ -13,6 +13,7 @@ from plotter import *
 from sampleParser import *
 from selections import *
 from variables import *
+from systematics import *
 
 class bcolors:
     HEADER = '\033[95m'
@@ -67,7 +68,7 @@ def RDFprocess(outDir, inputFile, selections, sample):
     myselections = selections
     sample = sample
 
-    p = RDFtree(outputDir=outDir, inputFile=inputFile)
+    p = RDFtree(outputDir=outDir, inputFile=inputFile,pretend = True, syst = systematics)
 
       # create branches
     for subsel_key, subsel in sample['subsel'].iteritems(): 
@@ -109,7 +110,7 @@ if not os.path.isdir(outDir): os.system('mkdir '+outDir)
 
 outputFiles = []
 
-parser = sampleParser()
+parser = sampleParser(restrict= ['QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'])
 samples_dict = parser.getSampleDict()
 
 for sample_key, sample in samples_dict.iteritems():
