@@ -30,6 +30,8 @@ class controlPlots(module):
 
     def run(self,d):
 
+        self.d = d
+
         RDF = ROOT.ROOT.RDataFrame
         runs = RDF('Runs', self.inputFile)
 
@@ -40,7 +42,7 @@ class controlPlots(module):
             print 'lumiweight   : '+'{:1.8f}'.format((1.*self.xsec)/genEventSumw)+' (|Generator_weight| not accounted for)'
             #genEventSumw=1
 
-        self.d = d.Filter(self.selections[self.dataType]['cut'])
+        selection = self.selections[self.dataType]['cut']
 
         # define mc specific weights
         if self.dataType == 'MC':            
@@ -62,26 +64,20 @@ class controlPlots(module):
 
             for var,tools in dic['variables'].iteritems():
 
-                print collectionName+'_'+var
-
                 for nom, variations in self.syst.iteritems():
                     
                     if len(variations)==0:
-                        h = self.d.Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')
+                        print "Nominal"
+                        print "Selection:", selection, "Variable", collectionName+'_'+var
+                        h = self.d.Filter(selection).Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')
                         self.myTH1.append(h)  
                     else:
-                        #variations = ['jerDown']
+
                         for v in variations:
                             if not nom in var: continue
-                            print var.replace(nom,v), "after substitution"
-                            h = self.d.Histo1D(collectionName+'_'+var.replace(nom,v))
-                            #h = self.d.Histo1D((Collection+'_'+var.replace(nom,v), " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var.replace(nom,v), 'totweight')
-                            print h
-                            print h.GetName(), "in loop"
+                            print "Variations", v
+                            print "Selection:", selection.replace(nom,v), "Variable", collectionName+'_'+var.replace(nom,v)
+                            h = self.d.Filter(selection.replace(nom,v)).Histo1D((Collection+'_'+var.replace(nom,v), " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var.replace(nom,v), 'totweight')
                             self.myTH1.append(h)
-
-        for h in self.myTH1:
-            print h.GetName(), "in control plots"
-                    
 
         return self.d

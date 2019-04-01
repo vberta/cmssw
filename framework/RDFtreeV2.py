@@ -2,15 +2,23 @@ from header import *
 import copy
 
 class RDFtree:
-    def __init__(self, outputDir, inputFile,treeName='Events',syst = {}, pretend=False):
+    def __init__(self, outputDir, outputFile, inputFile,treeName='Events',syst = {}, pretend=False):
 
         self.outputDir = outputDir # output directory
+        self.outputFile = outputFile
         self.inputFile = inputFile
         
         self.treeName = treeName
 
         RDF = ROOT.ROOT.RDataFrame
         self.d = RDF(self.treeName, self.inputFile)
+
+        self.pretend = pretend
+        if self.pretend:
+
+            ROOT.ROOT.DisableImplicitMT()
+            self.d=self.d.Range(10)
+
         self.entries = self.d.Count() #stores lazily the number of events
         
         self.modules = []
@@ -23,20 +31,14 @@ class RDFtree:
         self.graph = {} # save the graph to write it in the end 
         self.syst = syst
 
-        self.pretend = pretend
-        if self.pretend:
-
-            ROOT.ROOT.DisableImplicitMT()
-            self.d=self.d.Range(10)
-
 
         #start analysis
         self.start = time.time()
         
     def branch(self,nodeToStart, nodeToEnd, outputFile, modules=[]):
 
-        self.outputFile = outputFile
-        self.objs[self.outputFile] = {}
+        self.branchDir = nodeToEnd
+        self.objs[self.branchDir] = {}
 
         for syst_type, variations in self.syst.iteritems():
 
@@ -48,7 +50,7 @@ class RDFtree:
                     systDir = var[0].replace("Up", "")
                 else: systDir = "nom"
 
-                self.objs[self.outputFile][systDir] = []
+                self.objs[self.branchDir][systDir] = []
                
                 if nodeToStart in self.graph:
                     self.graph[nodeToStart].append(nodeToEnd)
@@ -72,14 +74,13 @@ class RDFtree:
                     tmp_th3 = m.getTH3()
 
                     for obj in tmp_th1:
-                        print obj.GetName()
-                        self.objs[self.outputFile][systDir].append(ROOT.RDF.RResultPtr('TH1D')(obj))
+                        self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH1D')(obj))
 
                     for obj in tmp_th2:
-                        self.objs[self.outputFile][systDir].append(ROOT.RDF.RResultPtr('TH2D')(obj))
+                        self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH2D')(obj))
 
                     for obj in tmp_th3:
-                        self.objs[self.outputFile][systDir].append(ROOT.RDF.RResultPtr('TH3D')(obj))
+                        self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH3D')(obj))
 
                     m.reset()
 
@@ -110,21 +111,19 @@ class RDFtree:
             os.system("mkdir -p " + self.outputDir)
    
         os.chdir(self.outputDir) 
+
+        fout = ROOT.TFile(self.outputFile, "recreate")
+        fout.cd()
     
-        for outfile, systDic in self.objs.iteritems():
+        for branchDir, systDic in self.objs.iteritems():
 
-            fout = ROOT.TFile(outfile, "recreate")
-            fout.cd()
-
+            fout.mkdir(branchDir)
+            
             for syst, hList in systDic.iteritems():
 
-                # make directory if it does not exist
-                dir = fout.GetDirectory(syst)
-                if not dir:
-                    print ">>> created dir"
-                    dir = fout.mkdir(syst)
+                fout.mkdir(branchDir+'/'+syst)
             
-                dir.cd()
+                fout.cd(branchDir+'/'+syst)
                 for h in hList:
                     print h.GetName()
                     h.Write()

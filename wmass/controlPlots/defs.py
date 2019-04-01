@@ -31,12 +31,14 @@ parser.add_argument('-dataYear', '--dataYear',type=int, default=2016, help="")
 parser.add_argument('-hadd', '--hadd',type=int, default=False, help="")
 parser.add_argument('-plot', '--plot',type=int, default=False, help="")
 parser.add_argument('-rdf', '--rdf',type=int, default=True, help="")
+parser.add_argument('-pretend', '--pretend',type=bool, default=False, help="")
 args = parser.parse_args()
 tag = args.tag
 dataYear = args.dataYear
 hadd = args.hadd
 plot = args.plot
 rdf = args.rdf
+pretend = args.pretend
 print "tag =", bcolors.OKGREEN, tag, bcolors.ENDC, \
     ", dataYear =", bcolors.OKGREEN, str(dataYear), bcolors.ENDC
 
@@ -68,7 +70,9 @@ def RDFprocess(outDir, inputFile, selections, sample):
     myselections = selections
     sample = sample
 
-    p = RDFtree(outputDir=outDir, inputFile=inputFile,pretend = True, syst = systematics)
+    outputFile = "%s.root" % (sample_key) 
+
+    p = RDFtree(outputDir=outDir, outputFile = outputFile,inputFile=inputFile,pretend = pretend, syst = systematics)
 
       # create branches
     for subsel_key, subsel in sample['subsel'].iteritems(): 
@@ -79,11 +83,11 @@ def RDFprocess(outDir, inputFile, selections, sample):
             print '\tBranching: subselection', bcolors.OKBLUE, subsel_key, bcolors.ENDC, 'with selection' , bcolors.OKBLUE, sel_key, bcolors.ENDC
             print '\tAdding variables for collections', bcolors.OKBLUE, myvariables.keys(), bcolors.ENDC
            
-            outputFile = "%s%s_%s.root" % (sample_key, ('_'+subsel_key if subsel_key!='none' else ''), sel_key) 
             myselection = copy.deepcopy(sel)
             myselection[dataType]['cut'] += subsel if subsel_key!='none' else ''
+            subsel_str= subsel if subsel_key!='none' else ''
             p.branch(nodeToStart='input',
-                        nodeToEnd='controlPlots'+sel_key,
+                        nodeToEnd='controlPlots'+sel_key+subsel_str,
                         outputFile=outputFile,
                         modules = [controlPlots(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile)])
     
@@ -140,7 +144,7 @@ if rdf:
         inputFile = ROOT.std.vector("std::string")()
         for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
             
-        p = Process(target=RDFprocess, args=(outDir, inputFile, myselections, sample))
+        p = Process(target=RDFprocess, args=(outDir, inputFile, myselections,sample))
         p.start()
         
         procs.append(p)

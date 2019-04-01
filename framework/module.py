@@ -19,33 +19,37 @@ class module:
         columns = list(d.GetColumnNames())
         columns.extend(d.GetDefinedColumnNames())
 
-        main = [c for c in columns if c.startswith(collection)] # columns of the main collection
-
         subSetWithSyst = []
+        mainWithSyst = []
 
         for nom, variations in syst.iteritems(): 
 
             if len(variations)>0: # case variations
+
+                main = [c for c in columns if c.startswith(collection) and nom in c] # columns of the main collection
                 
-                subSet = [c.replace(collection,subcollection) for c in main if c.startswith(collection) and nom in c] # columns of the sub collection if affected by the syst
-                print subSet, "subSet"
+                subSet = [c.replace(collection,subcollection) for c in main] # columns of the sub collection if affected by the syst
 
                 for var in variations:
                     subSetWithSyst.extend([c.replace(nom,var) for c in subSet]) # now with systematics
-                print subSetWithSyst, "subSetWithSyst"
+                    mainWithSyst.extend([c.replace(nom,var) for c in main])
 
                 for i,s in enumerate(subSetWithSyst):
-                    d = d.Define(s, '{vec}[{idx}]'.format(vec=main[i], idx=idx))
+                    d = d.Define(s, '{vec}[{idx}]'.format(vec=mainWithSyst[i], idx=idx))
 
             else: #case nominal
-                subSet = [c.replace(collection,subcollection) for c in main if c.startswith(collection)]
+
+                main = [c for c in columns if c.startswith(collection)] # columns of the main collection
+                mainNom = [c for c in main if not 'Up' in c]
+                mainNom2 = [c for c in mainNom if not 'Down' in c]
+
+
+                subSet = [c.replace(collection,subcollection) for c in mainNom2 ]
                 subSetNom = [c for c in subSet if not 'Up' in c]
                 subSetNom2 = [c for c in subSetNom if not 'Down' in c]
-                print subSetNom2, "subSet nominal"
 
                 for i,s in enumerate(subSetNom2):
-            
-                    d = d.Define(s, '{vec}[{idx}]'.format(vec=main[i], idx=idx))
+                    d = d.Define(s, '{vec}[{idx}]'.format(vec=mainNom2[i], idx=idx))
 
                 # define new vector length 
 
