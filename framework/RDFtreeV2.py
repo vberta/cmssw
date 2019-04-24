@@ -46,7 +46,7 @@ class RDFtree:
 
                 mysyst = {syst_type: var}
 
-                if len(var)>0:
+                if len(var)==2: # check if this is an Up/Down variation
                     systDir = var[0].replace("Up", "")
                 else: systDir = "nom"
 
@@ -66,7 +66,8 @@ class RDFtree:
                 # modify RDF according to modules
                 for i, m in enumerate(self.modules[lenght:]): 
 
-                    m.getSyst(mysyst) #get the syst dictionary to run the module doing the variations
+                    if hasattr( m, 'getSyst' ) and callable( m.getSyst ):
+                        m.getSyst(mysyst) #get the syst dictionary to run the module doing the variations
 
                     branchRDF = m.run(CastToRNode(branchRDF))
                     tmp_th1 = m.getTH1()

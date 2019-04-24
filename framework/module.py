@@ -14,7 +14,7 @@ class module:
         pass 
 
 
-    def defineSubcollectionFromIndex(self, collection, subcollection, idx, d, syst):
+    def defineSubcollectionFromIndex(self, collection, subcollection, idx, d, syst={}):
 
         columns = list(d.GetColumnNames())
         columns.extend(d.GetDefinedColumnNames())
@@ -22,38 +22,57 @@ class module:
         subSetWithSyst = []
         mainWithSyst = []
 
-        for nom, variations in syst.iteritems(): 
+        if syst:
 
-            if len(variations)>0: # case variations
+            for nom, variations in syst.iteritems(): 
 
-                main = [c for c in columns if c.startswith(collection) and nom in c] # columns of the main collection
+                if len(variations)>0: # case variations
+
+                    main = [c for c in columns if c.startswith(collection) and nom in c] # columns of the main collection
                 
-                subSet = [c.replace(collection,subcollection) for c in main] # columns of the sub collection if affected by the syst
+                    subSet = [c.replace(collection,subcollection) for c in main] # columns of the sub collection if affected by the syst
 
-                for var in variations:
-                    subSetWithSyst.extend([c.replace(nom,var) for c in subSet]) # now with systematics
-                    mainWithSyst.extend([c.replace(nom,var) for c in main])
+                    for var in variations:
+                        subSetWithSyst.extend([c.replace(nom,var) for c in subSet]) # now with systematics
+                        mainWithSyst.extend([c.replace(nom,var) for c in main])
 
-                for i,s in enumerate(subSetWithSyst):
-                    d = d.Define(s, '{vec}[{idx}]'.format(vec=mainWithSyst[i], idx=idx))
+                    for i,s in enumerate(subSetWithSyst):
+                        d = d.Define(s, '{vec}[{idx}]'.format(vec=mainWithSyst[i], idx=idx))
 
-            else: #case nominal
+                else: #case nominal
 
-                main = [c for c in columns if c.startswith(collection)] # columns of the main collection
-                mainNom = [c for c in main if not 'Up' in c]
-                mainNom2 = [c for c in mainNom if not 'Down' in c]
+                    main = [c for c in columns if c.startswith(collection)] # columns of the main collection
+                    mainNom = [c for c in main if not 'Up' in c]
+                    mainNom2 = [c for c in mainNom if not 'Down' in c]
 
 
-                subSet = [c.replace(collection,subcollection) for c in mainNom2 ]
-                subSetNom = [c for c in subSet if not 'Up' in c]
-                subSetNom2 = [c for c in subSetNom if not 'Down' in c]
+                    subSet = [c.replace(collection,subcollection) for c in mainNom2 ]
+                    subSetNom = [c for c in subSet if not 'Up' in c]
+                    subSetNom2 = [c for c in subSetNom if not 'Down' in c]
 
-                for i,s in enumerate(subSetNom2):
-                    d = d.Define(s, '{vec}[{idx}]'.format(vec=mainNom2[i], idx=idx))
+                    for i,s in enumerate(subSetNom2):
+                        d = d.Define(s, '{vec}[{idx}]'.format(vec=mainNom2[i], idx=idx))
 
-                # define new vector length 
+                    # define new vector length 
 
-                d = d.Define("n{}".format(subcollection), "{}".format(1))
+                    d = d.Define("n{}".format(subcollection), "{}".format(1))
+        else:
+
+            main = [c for c in columns if c.startswith(collection)] # columns of the main collection
+            mainNom = [c for c in main if not 'Up' in c]
+            mainNom2 = [c for c in mainNom if not 'Down' in c]
+
+
+            subSet = [c.replace(collection,subcollection) for c in mainNom2 ]
+            subSetNom = [c for c in subSet if not 'Up' in c]
+            subSetNom2 = [c for c in subSetNom if not 'Down' in c]
+
+            for i,s in enumerate(subSetNom2):
+                d = d.Define(s, '{vec}[{idx}]'.format(vec=mainNom2[i], idx=idx))
+
+            # define new vector length 
+
+            d = d.Define("n{}".format(subcollection), "{}".format(1))
 
         return d
 

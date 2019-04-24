@@ -15,7 +15,7 @@ selections = {
                 'MET_filters==1 && ' + \
                 'nVetoElectrons==0 && ' + \
                 '1',            
-            'weight' : \
+            'weight' : 'Generator_weight*' +\
                 'puWeight*' + \
                 'Muon_Trigger_SF[Idx_mu1]*' + \
                 'Muon_ID_SF[Idx_mu1]*' + \
@@ -44,7 +44,7 @@ selections = {
                 'MET_filters==1 && ' +\
                 'nVetoElectrons==0 && ' +\
                 '1',
-            'weight' : \
+            'weight' : 'Generator_weight*' +\
                 'puWeight*' + \
                 'Muon_Trigger_SF[Idx_mu1]*' + \
                 'Muon_ID_SF[Idx_mu1]*' + \
@@ -72,7 +72,7 @@ selections = {
                 'MET_filters==1 && '+ \
                 'nVetoElectrons==0 && '+ \
                 '1',
-            'weight' : \
+            'weight' : 'Generator_weight*' +\
                 'puWeight*' +\
                 'Muon_Trigger_SF[Idx_mu1]*Muon_ISO_SF[Idx_mu1]*Muon_ID_SF[Idx_mu1]*' +\
                 'Muon_ISO_SF[Idx_mu2]*Muon_ID_SF[Idx_mu2]',
