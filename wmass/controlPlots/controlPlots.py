@@ -57,6 +57,8 @@ class controlPlots(module):
             if "SF" in nom or "Weight" in nom: #if this is a systematic of type "weight variations"
 
                 print nom, "this is a systematic of type weight variations"
+                if not self.dataType == 'MC': break 
+
                 for v in variations:
                     newWeight = weight.replace(nom,v)
                     print weight, newWeight
@@ -66,7 +68,9 @@ class controlPlots(module):
                         self.d = self.d.Define('totweight_{}'.format(v), 'lumiweight*{}[0]'.format(v))
                     else:
                         self.d = self.d.Define('totweight', '1') # to be checked what to do with data
+                          
 
+                
                 # loop over variables
                 for Collection,dic in self.variables.iteritems():
                     collectionName = ''
@@ -84,15 +88,14 @@ class controlPlots(module):
                             for v in variations:
                                 print Collection+'_'+var+'_'+v,collectionName+'_'+var,'totweight_{}'.format(v)
 
-                                print self.d.GetColumnType(collectionName+'_'+var), "variable"
-                                print self.d.GetColumnType('totweight_{}'.format(v)), "weight"
                     
                                 self.d = self.d.Filter(selection)
                                 #cols = ROOT.vector('string')(); cols.push_back(collectionName+'_'+var);
                                 #d2 = self.d.Display(cols)
                                 #d2.Print()
+                                
                                 h =self.d.Histo1D((Collection+'_'+var+'_'+v, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight_{}'.format(v))
-
+                                
                                 self.myTH1.append(h)  
 
             else:        
@@ -103,24 +106,35 @@ class controlPlots(module):
                     collectionName = ''
                     if dic.has_key('newCollection') and dic['newCollection'] != '':
                         if 'index' in dic:                    
-                            # define a new subcollection with all the columns of the original collection                    
-                            self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d, self.syst)                 
+                            # define a new subcollection with all the columns of the original collection 
+                            if self.dataType == 'MC':                 
+                                self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d, self.syst)
+                            else:
+                                self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d)
+
                             collectionName = dic['newCollection']
                     else:
                         collectionName = dic['inputCollection']
 
                     for var,tools in dic['variables'].iteritems():
 
-                        for nom, variations in self.syst.iteritems():
-                    
-                            if len(variations)==0:
-                                h = self.d.Filter(selection).Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')
-                                self.myTH1.append(h)  
-                            else:
+                        if not self.dataType == 'MC': 
+                            h = self.d.Filter(selection).Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')
+                            print "il mio histo"
+                            print h.GetName()
+                            self.myTH1.append(h)
 
-                                for v in variations:
-                                    if not nom in var: continue
-                                    h = self.d.Filter(selection.replace(nom,v)).Histo1D((Collection+'_'+var.replace(nom,v), " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var.replace(nom,v), 'totweight')
-                                    self.myTH1.append(h)
+                        else:
+                            for nom, variations in self.syst.iteritems():
+                    
+                                if len(variations)==0:
+                                    h = self.d.Filter(selection).Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')
+                                    self.myTH1.append(h)  
+                                else:
+
+                                    for v in variations:
+                                        if not nom in var: continue
+                                        h = self.d.Filter(selection.replace(nom,v)).Histo1D((Collection+'_'+var.replace(nom,v), " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var.replace(nom,v), 'totweight')
+                                        self.myTH1.append(h)
 
         return self.d
