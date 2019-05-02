@@ -63,7 +63,7 @@ class controlPlots(module):
 
                     # define mc specific weights
                     if self.dataType == 'MC':           
-                        self.d = self.d.Define('totweight_{}'.format(v), 'lumiweight*{}'.format(v))
+                        self.d = self.d.Define('totweight_{}'.format(v), 'lumiweight*{}[0]'.format(v))
                     else:
                         self.d = self.d.Define('totweight', '1') # to be checked what to do with data
 
