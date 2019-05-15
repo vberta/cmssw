@@ -2,12 +2,13 @@ import os
 
 class sampleParser:
     
-    def __init__(self, tag='V0', dataYear = '2016', restrict=[]):
+    def __init__(self, tag='V0', dataYear = '2016', restrict=[], exclude =[] ):
 
         self.tag = tag
         self.dataYear = dataYear
         self.inputDir = ('/scratch/bertacch/NanoAOD%s-%s/' % (str(self.dataYear), self.tag))
         self.restrict = restrict
+        self.exclude = exclude
         self.samples_dict = {}
 
     def parse(self):
@@ -25,9 +26,15 @@ class sampleParser:
             xsec = -1
     
             accept = False
+            # check if sample is in restrict list
             for r in self.restrict: 
                 if r in sample_stripped: accept = True
             accept |= (len(self.restrict)==0)
+
+            # check if sample is in exclude list
+            for e in self.exclude:
+                if e in sample_stripped: accept = False
+            
             if not accept: continue
 
             multiprocess = False

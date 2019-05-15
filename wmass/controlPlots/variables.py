@@ -6,7 +6,7 @@ variables =  {
         'appliesTo' : ['Signal*','Sideband*','Dimuon'],
         'inputCollection' : 'PV',
         'variables': {
-            'npvsGood' :  ('Number of good primary vertexes',  100, 0, 100),
+            'npvsGood' :  ('Number of good primary vertices',  100, 0, 100),
             },
         },
     'RecoZ' : {
@@ -42,6 +42,9 @@ variables =  {
             'corrected_MET_nom_Wlikehpt': ('W-like recoil p_{T} (Rochester corr./smear MET)',  100, 0, 200),
 
             },
+        'newvariables':{
+            'pfRelIso04_all_corrected_pt': ('muon pfAbsIso04',100, 0., 10.,'Muon_pfRelIso04_all*Muon_corrected_pt'),
+        }
     },
     'Muon2': { 
         'appliesTo' : ['Dimuon'],

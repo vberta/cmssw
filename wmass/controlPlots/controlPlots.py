@@ -73,26 +73,28 @@ class controlPlots(module):
                 
                 # loop over variables
                 for Collection,dic in self.variables.iteritems():
-                    collectionName = ''
+                    
+                    collectionName = dic['inputCollection']
+
+                    # first of all define new variables in the input collection
+                    if dic.has_key('newvariables'):
+                        for newvar, definition in dic['newvariables'].iteritems():
+                            self.d = self.d.Define(collectionName+'_'+newvar, definition[4]) # 4th entries in tuple is the string that defines the new variable
+                        dic['variables'].update(dic['newvariables'])
+
+
                     if dic.has_key('newCollection') and dic['newCollection'] != '':
                         if 'index' in dic:                    
                             # define a new subcollection with all the columns of the original collection                    
                             self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d)                 
                             collectionName = dic['newCollection']
-                    else:
-                        collectionName = dic['inputCollection']
-
+                    
                     for var,tools in dic['variables'].iteritems():
 
                         for nom, variations in self.syst.iteritems():
                             for v in variations:
-                                print Collection+'_'+var+'_'+v,collectionName+'_'+var,'totweight_{}'.format(v)
-
                     
                                 self.d = self.d.Filter(selection)
-                                #cols = ROOT.vector('string')(); cols.push_back(collectionName+'_'+var);
-                                #d2 = self.d.Display(cols)
-                                #d2.Print()
                                 
                                 h =self.d.Histo1D((Collection+'_'+var+'_'+v, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight_{}'.format(v))
                                 
@@ -103,7 +105,15 @@ class controlPlots(module):
 
                 # loop over variables
                 for Collection,dic in self.variables.iteritems():
-                    collectionName = ''
+                    collectionName = dic['inputCollection']
+
+                    # first of all define new variables in the input collection
+                    if dic.has_key('newvariables'):
+                        for newvar, definition in dic['newvariables'].iteritems():
+                            
+                            self.d = self.d.Define(collectionName+'_'+newvar, definition[4]) # 4th entries in tuple is the string that defines the new variable
+                        dic['variables'].update(dic['newvariables'])
+
                     if dic.has_key('newCollection') and dic['newCollection'] != '':
                         if 'index' in dic:                    
                             # define a new subcollection with all the columns of the original collection 
@@ -113,21 +123,20 @@ class controlPlots(module):
                                 self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d)
 
                             collectionName = dic['newCollection']
-                    else:
-                        collectionName = dic['inputCollection']
-
+                        
                     for var,tools in dic['variables'].iteritems():
 
+                    
                         if not self.dataType == 'MC': 
                             h = self.d.Filter(selection).Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')
-                            print "il mio histo"
-                            print h.GetName()
+                            
                             self.myTH1.append(h)
 
                         else:
                             for nom, variations in self.syst.iteritems():
                     
                                 if len(variations)==0:
+                                   
                                     h = self.d.Filter(selection).Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')
                                     self.myTH1.append(h)  
                                 else:

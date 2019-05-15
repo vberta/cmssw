@@ -1,4 +1,6 @@
 # Base class from which the other modules will inherit
+import ROOT
+from header import *
 
 class module:
    
@@ -14,10 +16,13 @@ class module:
         pass 
 
 
-    def defineSubcollectionFromIndex(self, collection, subcollection, idx, d, syst={}):
+    def defineSubcollectionFromIndex(self, collection, subcollection, idx, d1, syst={}):
 
-        columns = list(d.GetColumnNames())
-        columns.extend(d.GetDefinedColumnNames())
+        columns = list(d1.GetColumnNames())
+        columns.extend(d1.GetDefinedColumnNames())
+
+        #remove duplicates
+        columns = list(dict.fromkeys(columns))
 
         subSetWithSyst = []
         mainWithSyst = []
@@ -37,7 +42,7 @@ class module:
                         mainWithSyst.extend([c.replace(nom,var) for c in main])
 
                     for i,s in enumerate(subSetWithSyst):
-                        d = d.Define(s, '{vec}[{idx}]'.format(vec=mainWithSyst[i], idx=idx))
+                        d1 = d1.Define(s, '{vec}[{idx}]'.format(vec=mainWithSyst[i], idx=idx))
 
                 else: #case nominal
 
@@ -45,17 +50,17 @@ class module:
                     mainNom = [c for c in main if not 'Up' in c]
                     mainNom2 = [c for c in mainNom if not 'Down' in c]
 
-
                     subSet = [c.replace(collection,subcollection) for c in mainNom2 ]
                     subSetNom = [c for c in subSet if not 'Up' in c]
                     subSetNom2 = [c for c in subSetNom if not 'Down' in c]
 
                     for i,s in enumerate(subSetNom2):
-                        d = d.Define(s, '{vec}[{idx}]'.format(vec=mainNom2[i], idx=idx))
+                        
+                        d1 = d1.Define(s, '{vec}[{idx}]'.format(vec=mainNom2[i], idx=idx))
 
                     # define new vector length 
 
-                    d = d.Define("n{}".format(subcollection), "{}".format(1))
+                    d1 = d1.Define("n{}".format(subcollection), "{}".format(1))
         else:
 
             main = [c for c in columns if c.startswith(collection)] # columns of the main collection
@@ -68,13 +73,15 @@ class module:
             subSetNom2 = [c for c in subSetNom if not 'Down' in c]
 
             for i,s in enumerate(subSetNom2):
-                d = d.Define(s, '{vec}[{idx}]'.format(vec=mainNom2[i], idx=idx))
+                
+                d1 = d1.Define(s, '{vec}[{idx}]'.format(vec=mainNom2[i], idx=idx))
 
             # define new vector length 
 
-            d = d.Define("n{}".format(subcollection), "{}".format(1))
+            d1 = d1.Define("n{}".format(subcollection), "{}".format(1))
 
-        return d
+        return d1
+
 
     def getTH1(self):
 

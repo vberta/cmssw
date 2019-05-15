@@ -114,7 +114,8 @@ if not os.path.isdir(outDir): os.system('mkdir '+outDir)
 
 outputFiles = []
 
-parser = sampleParser(restrict= ['QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'])
+parser = sampleParser(restrict= ['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'])
+#parser = sampleParser()
 samples_dict = parser.getSampleDict()
 
 for sample_key, sample in samples_dict.iteritems():
@@ -153,7 +154,7 @@ if rdf:
         p.join()
     
     
-    ROOT.ROOT.EnableImplicitMT(24)
+    #ROOT.ROOT.EnableImplicitMT(24)
 
     for sample_key, sample in samples_dict.iteritems():
 
