@@ -76,7 +76,7 @@ def RDFprocess(outDir, inputFile, selections, sample):
 
       # create branches
     for subsel_key, subsel in sample['subsel'].iteritems(): 
-        outputFiles.append("%s%s" % (sample_key, ('_'+subsel_key if subsel_key!='none' else '')) )
+        outputFiles.append("%s" % (sample_key))
         for sel_key, sel in myselections.iteritems():
             if len(sample['subsel'])>1 and subsel_key=='none': continue
             myvariables = filterVariables(variables, sel_key)
@@ -87,7 +87,7 @@ def RDFprocess(outDir, inputFile, selections, sample):
             myselection[dataType]['cut'] += subsel if subsel_key!='none' else ''
             subsel_str= subsel if subsel_key!='none' else ''
             p.branch(nodeToStart='input',
-                        nodeToEnd='controlPlots'+sel_key+subsel_str,
+                        nodeToEnd='controlPlots'+sel_key,
                         outputFile=outputFile,
                         modules = [controlPlots(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile)])
     
@@ -120,7 +120,7 @@ samples_dict = parser.getSampleDict()
 
 for sample_key, sample in samples_dict.iteritems():
     for subsel_key, subsel in sample['subsel'].iteritems(): 
-        outputFiles.append("%s%s" % (sample_key, ('_'+subsel_key if subsel_key!='none' else '')) )
+        outputFiles.append("%s" % (sample_key))
 
 if rdf:
 
@@ -191,13 +191,12 @@ print 'Samples to be merged:'
 print bcolors.OKBLUE, samples_merging, bcolors.ENDC
 
 outputMergedFiles = []
-for sel_key, sel in myselections.iteritems():
-    for sample_merging_key, sample_merging in samples_merging.iteritems():
+for sample_merging_key, sample_merging in samples_merging.iteritems():
         if len(sample_merging)>0:
-            outputMergedFiles.append( '%s_%s.root' % (sample_merging_key,sel_key))
-            cmd = 'hadd -f -k %s/%s_%s.root' % (outDir,sample_merging_key,sel_key)
+            outputMergedFiles.append( '%s.root' % (sample_merging_key))
+            cmd = 'hadd -f -k %s/%s.root' % (outDir,sample_merging_key)
             for isample in sample_merging:
-                cmd += ' %s/%s_%s.root' % (outDir,isample,sel_key)
+                cmd += ' %s/%s.root' % (outDir,isample)
             if hadd:
                 print bcolors.OKGREEN, cmd, bcolors.ENDC
                 os.system(cmd)
@@ -212,9 +211,9 @@ if plot:
     for sel_key, sel in myselections.iteritems():
 
         print sel_key
-        selected = [s for s in outputMergedFiles if sel_key in s]
+        selected = [s for s in outputMergedFiles]
 
-        plt = plotter(outdir=outDir+'/'+sel_key, folder=outDir, tag = sel_key, fileList=selected, norm = 35.922)
+        plt = plotter(outdir=outDir+'/'+sel_key, folder=outDir, tag = sel_key, syst=systematics , fileList=selected, norm = 35.922)
         plt.plotStack()
 
 

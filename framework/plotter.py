@@ -6,7 +6,7 @@ ROOT.gInterpreter.Declare('TH1D *Obj2TH1D(TObject *p) { return (TH1D*)p; }')
 
 class plotter:
     
-    def __init__(self, outdir, folder = '', fileList = [], norm = 1, tag =''):
+    def __init__(self, outdir, folder = '', fileList = [], norm = 1, tag ='',syst = {}):
 
         self.folder = folder # folder containig the various outputs
         self.fileList = fileList # list of files in each folders
@@ -15,6 +15,7 @@ class plotter:
         self.norm = norm
         self.tag = tag
         self.colours =[ROOT.kRed, ROOT.kGreen+2, ROOT.kBlue, ROOT.kMagenta+1, ROOT.kOrange+7, ROOT.kCyan+1, ROOT.kGray+2, ROOT.kViolet+5, ROOT.kSpring+5, ROOT.kAzure+1, ROOT.kPink+7, ROOT.kOrange+3, ROOT.kBlue+3, ROOT.kMagenta+3, ROOT.kRed+2]
+        self.syst = syst
         
         ROOT.gROOT.SetBatch()
 
@@ -35,17 +36,27 @@ class plotter:
             
             fIn = ROOT.TFile.Open(f)
 
-            for key in fIn.GetListOfKeys():
+            for syst_type, variations in self.syst.iteritems():
+                for var in variations: #FIXME when systematics has right dictionary (needed ntuples v1)
+                    # mysyst = {syst_type: var}
+                    if len(var)==2: # check if this is an Up/Down variation
+                        systDir = var[0].replace("Up", "")
+                    else: systDir = "nom"
 
-                if key.InheritsFrom(ROOT.TH2D.Class()): continue
-
-                h = fIn.Get(key.GetName())
-                
-                h.Sumw2()
+                    print "syst=", systDir
+                    fInSel =fIn.Get("controlPlots"+self.tag+"/"+systDir)
                     
-                hlist.append((copy.deepcopy(h),f.split('_')[0]))
+                    for key in fInSel.GetListOfKeys():
 
-            self.histos.append(hlist)
+                        if key.InheritsFrom(ROOT.TH2D.Class()): continue
+
+                        h = fInSel.Get(key.GetName())
+                        
+                        h.Sumw2()
+                            
+                        hlist.append((copy.deepcopy(h),f.split('_')[0]))
+
+                    self.histos.append(hlist)
 
 
         os.chdir('..')
