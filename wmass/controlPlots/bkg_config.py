@@ -14,6 +14,7 @@ from sampleParser import *
 from bkg_selections import *
 from bkg_variables import *
 from systematics import *
+from bkg_fakerateAnalyzer import *
 
 class bcolors:
     HEADER = '\033[95m'
@@ -91,7 +92,7 @@ def RDFprocess(outDir, inputFile, selections, sample):
             p.branch(nodeToStart='input',
                         nodeToEnd='controlPlots'+sel_key,
                         outputFile=outputFile,
-                        modules = [bkg_histos(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile)])
+                        modules = [bkg_histos(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning)])
     
     p.getOutput()
 
@@ -113,9 +114,16 @@ if not os.path.isdir(outDir): os.system('mkdir '+outDir)
 
 outputFiles = []
 
-parser = sampleParser(restrict= ['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'])
+# parser = sampleParser(restrict= ['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'])
+# parser = sampleParser()
+
+#WJ+QCD
 #parser = sampleParser(restrict= ['WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8','QCD_Pt-1000toInf_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-1000toInf_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-120to170_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-15to20_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-170to300_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-170to300_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-20to30_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-30to50_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-50to80_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-600to800_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-600to800_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1'])
-#parser = sampleParser()
+
+# WJ+QCD+EWK (w/o  data)
+parser = sampleParser(restrict= ['WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8','ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1', 'ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1', 'ST_t-channel_top_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1', 'ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1_ext1', 'ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1_ext1', 'TTJets_DiLept_TuneCUETP8M1_13TeV-madgraphMLM-pythia8', 'TTJets_DiLept_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_ext1', 'TTJets_SingleLeptFromTbar_TuneCUETP8M1_13TeV-madgraphMLM-pythia8', 'TTJets_SingleLeptFromTbar_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_ext1', 'TTJets_SingleLeptFromT_TuneCUETP8M1_13TeV-madgraphMLM-pythia8', 'TTJets_SingleLeptFromT_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_ext1', 'WW_TuneCUETP8M1_13TeV-pythia8', 'WW_TuneCUETP8M1_13TeV-pythia8_ext1', 'WZ_TuneCUETP8M1_13TeV-pythia8', 'ZZ_TuneCUETP8M1_13TeV-pythia8','QCD_Pt-1000toInf_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-1000toInf_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-120to170_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-15to20_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-170to300_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-170to300_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-20to30_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-30to50_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-50to80_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-600to800_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-600to800_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1'])
+
+
 samples_dict = parser.getSampleDict()
 
 for sample_key, sample in samples_dict.iteritems():
@@ -155,7 +163,7 @@ if rdf:
         p.join()
     
     
-    #ROOT.ROOT.EnableImplicitMT(24)
+    ROOT.ROOT.EnableImplicitMT(24)
 
     for sample_key, sample in samples_dict.iteritems():
 
@@ -207,8 +215,14 @@ print bcolors.OKBLUE, outputMergedFiles, bcolors.ENDC
 
 if fakerate :
     print "----> FakeRate analyzer:"
-    # selected = [s for s in outputMergedFiles]
-    # fake = fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir, fileList=selected, norm = 35.922)
+    selected = [s for s in outputMergedFiles]
+    if not rdf : #if rdf=false --->expected already created the rootfiles with proper histos (done previously by rdf)
+        skipHisto = True
+    if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg') 
+    # fake = fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir, fileList=selected, norm = 35.922, skipHisto = skipHisto)
+    fake = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922)
+    fake.integrated_preliminary()
+
 
 if (plot and 0):
 
