@@ -1,4 +1,8 @@
-class ACoeff:
+import sys
+sys.path.append('../../framework')
+from module import *
+
+class ACoeff(module):
    
     def __init__(self, hmap):
         

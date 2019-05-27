@@ -17,7 +17,6 @@ class Module {
   	std::vector<ROOT::RDF::RResultPtr<TH1D>> _h1List;
   	std::vector<ROOT::RDF::RResultPtr<TH2D>> _h2List;
   	std::vector<ROOT::RDF::RResultPtr<TH3D>> _h3List;
-    bool _trigLoop;
 
   public:
 
@@ -26,6 +25,7 @@ class Module {
   	virtual std::vector<ROOT::RDF::RResultPtr<TH1D>> getTH1();
   	virtual std::vector<ROOT::RDF::RResultPtr<TH2D>> getTH2();
   	virtual std::vector<ROOT::RDF::RResultPtr<TH3D>> getTH3();
+    virtual void reset();
     
 };
 

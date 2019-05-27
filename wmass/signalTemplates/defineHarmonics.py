@@ -1,4 +1,8 @@
-class defineHarmonics:
+import sys
+sys.path.append('../../framework')
+from module import *
+
+class defineHarmonics(module):
    
     def __init__(self):
         
@@ -33,3 +37,4 @@ class defineHarmonics:
     def getTH3(self):
 
         return self.myTH3
+

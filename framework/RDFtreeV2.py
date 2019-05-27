@@ -37,8 +37,12 @@ class RDFtree:
         
     def branch(self,nodeToStart, nodeToEnd, outputFile, modules=[]):
 
+        self.outputFile = outputFile
         self.branchDir = nodeToEnd
         self.objs[self.branchDir] = {}
+
+        if self.syst == {}:
+            self.syst = {"nom": [[]]}
 
         for syst_type, variations in self.syst.iteritems():
 
@@ -75,14 +79,31 @@ class RDFtree:
                     tmp_th3 = m.getTH3()
 
                     for obj in tmp_th1:
-                        self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH1D')(obj))
+                              
+                        if isinstance(obj, ROOT.TH1D):  
+                                   
+                            self.objs[self.branchDir][systDir].append(ROOT.TH1D(obj)) 
+                        else:
+                            self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH1D')(obj)) 
 
                     for obj in tmp_th2:
-                        self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH2D')(obj))
-
+                                
+                        if isinstance(obj, ROOT.TH2D):  
+                                   
+                            self.objs[self.branchDir][systDir].append(ROOT.TH2D(obj)) 
+                        else:
+                            self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH2D')(obj))
+                                
+                                     
                     for obj in tmp_th3:
-                        self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH3D')(obj))
-
+                                
+                        if isinstance(obj, ROOT.TH3D):  
+                                   
+                            self.objs[self.branchDir][systDir].append(ROOT.TH2D(obj)) 
+                        else:
+                            
+                            self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH3D')(obj))
+                    
                     m.reset()
 
                 self.node[nodeToEnd] = branchRDF
@@ -126,7 +147,7 @@ class RDFtree:
             
                 fout.cd(branchDir+'/'+syst)
                 for h in hList:
-                    print h.GetName()
+                    
                     h.Write()
 
         
