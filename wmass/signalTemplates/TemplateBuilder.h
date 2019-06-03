@@ -22,19 +22,15 @@ class TemplateBuilder : public Module{
     std::vector<ROOT::RDF::RResultPtr<TH1D>> _h1List;
     std::vector<ROOT::RDF::RResultPtr<TH2D>> _h2List;
     std::vector<ROOT::RDF::RResultPtr<TH3D>> _h3List;
-    bool _trigLoop;
-    std::string _myString;
     
     public:
     
-    TemplateBuilder(std::string s): _myString(s) {};
     ~TemplateBuilder() {};
     RNode run(RNode) override;
     std::vector<ROOT::RDF::RResultPtr<TH1D>> getTH1() override;
     std::vector<ROOT::RDF::RResultPtr<TH2D>> getTH2() override;
     std::vector<ROOT::RDF::RResultPtr<TH3D>> getTH3() override;
-    bool triggerLoop() override;
-
+    void reset() override;
     
 };
 
