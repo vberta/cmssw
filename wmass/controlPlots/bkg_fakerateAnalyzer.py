@@ -15,7 +15,7 @@ from bkg_selections import *
 # class bkg_fakerateAnalyzer(module):
 class bkg_fakerateAnalyzer:  
     # def __init__(self, outdir='./bkg', folder='./', norm = 1, skipHisto = 1, fileList,)  :
-    def __init__(self, ptBinning, etaBinning, outdir='./bkg', folder='./', norm = 1, varFake = 'pfRelIso04_all_corrected_MET_nom_mt', tightCut = 0.15, fitOnTemplate=False)  :
+    def __init__(self, ptBinning, etaBinning, outdir='./bkg', folder='./', norm = 1, varFake = 'pfRelIso04_all_corrected_MET_nom_mt', tightCut = 0.15, looseCut=40, fitOnTemplate=False, onData=True, nameSuff = '')  :
     
         self.outdir = outdir
         self.folder = folder
@@ -26,15 +26,19 @@ class bkg_fakerateAnalyzer:
         self.etaBinning = etaBinning
         self.varFake = varFake
         self.tightCut = tightCut
+        self.looseCut = looseCut
+        self.nameSuff = nameSuff
+
         self.fitOnTemplate = fitOnTemplate
+        self.onData = onData
         
         self.rootFiles = []
         self.relisoCUT = 0.15
         self.isoCUT = 5
         self.QCDmult = 1. #multiplication factor to QCD bkg
         
-        # self.sampleList = ['WToMuNu','QCD','EWKbkg','Data','DataLike']
-        self.sampleList = ['WToMuNu','QCD','EWKbkg','DataLike']
+        self.sampleList = ['WToMuNu','QCD','EWKbkg','Data','DataLike']
+        # self.sampleList = ['WToMuNu','QCD','EWKbkg','DataLike']
         # self.sampleList = ['WToMuNu','QCD','Data','DataLike']
 
         self.signList = ['Plus','Minus']
@@ -49,7 +53,9 @@ class bkg_fakerateAnalyzer:
         # self.etaBinningS = ['{:.2g}'.format(x) for x in self.etaBinning[1:]]
         self.ptBinningS = ['{:.2g}'.format(x) for x in self.ptBinning[:-1]]
         self.etaBinningS = ['{:.2g}'.format(x) for x in self.etaBinning[:-1]]
-
+        
+        self.dataOpt = 'fake'
+        if not self.onData : self.dataOpt = 'fakeMC'
         
         #open all the useful rootfile
         # for f in fileList
@@ -120,18 +126,47 @@ class bkg_fakerateAnalyzer:
         # return fitFunc.GetParameter(1)
         return outlist
         
+
+    def isolationAna(self, hdict,  loosecut=40, varname = 'pfRelIso04_all_corrected_MET_nom_mt', kind = 'fake') :
+        self.loosecut = loosecut
+        self.varname = varname
+        self.kind = kind # fake = calculate the fakerate (measurement ABCD), prompt = the promptrate (from MC), validation = the fakerate on MC QCD, fakeMC = fakerate from dataLike (MC) SEE DICT BELOW
+        self.hdct = hdict 
         
-        
-        
+        kindDict = {
+            'fake' : 'Data',
+            'validation' : 'QCD',
+            'fakeMC' : 'DataLike' ,
+            'prompt' : 'WToMuNu',
+            'EWKbkg' : 'EWKbkg',
+        }
+        datakind = kindDict[self.kind]            
+
+        hIsos = {}
+
+        for s in self.signList :
+            for e in self.etaBinningS :
+                for p in self.ptBinningS :
+                    # hIso = ROOT.TH1F("hIso_{kind}_{sign}_{eta}_{pt}".format(kind=self.kind,sign=s,eta=e, pt=p),"hIso_{kind}_{sign}_{eta}_{pt}".format(kind=self.kind,sign=s,eta=e, pt=p),400,0,0.5)            
+                    mtMin= hdict[p+e+s+varname+datakind+'Tot'].GetXaxis().GetBinCenter(1)-hdict[p+e+s+varname+datakind+'Tot'].GetXaxis().GetBinWidth(1)/2
+                    binsizeLoose = hdict[p+e+s+varname+datakind+'Tot'].GetXaxis().GetBinWidth(1)
+                    NcutLoose=(self.loosecut-mtMin)/binsizeLoose
+                    NcutLoose = int(NcutLoose)                    
+                    
+                    hIso = hdict[p+e+s+varname+datakind+'Tot'].ProjectionY("Iso_{kind}_{sign}_{eta}_{pt}".format(kind=self.kind,sign=s,eta=e, pt=p),0,NcutLoose-1)
+                    
+                    hIsos[p+e+s] = (hIso)
+        return hIsos           
     
-    
-    def differential_fakerate(self, hdict, mtDict, tightcut = 0.15, loosecut=40, varname = 'pfRelIso04_all_corrected_MET_nom_mt', kind = 'fake') :
+    def differential_fakerate(self, hdict, mtDict, tightcut = 0.15, loosecut=40, varname = 'pfRelIso04_all_corrected_MET_nom_mt', kind = 'fake', EWSFfit=True, highMtCut=90 ) :
         self.loosecut = loosecut
         self.tightcut = tightcut
         self.varname = varname
         self.kind = kind # fake = calculate the fakerate (measurement ABCD), prompt = the promptrate (from MC), validation = the fakerate on MC QCD, fakeMC = fakerate from dataLike (MC) SEE DICT BELOW
         self.hdct = hdict 
         self.mtDict =mtDict
+        self.EWSFfit = EWSFfit
+        self.highMtCut = highMtCut
         
         kindDict = {
             'fake' : 'Data',
@@ -164,10 +199,19 @@ class bkg_fakerateAnalyzer:
                 hFakes_pt = ROOT.TH1F("hFakes_pt_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hFakes_pt_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
                 scaleFactorEW =1 
                 if self.kind == 'fake' or self.kind == 'fakeMC' : 
-                    print "PRE FIT (sign, eta, kind))", s, e, datakind
+                    # print "PRE FIT (sign, eta, kind))", s, e, datakind
                     # scaleFactorEW=self.Fit4ScaleFactorEW(mtDict=mtDict,sign=s,eta=e,datakind=datakind)   
-                    scaleFactorEWPars = self.Fit4ScaleFactorEW(mtDict=mtDict,sign=s,eta=e,datakind=datakind)     
-                    scaleFactorEW=scaleFactorEWPars[0]
+                    scaleFactorEWPars = self.Fit4ScaleFactorEW(mtDict=self.mtDict,sign=s,eta=e,datakind=datakind)     
+                    if(self.EWSFfit) :
+                        scaleFactorEW=scaleFactorEWPars[0]
+                    else :
+                        minBin = mtDict[e+s+'WToMuNuTot'].GetXaxis().FindBin(self.highMtCut)
+                        maxBin = mtDict[e+s+'WToMuNuTot'].GetSize()-1 #number of bins (overflow included, -1 is to the underflow)
+                        EWKInt = mtDict[e+s+'WToMuNuTot'].Integral(minBin,maxBin)
+                        EWKInt = EWKInt + mtDict[e+s+'EWKbkgTot'].Integral(minBin,maxBin)
+                        dataInt = mtDict[e+s+datakind+'Tot'].Integral(minBin,maxBin)
+                        scaleFactorEW = EWKInt/dataInt
+                        print "SCALE FACTOR (eta,sign)",e, s, ",   VALUE=", scaleFactorEW, "  fit one=",scaleFactorEWPars[0], "   ratio (int/fit)=",scaleFactorEW/scaleFactorEWPars[0]
                     hEWSF_bkg.SetBinContent(self.etaBinningS.index(e)+1,scaleFactorEWPars[0])
                     hEWSF_bkg.SetBinError(self.etaBinningS.index(e)+1,scaleFactorEWPars[1])
                     hEWSF_sig.SetBinContent(self.etaBinningS.index(e)+1,scaleFactorEWPars[2])
@@ -223,7 +267,8 @@ class bkg_fakerateAnalyzer:
                             num_WToMuNu = hdict[p+e+s+varname+'WToMuNu'+'Tot'].ProjectionX("histoNum",0,NcutTight-1, "e").IntegralAndError(0,NcutLoose-1,numErr_WToMuNu)
                             
                             # print "PRE FIT (sign, kind))", s, datakind
-                            # scaleFactorEW = self.Fit4ScaleFactorEW(mtDict,s,datakind)    
+                            # scaleFactorEW = self.Fit4ScaleFactorEW(mtDict,s,datakind)   
+                            # scaleFactorEW=1
                             den = den - (den_EWKbkg + den_WToMuNu)*scaleFactorEW
                             num = num - (num_EWKbkg + num_WToMuNu)*scaleFactorEW
                             
@@ -276,7 +321,7 @@ class bkg_fakerateAnalyzer:
                     if(num==0) :
                         print "WARNING: fake rate num = 0 --> den=", den, "data kind=",self.kind, "(pt,eta,sign)=",p,e,s 
                     else:
-                        print "Ok: fake rate --> num/den=", num, den, num/den, "data kind=",self.kind, "(pt,eta,sign)=",p,e,s  
+                        # print "Ok: fake rate --> num/den=", num, den, num/den, "data kind=",self.kind, "(pt,eta,sign)=",p,e,s  
                         fake = num/den
                         # print num, numErr, math.sqrt(num),den, denErr, math.sqrt(den)
                         # fake_err = 1/(den**2)*math.sqrt((numErr**2)*(den**2)+(denErr**2)*(num**2)) #UNCORRELATED!!!!
@@ -405,21 +450,21 @@ class bkg_fakerateAnalyzer:
                             fr = 0
                             pr = 1 
                     
-                    print "fake rate=", fr, "prompt rate=",pr, "(eta,pt)=",e,p, "sign=", s
+                    # print "fake rate=", fr, "prompt rate=",pr, "(eta,pt)=",e,p, "sign=", s
                     scaleTight = -fr*(1-pr)/(pr-fr)
                     scaleNotTight = fr*pr/(pr-fr)
-                    print "scale (tight, not tight)", scaleTight,scaleNotTight
+                    # print "scale (tight, not tight)", scaleTight,scaleNotTight
                     scaleTightErr = math.sqrt((pr**4)*(dfr**2)-2*(pr**3)*(dfr**2)+(pr**2)*(dfr**2)+(fr**2)*((fr-1)**2)*(dpr**2))/((pr-fr)**2)
                     scaleNotTightErr = math.sqrt((pr**4)*(dfr**2)+(fr**4)*(dpr**2))/((pr-fr)**2)
                     NQCD=Ntight*scaleTight+NnotTight*scaleNotTight
                     NQCDErr = math.sqrt((scaleTight**2)*(tightErr**2)+(scaleTightErr**2)*(Ntight**2)+(scaleNotTight**2)*(notTightErr**2)+(scaleNotTightErr**2)*(NnotTight**2)   )
                     if self.kind == "prompt" or self.kind=="validation" or self.kind=='EWKbkg' :
-                        print "prompt and fake rate not applied"
+                        # print "prompt and fake rate not applied"
                         NQCD=Ntight
                         NQCDErr = tightErr
                             
                     htempl_pt.SetBinContent(self.ptBinningS.index(p)+1,NQCD)
-                    print "NQCD", NQCD, "kind=", self.kind,"---not tight=", NnotTight, "tight=", Ntight
+                    # print "NQCD", NQCD, "kind=", self.kind,"---not tight=", NnotTight, "tight=", Ntight
                     h2templ_sign.SetBinContent(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1,NQCD)
                     htempl_pt.SetBinError(self.ptBinningS.index(p)+1,NQCDErr)
                     # print "PROBLEMA: ERRORE NON ASSEGNATO", NQCDErr
@@ -435,7 +480,7 @@ class bkg_fakerateAnalyzer:
     
     def integrated_preliminary(self) :
     
-        print "getting histos"
+        # print "getting histos"
         histoDict = {}                          
         for s in self.signList :
             for v,name in map(None,self.varList,self.varName) :
@@ -446,7 +491,7 @@ class bkg_fakerateAnalyzer:
                                 # print "Get histo:" 'controlPlotsbkg_'+r+s+'/nom/Muon1_'+v
                                 # print "key=",s+v+f+r
                                 histoDict[s+v+f+r] =  rootFile.Get('controlPlotsbkg_'+r+s+'/nom/Muon1_'+v)
-                                histoDict[s+v+f+r].Scale(self.norm)
+                                if(f!='Data') : histoDict[s+v+f+r].Scale(self.norm)
                             else:
                                 # print "clone histo:", f+'_'+s+'_'+name+'_Tot'
                                 histoDict[s+v+f+r] = histoDict[s+v+f+'Sideband'].Clone(f+'_'+s+'_'+name+'_Tot')
@@ -469,7 +514,7 @@ class bkg_fakerateAnalyzer:
                 # print "=======================================================================" 
   
         # print histos            
-        print "ratios (integrated, preliminary)"
+        # print "ratios (integrated, preliminary)"
         ratios = []
         for s in self.signList :
             for v,name in map(None,self.varList,self.varName) :
@@ -479,7 +524,7 @@ class bkg_fakerateAnalyzer:
                     else : cutvalue = self.isoCUT
                     ratios.append(self.ratio_2Dto1D(histoDict[s+v+f+'Tot'],cutvalue,'ratio_'+histoDict[s+v+f+'Tot'].GetName()))
         
-        output = ROOT.TFile(self.outdir+"/bkg_integrated_preliminary.root","recreate")
+        output = ROOT.TFile(self.outdir+"/bkg_integrated_preliminary"+self.nameSuff+".root","recreate")
         for h in range(len(ratios)):
             ratios[h].Write()
 
@@ -489,7 +534,7 @@ class bkg_fakerateAnalyzer:
         
         self.fakerate = fakerate #if true calculate the fakerate in bin of eta, pt 
         
-        print "getting histos"
+        # print "getting histos"
         histoDict = {}
         mtDict = {}
 
@@ -507,20 +552,24 @@ class bkg_fakerateAnalyzer:
                                         # print "Get histo:" 'controlPlotsbkg_'+r+s+'/nom/Muon1_'+v+'_'+e+'_'+p
                                         # print "key=",p+e+s+v+f+r
                                         histoDict[p+e+s+v+f+r] =  rootFile.Get('controlPlotsbkg_'+r+s+'/nom/Muon1_'+v+'_'+e+'_'+p)
-                                        histoDict[p+e+s+v+f+r].Scale(self.norm)
-                                        if(MtCond) : mtDict[e+s+f+r] = rootFile.Get('controlPlotsbkg_'+r+s+'/nom/Muon1_corrected_MET_nom_mt')
-
+                                        if(f!='Data') : histoDict[p+e+s+v+f+r].Scale(self.norm)
+                                        if(MtCond) : 
+                                            mtDict[e+s+f+r] = rootFile.Get('controlPlotsbkg_'+r+s+'/nom/Muon1_corrected_MET_nom_mt_'+e)
+                                            if(f!='Data') : mtDict[e+s+f+r].Scale(self.norm)
                                     else:
                                         # print "clone histo:", p+e+f+'_'+s+'_'+name+'_Tot'
                                         histoDict[p+e+s+v+f+r] = histoDict[p+e+s+v+f+'Sideband'].Clone(p+'_'+e+'_'+f+'_'+s+'_'+name+'_Tot')
-                                        if(MtCond) : mtDict[e+s+f+r] = mtDict[e+s+f+'Sideband'].Clone(e+'_'+f+'_'+s+'_Mt_Tot')
+                                        if(MtCond) : mtDict[e+s+f+r] = mtDict[e+s+f+'Signal'].Clone('Mt_'+e+'_'+f+'_'+s+'_Tot')
                                         for rr in self.regionList :
                                             if (rr =="Sideband" or rr=="Tot") : continue
                                             # print "Added histo:", histoDict[p+e+s+v+f+rr].GetName()
                                             # print "key=",p+e+s+v+f+r
-                                            # print "key added=",p+e+s+v+f+rr
+                                            #print "key added=",p+e+s+v+f+rr
                                             histoDict[p+e+s+v+f+r].Add(histoDict[p+e+s+v+f+rr])
-                                            if(MtCond) : mtDict[e+s+f+r].Add(mtDict[e+s+f+rr])
+                                            if(MtCond) : 
+                                                # print "skipped sideband adding in Mt!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+                                                # continue
+                                                mtDict[e+s+f+r].Add(mtDict[e+s+f+rr])
                                             
 
 
@@ -528,7 +577,7 @@ class bkg_fakerateAnalyzer:
                                 # print "cloned (datalike) histo:", 'DataLike_'+s+'_'+name+'_Tot'
                                 # print "key=",p+e+s+v+f+'Tot'
                                 histoDict[p+e+s+v+f+'Tot']= histoDict[p+e+s+v+'WToMuNuTot'].Clone(p+'_'+e+'_'+'DataLike_'+s+'_'+name+'_Tot')
-                                if(MtCond) : mtDict[e+s+f+'Tot'] = mtDict[e+s+'WToMuNuTot'].Clone(e+'_'+'DataLike_'+s+'_'+'Mt_Tot')
+                                if(MtCond) : mtDict[e+s+f+'Tot'] = mtDict[e+s+'WToMuNuTot'].Clone('Mt_'+e+'_'+'DataLike_'+s+'_'+'_Tot')
                                 # print "><>>><<>><<>><<>>>>>>><<>><>>>>>>>>"
                                 for ff in self.sampleList :
                                     if (ff =="WToMuNu" or ff=="Data" or ff=="DataLike"):  continue
@@ -540,11 +589,11 @@ class bkg_fakerateAnalyzer:
                                 #DEBUUUG
                                 errore = ROOT.Double(0)
                                 binsizeTight = histoDict[p+e+s+v+f+'Tot'].GetYaxis().GetBinWidth(1)
-                                NcutTight=(0.15)/binsizeTight
+                                NcutTight=(self.tightCut)/binsizeTight
                                 NcutTight = int(NcutTight)
                                 
                                 binsizeLoose = histoDict[p+e+s+v+f+'Tot'].GetXaxis().GetBinWidth(1)
-                                NcutLoose=(40)/binsizeLoose
+                                NcutLoose=(self.looseCut)/binsizeLoose
                                 NcutLoose = int(NcutLoose)    
                                 # print "cut, l, t, ", NcutLoose,NcutTight
                                 # print "ENTRIES=", histoDict[p+e+s+v+f+'Tot'].ProjectionX("htight",NcutTight,-1, "e").IntegralAndError(NcutLoose-1,-1,errore), histoDict[p+e+s+v+f+'Tot'].ProjectionX("htight",-1,NcutTight, "e").IntegralAndError(NcutLoose-1,-1,errore)
@@ -563,8 +612,8 @@ class bkg_fakerateAnalyzer:
                             if 'relIso' in name : cutvalue =  self.relisoCUT
                             else : cutvalue = self.isoCUT
                             ratios.append(self.ratio_2Dto1D(histoDict[p+e+s+v+f+'Tot'],cutvalue,'ratio_'+histoDict[p+e+s+v+f+'Tot'].GetName()))
-        
-        output = ROOT.TFile(self.outdir+"/bkg_differential_fakerate.root","recreate")
+                
+        output = ROOT.TFile(self.outdir+"/bkg_differential_fakerate"+self.nameSuff+".root","recreate")
         preliminary_dir = output.mkdir("RatiosVSMt")
         preliminary_dir.cd()
         for h in range(len(ratios)):
@@ -573,20 +622,41 @@ class bkg_fakerateAnalyzer:
         
         # ptVSeta_map(hdict = histoDict)
         # ABCD_hypo(hdict = histoDict)
-        
+        Mt_dir = output.mkdir("Mt")
+        Mt_dir.cd()        
+        for e in self.etaBinningS :
+            for s in self.signList :
+                if(self.onData) : dataNameMt = 'Data'
+                else : dataNameMt = 'DataLike'
+                mtDict[e+s+'WToMuNuTot'].Write()
+                mtDict[e+s+'EWKbkgTot'].Write()
+                mtDict[e+s+'QCDTot'].Write() 
+                mtDict[e+s+dataNameMt+'Tot'].Write()       
         
         # ABCD_dir = output.mkdir("ABCD_checks")
         # ABCD_dir.cd()
         
-            
+        hIsoMC = self.isolationAna(kind=self.dataOpt,hdict=histoDict,varname = self.varFake, loosecut = self.looseCut)   
+        hIsoValidation = self.isolationAna(kind = 'validation',hdict=histoDict,varname = self.varFake, loosecut = self.looseCut)   
+        hIsoPrompt = self.isolationAna(kind = 'prompt',hdict=histoDict,varname = self.varFake, loosecut = self.looseCut)
+        hIsoEWKbkg = self.isolationAna(kind = 'EWKbkg',hdict=histoDict,varname = self.varFake, loosecut = self.looseCut)
+        fakerate_dir = output.mkdir("Isolation")
+        fakerate_dir.cd()
+        for a,b,c,d in map(None,hIsoMC,hIsoValidation,hIsoPrompt,hIsoEWKbkg): 
+                hIsoMC[a].Write()
+                hIsoValidation[b].Write()
+                hIsoPrompt[c].Write() 
+                hIsoEWKbkg[d].Write()  
+  
+              
         
         if(self.fakerate) :
-            print "processing fakerate"
-            hfakesMC = self.differential_fakerate(kind = 'fakeMC', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut)
-            hprompt =self.differential_fakerate(kind = 'prompt', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut)
-            hvalidation =self.differential_fakerate(kind = 'validation', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut)       
-            hvalidationSigReg =self.differential_fakerate(kind = 'validationSigReg', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut)       
-            hpromptSideband =self.differential_fakerate(kind = 'promptSideband', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut)       
+            # print "processing fakerate"
+            hfakesMC = self.differential_fakerate(kind = self.dataOpt, hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut, EWSFfit=False, highMtCut=90)
+            hprompt =self.differential_fakerate(kind = 'prompt', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut)
+            hvalidation =self.differential_fakerate(kind = 'validation', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut)       
+            hvalidationSigReg =self.differential_fakerate(kind = 'validationSigReg', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut)       
+            hpromptSideband =self.differential_fakerate(kind = 'promptSideband', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut)       
 
             # outputFake = ROOT.TFile(self.outdir+"/bkg_differential_fakerate.root","recreate")
             fakerate_dir = output.mkdir("Fakerate")
@@ -603,11 +673,11 @@ class bkg_fakerateAnalyzer:
                 
             template_dir = output.mkdir("Template")
             template_dir.cd()
-            print "processing template"
-            bkg_templateMC = self.bkg_template(kind = 'fakeMC', fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=40, varname = self.varFake)
-            bkg_templatePrompt = self.bkg_template(kind = 'prompt', fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=40, varname = self.varFake)
-            bkg_templateValidation = self.bkg_template(kind = 'validation', fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=40, varname = self.varFake)
-            bkg_templateEWKbkg = self.bkg_template(kind = 'EWKbkg', fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=40, varname = self.varFake)
+            # print "processing template"
+            bkg_templateMC = self.bkg_template(kind = self.dataOpt, fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake)
+            bkg_templatePrompt = self.bkg_template(kind = 'prompt', fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake)
+            bkg_templateValidation = self.bkg_template(kind = 'validation', fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake)
+            bkg_templateEWKbkg = self.bkg_template(kind = 'EWKbkg', fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake)
 
             for a,b,c in map(None, bkg_templateMC,bkg_templatePrompt,bkg_templateValidation) :
                 bkg_templateMC[a].Write()
@@ -616,12 +686,18 @@ class bkg_fakerateAnalyzer:
                 
         output.Close()
             
-    def fakerate_plots(self) :
+    def fakerate_plots(self, variations=False,tightCutList=[0.15],looseCutList=[40] ) :
         
-        inputFile = ROOT.TFile.Open(self.outdir+"/bkg_differential_fakerate.root")
+        self.variations = variations
+        self.tightCutList= tightCutList
+        self.looseCutList= looseCutList
+        
+        inputFile = ROOT.TFile.Open(self.outdir+"/bkg_differential_fakerate"+self.nameSuff+".root")
         
         canvasList = []
         legDict = {}
+        stackDict ={}
+        
         for s in self.signList :
             for e in self.etaBinningS :
                 
@@ -633,7 +709,7 @@ class bkg_fakerateAnalyzer:
                     c_comparison.SetGridy()
 
 
-                    h_fakeMC = inputFile.Get("Fakerate/hFakes_pt_fakeMC_"+s+"_"+e)
+                    h_fakeMC = inputFile.Get("Fakerate/hFakes_pt_"+self.dataOpt+"_"+s+"_"+e)
                     h_prompt = inputFile.Get("Fakerate/hFakes_pt_prompt_"+s+"_"+e)
                     h_validation = inputFile.Get("Fakerate/hFakes_pt_validation_"+s+"_"+e)
 
@@ -662,14 +738,14 @@ class bkg_fakerateAnalyzer:
                     h_fakeMC.SetTitle("Fake Rates, {min}<#eta<{max}, W {sign}".format(min=e, max=self.etaBinning[self.etaBinning.index(float(e))+1], sign=s))
 
                     legDict[e+s] = ROOT.TLegend(0.1,0.7,0.48,0.9)
-                    legDict[e+s].AddEntry(h_fakeMC,"Data-Like MC")
+                    legDict[e+s].AddEntry(h_fakeMC,"Data")
                     legDict[e+s].AddEntry(h_prompt, "W MC")
                     legDict[e+s].AddEntry(h_validation, "QCD MC")
                     # legDict[e+s].AddEntry(h_fake, "Data")
                     legDict[e+s].Draw("SAME")
 
                     canvasList.append(c_comparison)
-                    
+                    # c_comparison.SaveAs(self.outdir+"/plot/"+c_comparison.GetName()+'.png')
                     
                     #---------------------------------------------ABCD cehcks PLOTS ---------------------------------------------#
                     
@@ -715,7 +791,7 @@ class bkg_fakerateAnalyzer:
                     legDict[e+s+'ABCD'].Draw("SAME")
 
                     canvasList.append(c_ABCDcheck)
-                    
+                    # c_comparison.SaveAs(self.outdir+"/plot/"+c_ABCDcheck.GetName()+'.png')
                     
                     
                     #---------------------------------------------TEMPLATE PLOTS ---------------------------------------------#
@@ -726,7 +802,7 @@ class bkg_fakerateAnalyzer:
                     c_template.SetGridy()
 
 
-                    h_template = inputFile.Get("Template/htempl_pt_fakeMC_"+s+"_"+e)
+                    h_template = inputFile.Get("Template/htempl_pt_"+self.dataOpt+"_"+s+"_"+e)
                     h_W = inputFile.Get("Template/htempl_pt_prompt_"+s+"_"+e)
                     h_qcd = inputFile.Get("Template/htempl_pt_validation_"+s+"_"+e)
 
@@ -760,7 +836,140 @@ class bkg_fakerateAnalyzer:
                     # legDict[e+s].AddEntry(h_fake, "Data")
                     legDict[e+s].Draw("SAME")
 
-                    canvasList.append(c_template)                    
+                    canvasList.append(c_template)
+                    # c_comparison.SaveAs(self.outdir+"/plot/"+c_template.GetName()+'.png')
+
+                    
+                    #---------------------------------------------Mt EWSF PLOTS ---------------------------------------------#
+                    
+                    c_Mt_EWSF = ROOT.TCanvas("c_Mt_EWSF_{sign}_{eta}".format(sign=s,eta=e),"c_Mt_EWSF_{sign}_{eta}".format(sign=s,eta=e),800,600)
+                    c_Mt_EWSF.cd()
+                    c_Mt_EWSF.SetGridx()
+                    c_Mt_EWSF.SetGridy()
+                    
+                    if(self.onData) : dataNameMt = 'Data'
+                    else : dataNameMt = 'DataLike' 
+                    
+                    h_Mt_data = inputFile.Get("Mt/Mt_"+e+"_"+dataNameMt+"_"+s+"_Tot")
+                    h_Mt_bkg = inputFile.Get("Mt/Mt_"+e+"_QCD_"+s+"_Tot")
+                    h_Mt_sig = inputFile.Get("Mt/Mt_"+e+"_WToMuNu_"+s+"_Tot")
+                    h_Mt_EWKbkg = inputFile.Get("Mt/Mt_"+e+"_EWKbkg_"+s+"_Tot")
+                    h_Mt_sig.Add(h_Mt_EWKbkg)
+                    
+                    h_Mt_sig.Rebin(3)
+                    h_Mt_bkg.Rebin(3)
+                    h_Mt_data.Rebin(3)
+                    
+                    h_Mt_data.SetLineWidth(3)
+                    h_Mt_bkg.SetLineWidth(3)
+                    h_Mt_sig.SetLineWidth(3)
+                    # h_fake.SetLineWidth(3)
+                    
+                    # h_Mt_data.SetLineColor(632+2) #red
+                    h_Mt_data.SetLineColor(1) #black
+                    h_Mt_bkg.SetLineColor(600-4) #blue
+                    h_Mt_sig.SetLineColor(416+2) #green
+                    h_Mt_bkg.SetFillColor(600-4) #blue
+                    h_Mt_sig.SetFillColor(416+2) #green                    
+                    # h_fake.SetLineColor(1) #black
+                    
+                    h_Mt_data.Sumw2()
+                    h_Mt_data.SetMarkerStyle(20)
+                    h_Mt_data.Draw()
+                    
+                    
+                    stackDict[e+s+"Mt"] = ROOT.THStack("Mt"+e+s,"")
+                    stackDict[e+s+"Mt"].Add(h_Mt_sig)
+                    stackDict[e+s+"Mt"].Add(h_Mt_bkg)
+                    stackDict[e+s+"Mt"].Draw("SAME HIST")
+                    h_Mt_data.DrawCopy("SAME")
+                    # h_Mt_bkg.Draw("SAME")
+                    # h_Mt_sig.Draw("SAME")
+                    # h_fake.Draw("SAME")
+                    
+                    h_Mt_data.GetYaxis().SetTitle("dN/dMt/{size} [1/GeV]".format(size=h_Mt_data.GetBinWidth(1)))
+                    h_Mt_data.GetYaxis().SetTitleOffset(1)
+                    h_Mt_data.GetXaxis().SetTitle("M_{T} [GeV]")
+                    # h_Mt_data.SetTitle("Fake Rates, {min}<#eta<{max}, W {sign}".format(min=self.etaBinning[self.etaBinning.index(float(e))-1], max=e, sign=s))
+                    h_Mt_data.SetTitle("Transverse Mass, {min}<#eta<{max}, W {sign}".format(min=e, max=self.etaBinning[self.etaBinning.index(float(e))+1], sign=s))
+                    
+                    legDict[e+s+"Mt"] = ROOT.TLegend(0.1,0.7,0.48,0.9)
+                    legDict[e+s+"Mt"].AddEntry(h_Mt_data,"Data")
+                    legDict[e+s+"Mt"].AddEntry(h_Mt_bkg, "QCD MC")
+                    legDict[e+s+"Mt"].AddEntry(h_Mt_sig, "EWK MC")
+                    # legDict[e+s].AddEntry(h_fake, "Data")
+                    legDict[e+s+"Mt"].Draw("SAME")
+                    
+                    canvasList.append(c_Mt_EWSF)
+                    # c_comparison.SaveAs(self.outdir+"/plot/"+c_Mt_EWSF.GetName()+'.png')
+                    
+                    
+                    for p in self.ptBinningS :
+                        #---------------------------------------------ISO PLOTS ---------------------------------------------#
+                        
+                        c_Iso = ROOT.TCanvas("c_Iso_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),"c_Iso_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),800,600)
+                        c_Iso.cd()
+                        c_Iso.SetGridx()
+                        c_Iso.SetGridy()
+                        
+                        if(self.onData) : dataNameIso = 'fake'
+                        else : dataNameIso = 'FakeMC' 
+                        
+                        h_iso_data = inputFile.Get("Isolation/Iso_"+dataNameIso+"_"+s+"_"+e+"_"+p)
+                        h_iso_bkg = inputFile.Get("Isolation/Iso_validation_"+s+"_"+e+"_"+p)
+                        h_iso_sig = inputFile.Get("Isolation/Iso_prompt_"+s+"_"+e+"_"+p)
+                        h_iso_EWKbkg = inputFile.Get("Isolation/Iso_EWKbkg_"+s+"_"+e+"_"+p)
+                        # print "Isolation/iso_EWKbkg_"+s+"_"+e+"_"+p
+                        # print "Isolation/iso_prompt_"+s+"_"+e+"_"+p
+                        h_iso_sig.Add(h_iso_EWKbkg)
+                        
+                        h_iso_sig.Rebin(20)
+                        h_iso_bkg.Rebin(20)
+                        h_iso_data.Rebin(20)
+                        
+                        h_iso_data.SetLineWidth(3)
+                        h_iso_bkg.SetLineWidth(3)
+                        h_iso_sig.SetLineWidth(3)
+                        # h_fake.SetLineWidth(3)
+                        
+                        # h_iso_data.SetLineColor(632+2) #red
+                        h_iso_data.SetLineColor(1) #black
+                        h_iso_bkg.SetLineColor(600-4) #blue
+                        h_iso_sig.SetLineColor(416+2) #green
+                        h_iso_bkg.SetFillColor(600-4) #blue
+                        h_iso_sig.SetFillColor(416+2) #green                    
+                        # h_fake.SetLineColor(1) #black
+                        
+                        h_iso_data.Sumw2()
+                        h_iso_data.SetMarkerStyle(20)
+                        h_iso_data.Draw()
+                        
+                        stackDict[e+s+p+"Iso"] = ROOT.THStack("Iso"+e+s+p,"")
+                        stackDict[e+s+p+"Iso"].Add(h_iso_sig)
+                        stackDict[e+s+p+"Iso"].Add(h_iso_bkg)
+                        stackDict[e+s+p+"Iso"].Draw("SAME HIST")
+                        h_iso_data.DrawCopy("SAME")
+                        # h_iso_bkg.Draw("SAME")
+                        # h_iso_sig.Draw("SAME")
+                        # h_fake.Draw("SAME")
+                        
+                        h_iso_data.GetYaxis().SetTitle("dN/dIso/{size} [1/GeV]".format(size=h_iso_data.GetBinWidth(1)))
+                        h_iso_data.GetYaxis().SetTitleOffset(1)
+                        h_iso_data.GetXaxis().SetTitle("RelIso_{T} ")
+                        # h_iso_data.SetTitle("Fake Rates, {min}<#eta<{max}, W {sign}".format(min=self.etaBinning[self.etaBinning.index(float(e))-1], max=e, sign=s))
+                        h_iso_data.SetTitle("Relaitve Isolation 04, {min}<#eta<{max},{pmin}<Pt<{pmax}, W {sign}".format(min=e, max=self.etaBinning[self.etaBinning.index(float(e))+1],pmin=p, pmax=self.ptBinning[self.ptBinning.index(float(p))+1], sign=s))
+                        
+                        legDict[e+s+p+"Iso"] = ROOT.TLegend(0.1,0.7,0.48,0.9)
+                        legDict[e+s+p+"Iso"].AddEntry(h_iso_data,"Data")
+                        legDict[e+s+p+"Iso"].AddEntry(h_iso_bkg, "QCD MC")
+                        legDict[e+s+p+"Iso"].AddEntry(h_iso_sig, "EWK MC")
+                        # legDict[e+s].AddEntry(h_fake, "Data")
+                        legDict[e+s+p+"Iso"].Draw("SAME")
+                        
+                        canvasList.append(c_Iso)                        
+                        # c_comparison.SaveAs(self.outdir+"/plot/"+c_Iso.GetName()+'.png')
+                    
+                                        
                     
                     
         #---------------------------------------------FIT CHECK PLOTS ---------------------------------------------#
@@ -776,8 +985,8 @@ class bkg_fakerateAnalyzer:
 
         
         for ty in typeFitDict :
-            if ty == "Templ" : kind = ['fakeMC', 'prompt']
-            else : kind = ['fakeMC']
+            if ty == "Templ" : kind = [self.dataOpt, 'prompt']
+            else : kind = [self.dataOpt]
             for var in typeFitDict[ty] :
 
                 for ki in kind :    
@@ -810,12 +1019,105 @@ class bkg_fakerateAnalyzer:
                     legDict[ty+var+ki].Draw("SAME")
                     # canvasList.append(c_EWSF_chi2)   
                     canvasList.append(c_fitDict[ty+var+ki])
-        
-         
-                
+                    # c_comparison.SaveAs(self.outdir+"/plot/"+c_fitDict[ty+var+ki].GetName()+'.png')
         
         
-        
+        #---------------------------------------------VARIATION OF CUTS PLOTS ---------------------------------------------#
+                    
+        if(self.variations) :
+            
+            fileVarDict = {}
+            graphVarDict = {}
+            
+            for lcut in self.looseCutList :
+                for tcut in self.tightCutList :
+                    fileVarDict[str(lcut)+str(tcut)] = ROOT.TFile.Open(self.outdir+"/bkg_differential_fakerate"+"_"+str(lcut)+"_"+str(tcut)+".root")
+
+            for s in self.signList :
+                for e in self.etaBinningS :
+                    ptPoint = 1
+                    for p in self.ptBinningS :
+                        c_variation = ROOT.TCanvas("c_variations_{sign}_{eta}_{pt}".format(sign=s,eta=e,pt=p),"c_variations_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),800,600)
+                        c_variation.cd()
+                        legDict[e+s+p+"Variation"] = ROOT.TLegend(0.1,0.7,0.48,0.9)
+                        tightPoint =0
+                        
+                        #line of W QCD value
+                        h_templW = fileVarDict[str(lcut)+str(tcut)].Get("Template/htempl_pt_prompt_"+s+"_"+e)
+                        Wvalue = ROOT.TLine(4,h_templW.GetBinContent(ptPoint),86,h_templW.GetBinContent(ptPoint))
+                        Wvalue.SetLineColor(880)
+                        Wvalue.SetLineStyle(2)
+                        Wvalue.SetLineWidth(3)
+                        # print "W VALUE", h_templW.GetBinContent(ptPoint), "sep", s,e, p
+                        
+                        for tcut in self.tightCutList :
+                            graphVarDict[s+e+p+str(tcut)] = ROOT.TGraphErrors()
+                            loosePoint = 0
+                            for lcut in self.looseCutList :
+                                h_template = fileVarDict[str(lcut)+str(tcut)].Get("Template/htempl_pt_"+self.dataOpt+"_"+s+"_"+e)
+                                graphVarDict[s+e+p+str(tcut)].SetPoint(loosePoint,lcut,h_template.GetBinContent(ptPoint))
+                                graphVarDict[s+e+p+str(tcut)].SetPointError(loosePoint,0,h_template.GetBinError(ptPoint))
+                                # print "s,e,p", s,e,p,"_____ l-t=",lcut, tcut, loosePoint, tightPoint, "point=",h_template.GetBinContent(ptPoint)
+                                loosePoint = loosePoint+1
+                            graphVarDict[s+e+p+str(tcut)].SetMarkerColor(tightPoint+1)
+                            graphVarDict[s+e+p+str(tcut)].SetLineColor(tightPoint+1)
+                            if(tightPoint==0) :
+                                graphVarDict[s+e+p+str(tcut)].Draw()
+                            else :
+                                graphVarDict[s+e+p+str(tcut)].Draw("SAME")  #"P" 
+                            graphVarDict[s+e+p+str(tcut)].GetXaxis().SetTitle("M_{T} cut [GeV] ")
+                            graphVarDict[s+e+p+str(tcut)].GetYaxis().SetTitle("N QCD tight")
+                            graphVarDict[s+e+p+str(tcut)].GetYaxis().SetTitleOffset(1)
+                            graphVarDict[s+e+p+str(tcut)].SetTitle("QCD tight varying the cuts, {min}<#eta<{max},{pmin}<Pt<{pmax}, W {sign}".format(min=e, max=self.etaBinning[self.etaBinning.index(float(e))+1],pmin=p, pmax=self.ptBinning[self.ptBinning.index(float(p))+1], sign=s))
+                            if(self.tightCutList.index(tcut)==len(self.tightCutList)-1) :
+                                valuemaxX = ROOT.Double(0)
+                                valuemaxY = ROOT.Double(0)
+                                graphVarDict[s+e+p+str(tcut)].GetPoint(0,valuemaxX,valuemaxY)
+                                graphVarDict[s+e+p+str(self.tightCutList[0])].GetYaxis().SetRangeUser(0,valuemaxY+valuemaxY/20)
+                            legDict[e+s+p+"Variation"].AddEntry(graphVarDict[s+e+p+str(tcut)], "Iso<"+str(tcut))
+                            tightPoint = tightPoint+1
+                        Wvalue.Draw("SAME")
+                        legDict[e+s+p+"Variation"].AddEntry(Wvalue, "W MC={val:.0g}".format(val=h_templW.GetBinContent(ptPoint)))
+                        legDict[e+s+p+"Variation"].Draw("SAME")
+                        ptPoint = ptPoint+1
+                        canvasList.append(c_variation)
+                        # c_comparison.SaveAs(self.outdir+"/plot/"+c_variation.GetName()+'.png')
+            #---------------------------------------------QCD TRENDS with VARIAION OF CUTS PLOTS ---------------------------------------------#            
+            for s in self.signList :
+                for e in self.etaBinningS :
+                    for p in self.ptBinningS :
+                        
+                        h2qcd = ROOT.TH2F("h2qcd_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),"h2qcd_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),len(self.looseCutList)-1, array('f',self.looseCutList), len(self.tightCutList)-1, array('f',self.tightCutList) )
+                        # tightPoint =0
+                        for tcut in self.tightCutList :
+                            # loosePoint = 0
+                            if self.tightCutList.index(tcut)== len(self.tightCutList)-1 : continue #skip the lat
+                            y_t_down = graphVarDict[s+e+p+str(tcut)].GetY()
+                            tcutUP = self.tightCutList[self.tightCutList.index(tcut)+1]
+                            y_t_up = graphVarDict[s+e+p+str(tcutUP)].GetY()
+                            diff_list= []
+                            for ll in range(len(self.looseCutList)) :
+                                diff_list.append(y_t_up[ll]-y_t_down[ll])                
+                            for ll in range(len(self.looseCutList)) :
+                                if ll == len(self.looseCutList)-1 : continue #skip the last
+                                valBin = diff_list[ll]-diff_list[ll+1]
+                                h2qcd.SetBinContent(ll+1,self.tightCutList.index(tcut)+1,valBin)
+                                # print ll+1, self.tightCutList.index(tcut)+1, valBin
+                        
+                        
+                        h2qcd.GetXaxis().SetTitle("M_{T} [GeV]")
+                        h2qcd.GetYaxis().SetTitle("Relative Isolation")
+                        h2qcd.GetYaxis().SetTitleOffset(1)
+                        h2qcd.SetTitle("QCD trends, {min}<#eta<{max},{pmin}<Pt<{pmax}, W {sign}".format(min=e, max=self.etaBinning[self.etaBinning.index(float(e))+1],pmin=p, pmax=self.ptBinning[self.ptBinning.index(float(p))+1], sign=s))
+                        canvasList.append(h2qcd)
+                        c_QCDtrend = ROOT.TCanvas("c_QCDtrend_{sign}_{eta}_{pt}".format(sign=s,eta=e,pt=p),"c_QCDtrend_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),800,600)
+                        c_QCDtrend.cd()
+                        h2qcd.Draw("lego2z")
+                        canvasList.append(c_QCDtrend)
+                        # c_comparison.SaveAs(self.outdir+"/plot/"+c_QCDtrend.GetName()+'.png')
+
+                        
+                            
         
         # c_EWSF_chi2 = ROOT.TCanvas("c_EWSF_chi2","c_EWSF_chi2",800,600)
         # c_EWSF_chi2.cd()
@@ -923,11 +1225,15 @@ class bkg_fakerateAnalyzer:
                     
                                         
         
-        outputFake = ROOT.TFile(self.outdir+"/bkg_plots.root","recreate")
+        outputFake = ROOT.TFile(self.outdir+"/bkg_plots"+self.nameSuff+".root","recreate")
         for h in range(len(canvasList)) :
             # print "name" , canvasList[h]
             # print "index", h
-            canvasList[h].Write()
+            if "h2qcd" in canvasList[h].GetName() :
+                 continue
+            else :
+                canvasList[h].Write()
+                canvasList[h].SaveAs(self.outdir+"/bkg_plot/"+canvasList[h].GetName()+'.png')
             
         
                     
@@ -1010,6 +1316,6 @@ class bkg_fakerateAnalyzer:
                     else : cutvalue = self.isoCUT
                     ratios.append(self.ratio_2Dto1D(histos[s][v][f][len(self.regionList)-1],cutvalue,'ratio_'+histos[s][v][f][len(self.regionList)-1].GetName()))
         
-        output = ROOT.TFile(self.outdir+"/bkg_integrated_preliminary.root","recreate")
+        output = ROOT.TFile(self.outdir+"/bkg_integrated_preliminary"+self.nameSuff+".root","recreate")
         for h in range(len(ratios)):
             ratios[h].Write()
