@@ -45,16 +45,20 @@ class RDFtree:
             self.syst = {"nom": [[]]}
 
         for syst_type, variations in self.syst.iteritems():
-
+            print "RDFtreeV2>>>Syst Type", syst_type 
             for var in variations:
 
                 mysyst = {syst_type: var}
-
+                print "RDFtreeV2>>>", var
                 if len(var)==2: # check if this is an Up/Down variation
                     systDir = var[0].replace("Up", "")
                 else: systDir = "nom"
-
-                self.objs[self.branchDir][systDir] = []
+                
+                #print "RDFtreeV2>>>branchDir, systDir =",self.branchDir, "\t", systDir
+                #print "RDFtreeV2>>>Does element var this variation exist in self.objs? = ", len(self.objs[self.branchDir][systDir]) 
+                ##what if this is not empty????This protects it
+                if systDir not in self.objs.get(self.branchDir,{}):
+                    self.objs[self.branchDir][systDir] = []
                
                 if nodeToStart in self.graph:
                     self.graph[nodeToStart].append(nodeToEnd)
@@ -138,18 +142,20 @@ class RDFtree:
         fout.cd()
     
         for branchDir, systDic in self.objs.iteritems():
-
+            #print "BranchDir:", branchDir
+            #print "systDic Size:", len(systDic)
+            fout.cd()
             fout.mkdir(branchDir)
-            
+            #fout.ls()
             for syst, hList in systDic.iteritems():
-
-                fout.mkdir(branchDir+'/'+syst)
-            
+                if not fout.GetDirectory(branchDir+'/'+syst):
+                    fout.mkdir(branchDir+'/'+syst)
                 fout.cd(branchDir+'/'+syst)
+                #print "Systematics directory created:", branchDir+'/'+syst 
                 for h in hList:
-                    
+                    #print "Writing histogram>>>",h.GetName()
                     h.Write()
-
+                    
         
         os.chdir('..')
         self.objs = {} # re-initialise object list

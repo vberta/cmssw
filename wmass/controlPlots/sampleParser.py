@@ -6,14 +6,18 @@ class sampleParser:
 
         self.tag = tag
         self.dataYear = dataYear
-        self.inputDir = ('/scratch/bertacch/NanoAOD%s-%s/' % (str(self.dataYear), self.tag))
+        self.inputDir = ('/scratch/sroychow/NanoAOD%s-%s/' % (str(self.dataYear), self.tag))
         self.restrict = restrict
         self.exclude = exclude
         self.samples_dict = {}
 
     def parse(self):
 
-        production_file = open('/scratch/bianchini/NanoAOD%s-%s/mcsamples_%s.txt' % (str(self.dataYear), self.tag, str(self.dataYear)), 'r')
+        #production_file = open('/scratch/sroychow/mcsamples_%s-%s.txt' % (str(self.dataYear), self.tag, 'r'))
+        production_file = open('/scratch/sroychow/mcsamples_2016-V1MCFinal.txt', 'r')
+        print "Input Directory=", self.inputDir
+        print "Name of production file=", production_file
+        
         production_content = [x.strip() for x in production_file.readlines()]
 
         # available files

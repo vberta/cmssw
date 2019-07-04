@@ -33,7 +33,7 @@ class module:
 
                 if len(variations)>0: # case variations
 
-                    main = [c for c in columns if c.startswith(collection) and nom in c] # columns of the main collection
+                    main = [c for c in columns if c.startswith(collection) and nom in c and "Up" not in c and "Down" not in c] # columns of the main collection
                 
                     subSet = [c.replace(collection,subcollection) for c in main] # columns of the sub collection if affected by the syst
 
