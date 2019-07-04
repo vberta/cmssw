@@ -70,11 +70,10 @@ class controlPlots(module):
                             variation = v[:re.search("[0-9]", v).start()]
                             index = v[re.search("[0-9]", v).start():]
                             print 'lumiweight*{}[{}]'.format(variation,index)
-                            nw = '{}[{}]'.format(nom + "*" + variation,i)
-                            newWeight = weight.replace(nom,v)
+                            nw = '{}[{}]'.format(nom + "*" + variation,index)
+                            newWeight = weight.replace(nom,nw)
                         else:
                             newWeight = weight.replace(nom,v)
-                        newWeight = weight.replace(nom,v) 
                         print "Original Weight:", weight
                         print "New Weight", newWeight
                         self.d = self.d.Define('totweight_{}'.format(v), 'lumiweight*{}'.format(newWeight))
@@ -108,18 +107,16 @@ class controlPlots(module):
                         for nom, variations in self.syst.iteritems():
                             for v in variations:
                                 self.d = self.d.Filter(selection)
-                                if "LHE" in v:
-                                    for i in range(0,99):
-                                        variation = v + str(i)
-                                        print "New histogram name=", Collection +'_' + var+'_'+ variation
-                                        #print "DEBUG INFO:", tools[0], tools[1], tools[2], tools[3]
-                                        h =self.d.Histo1D((Collection +'_' + var+'_'+ variation, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+ var , 'totweight_{}'.format(variation))
-                                        self.myTH1.append(h)
-                                else:
-                                    h =self.d.Histo1D((Collection+'_'+var+'_'+v, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight_{}'.format(v))
-                                    self.myTH1.append(h)  
-                    for h in  self.myTH1:
-                        print h.GetName()
+                                #if "LHE" in v:
+                                #for i in range(0,99):
+                                #        variation = v + str(i)
+                                #        print "New histogram name=", Collection +'_' + var+'_'+ variation
+                                #        #print "DEBUG INFO:", tools[0], tools[1], tools[2], tools[3]
+                                #        h =self.d.Histo1D((Collection +'_' + var+'_'+ variation, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+ var , 'totweight_{}'.format(variation))
+                                #       self.myTH1.append(h)
+                                #else:
+                                h =self.d.Histo1D((Collection+'_'+var+'_'+v, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight_{}'.format(v))
+                                self.myTH1.append(h)  
 
             else:        
                 print nom, "this is a systematic of type Up/Down variations"
