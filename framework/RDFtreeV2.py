@@ -37,20 +37,28 @@ class RDFtree:
         
     def branch(self,nodeToStart, nodeToEnd, outputFile, modules=[]):
 
+        self.outputFile = outputFile
         self.branchDir = nodeToEnd
         self.objs[self.branchDir] = {}
 
-        for syst_type, variations in self.syst.iteritems():
+        if self.syst == {}:
+            self.syst = {"nom": [[]]}
 
+        for syst_type, variations in self.syst.iteritems():
+            print "RDFtreeV2>>>Syst Type", syst_type 
             for var in variations:
 
                 mysyst = {syst_type: var}
-
+                print "RDFtreeV2>>>", var
                 if len(var)==2: # check if this is an Up/Down variation
                     systDir = var[0].replace("Up", "")
                 else: systDir = "nom"
-
-                self.objs[self.branchDir][systDir] = []
+                
+                #print "RDFtreeV2>>>branchDir, systDir =",self.branchDir, "\t", systDir
+                #print "RDFtreeV2>>>Does element var this variation exist in self.objs? = ", len(self.objs[self.branchDir][systDir]) 
+                ##what if this is not empty????This protects it
+                if systDir not in self.objs.get(self.branchDir,{}):
+                    self.objs[self.branchDir][systDir] = []
                
                 if nodeToStart in self.graph:
                     self.graph[nodeToStart].append(nodeToEnd)
@@ -75,14 +83,31 @@ class RDFtree:
                     tmp_th3 = m.getTH3()
 
                     for obj in tmp_th1:
-                        self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH1D')(obj))
+                              
+                        if isinstance(obj, ROOT.TH1D):  
+                                   
+                            self.objs[self.branchDir][systDir].append(ROOT.TH1D(obj)) 
+                        else:
+                            self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH1D')(obj)) 
 
                     for obj in tmp_th2:
-                        self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH2D')(obj))
-
+                                
+                        if isinstance(obj, ROOT.TH2D):  
+                                   
+                            self.objs[self.branchDir][systDir].append(ROOT.TH2D(obj)) 
+                        else:
+                            self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH2D')(obj))
+                                
+                                     
                     for obj in tmp_th3:
-                        self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH3D')(obj))
-
+                                
+                        if isinstance(obj, ROOT.TH3D):  
+                                   
+                            self.objs[self.branchDir][systDir].append(ROOT.TH2D(obj)) 
+                        else:
+                            
+                            self.objs[self.branchDir][systDir].append(ROOT.RDF.RResultPtr('TH3D')(obj))
+                    
                     m.reset()
 
                 self.node[nodeToEnd] = branchRDF
@@ -117,18 +142,20 @@ class RDFtree:
         fout.cd()
     
         for branchDir, systDic in self.objs.iteritems():
-
+            #print "BranchDir:", branchDir
+            #print "systDic Size:", len(systDic)
+            fout.cd()
             fout.mkdir(branchDir)
-            
+            #fout.ls()
             for syst, hList in systDic.iteritems():
-
-                fout.mkdir(branchDir+'/'+syst)
-            
+                if not fout.GetDirectory(branchDir+'/'+syst):
+                    fout.mkdir(branchDir+'/'+syst)
                 fout.cd(branchDir+'/'+syst)
+                #print "Systematics directory created:", branchDir+'/'+syst 
                 for h in hList:
-                    print h.GetName()
+                    #print "Writing histogram>>>",h.GetName()
                     h.Write()
-
+                    
         
         os.chdir('..')
         self.objs = {} # re-initialise object list

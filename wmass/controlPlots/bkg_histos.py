@@ -1,5 +1,6 @@
 import math 
 import ROOT
+import re
 
 import sys
 sys.path.append('../../framework')
@@ -59,20 +60,29 @@ class bkg_histos(module):
             self.d = self.d.Define('totweight', '1')
 
         for nom,variations in self.syst.iteritems():
-            if "SF" in nom or "Weight" in nom: #if this is a systematic of type "weight variations"
+            if "SF" in nom or "Weight" in nom or "weight" in nom: #if this is a systematic of type "weight variations"
 
                 print nom, "this is a systematic of type weight variations"
                 if not self.dataType == 'MC': break 
 
                 for v in variations:
-                    newWeight = weight.replace(nom,v)
-                    print weight, newWeight
+                    if re.search("[0-9]", v):
+                        variation = v[:re.search("[0-9]", v).start()]
+                        index = v[re.search("[0-9]", v).start():]
+                        print 'lumiweight*{}[{}]'.format(variation,index)
+                        nw = '{}[{}]'.format(nom + "*" + variation,index)
+                        newWeight = weight.replace(nom,nw)
+                    else:
+                        newWeight = weight.replace(nom,v)
+                    print "Original Weight:", weight
+                    print "New Weight", newWeight
+                    self.d = self.d.Define('totweight_{}'.format(v), 'lumiweight*{}'.format(newWeight))
 
                     # define mc specific weights
-                    if self.dataType == 'MC':           
-                        self.d = self.d.Define('totweight_{}'.format(v), 'lumiweight*{}[0]'.format(v))
-                    else:
-                        self.d = self.d.Define('totweight', '1') # to be checked what to do with data
+                    # if self.dataType == 'MC':           
+                    # self.d = self.d.Define('totweight_{}'.format(v), 'lumiweight*{}'.format(newWeight))
+                    # else:
+                        # self.d = self.d.Define('totweight', '1') # to be checked what to do with data
                           
 
                 
@@ -119,7 +129,7 @@ class bkg_histos(module):
                                     
                                     h =self.d.Histo2D((Collection+'_'+var+'_'+v, " ; {}; ".format(tools[0]), tools[4],tools[5], tools[6],tools[1],tools[2], tools[3]), collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y', 'totweight_{}'.format(v))
                                     
-                                    self.myTH1.append(h) 
+                                    self.myTH2.append(h) 
 
             else:        
                 print nom, "this is a systematic of type Up/Down variations"
@@ -132,6 +142,11 @@ class bkg_histos(module):
                     if dic.has_key('newvariables'):
                         for newvar, definition in dic['newvariables'].iteritems():
                             self.d = self.d.Define(collectionName+'_'+newvar, definition[4]) # 4th entries in tuple is the string that defines the new variable
+                            
+                            for v in variations:
+                                if not nom in newvar: continue
+                                self.d = self.d.Define(collectionName+'_'+newvar.replace(nom,v), definition[4].replace(nom,v))
+                                
                         dic['variables'].update(dic['newvariables'])
                             
                     if dic.has_key('newCollection') and dic['newCollection'] != '':
@@ -186,11 +201,12 @@ class bkg_histos(module):
                                         h = self.d.Filter(selection.replace(nom,v)).Histo1D((Collection+'_'+var.replace(nom,v), " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var.replace(nom,v), 'totweight')
                                         self.myTH1.append(h)
                                         
-                                        if(var=='corrected_MET_nom_mt') :
-                                            for ieta in range(1, h_mt_eta.GetNbins()+1): #for each eta bin
+                                        print var
+                                        if(var=='corrected_MET_nom_mt') :    
+                                            for ieta in range(1, h_mt_eta.GetNbinsX()+1): #for each eta bin
                                                 lowEdgeEta = h_mt_eta.GetXaxis().GetBinLowEdge(ieta)
                                                 upEdgeEta = h_mt_eta.GetXaxis().GetBinUpEdge(ieta) 
-                                                hbin = self.d.Filter(selection.replace(nom,v))+'&& Muon_eta[Idx_mu1]<{upEta} && Muon_eta[Idx_mu1]>{lowEta}'.format(upEta=upEdgeEta, lowEta=lowEdgeEta).Histo1D((Collection+'_'+var.replace(nom,v)+'_{eta:.2g}'.format(eta=lowEdgeEta), " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]),collectionName+'_'+var.replace(nom,v),'totweight')    
+                                                hbin = self.d.Filter(selection.replace(nom,v)+'&& Muon_eta[Idx_mu1]<{upEta} && Muon_eta[Idx_mu1]>{lowEta}'.format(upEta=upEdgeEta, lowEta=lowEdgeEta)).Histo1D((Collection+'_'+var.replace(nom,v)+'_{eta:.2g}'.format(eta=lowEdgeEta), " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]),collectionName+'_'+var.replace(nom,v),'totweight')    
                                                 self.myTH1.append(hbin)                                           
 
 

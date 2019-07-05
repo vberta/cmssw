@@ -107,14 +107,17 @@ for cut in ['Signal', 'Sideband', 'Dimuon']:
         myselections['%sMinus' % cut][d]['cut']   += ' && Muon_charge[Idx_mu1]<0'
 
 
-inputDir = ('/scratch/bertacch/NanoAOD%s-%s/' % (str(dataYear), tag))
+# inputDir = ('/scratch/bertacch/NanoAOD%s-%s/' % (str(dataYear), tag))
+inputDir = ('/scratch/sroychow/NanoAOD%s-%s/' % (str(dataYear), tag))
+
 
 outDir =  'NanoAOD%s-%s/' % (str(dataYear), tag) 
 if not os.path.isdir(outDir): os.system('mkdir '+outDir) 
 
 outputFiles = []
 
-parser = sampleParser(restrict= ['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'])
+# parser = sampleParser(restrict= ['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'])
+parser = sampleParser(restrict= ['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'],tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt')
 #parser = sampleParser()
 samples_dict = parser.getSampleDict()
 
@@ -191,11 +194,11 @@ print 'Samples to be merged:'
 print bcolors.OKBLUE, samples_merging, bcolors.ENDC
 
 outputMergedFiles = []
-for sample_merging_key, sample_merging in samples_merging.iteritems():
-        if len(sample_merging)>0:
+for sample_merging_key, sample_merging_value in samples_merging.iteritems():
+        if len(sample_merging_value)>0:
             outputMergedFiles.append( '%s.root' % (sample_merging_key))
             cmd = 'hadd -f -k %s/%s.root' % (outDir,sample_merging_key)
-            for isample in sample_merging:
+            for isample in sample_merging_value:
                 cmd += ' %s/%s.root' % (outDir,isample)
             if hadd:
                 print bcolors.OKGREEN, cmd, bcolors.ENDC

@@ -537,13 +537,13 @@ class bkg_fakerateAnalyzer:
         # print "getting histos"
         histoDict = {}
         mtDict = {}
-
+        PVDict = {}
 
         for p in self.ptBinningS :
             for e in self.etaBinningS :                          
                 for s in self.signList :
                     for v,name in map(None,self.varList,self.varName) :
-                        # MtCond = bool(self.ptBinningS.index(p)==0 and self.etaBinningS.index(e)==0 and self.varList.index(v)==0)
+                        PVCond = bool(self.ptBinningS.index(p)==0 and self.etaBinningS.index(e)==0 and self.varList.index(v)==0)
                         MtCond = bool(self.ptBinningS.index(p)==0 and self.varList.index(v)==0)
                         for f,rootFile in map(None,self.sampleList,self.rootFiles) :
                             if(f!='DataLike') :
@@ -556,10 +556,15 @@ class bkg_fakerateAnalyzer:
                                         if(MtCond) : 
                                             mtDict[e+s+f+r] = rootFile.Get('controlPlotsbkg_'+r+s+'/nom/Muon1_corrected_MET_nom_mt_'+e)
                                             if(f!='Data') : mtDict[e+s+f+r].Scale(self.norm)
+                                        if(PVCond) :
+                                            PVDict[s+f+r] = rootFile.Get('controlPlotsbkg_'+r+s+'/nom/PV_npvsGood')
+                                            if(f!='Data') : PVDict[s+f+r].Scale(self.norm)   
+                                            
                                     else:
                                         # print "clone histo:", p+e+f+'_'+s+'_'+name+'_Tot'
                                         histoDict[p+e+s+v+f+r] = histoDict[p+e+s+v+f+'Sideband'].Clone(p+'_'+e+'_'+f+'_'+s+'_'+name+'_Tot')
-                                        if(MtCond) : mtDict[e+s+f+r] = mtDict[e+s+f+'Signal'].Clone('Mt_'+e+'_'+f+'_'+s+'_Tot')
+                                        if(MtCond) : mtDict[e+s+f+r] = mtDict[e+s+f+'Sideband'].Clone('Mt_'+e+'_'+f+'_'+s+'_Tot') #PUT SIGNAL PER FAR FUNZIONARE
+                                        if(PVCond) : PVDict[s+f+r] = PVDict[s+f+'Sideband'].Clone('PV_'+f+'_'+s+'_Tot')
                                         for rr in self.regionList :
                                             if (rr =="Sideband" or rr=="Tot") : continue
                                             # print "Added histo:", histoDict[p+e+s+v+f+rr].GetName()
@@ -570,7 +575,9 @@ class bkg_fakerateAnalyzer:
                                                 # print "skipped sideband adding in Mt!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
                                                 # continue
                                                 mtDict[e+s+f+r].Add(mtDict[e+s+f+rr])
-                                            
+                                            if(PVCond) :
+                                                PVDict[s+f+r].Add(PVDict[s+f+rr])
+                                                
 
 
                             else :
@@ -578,6 +585,7 @@ class bkg_fakerateAnalyzer:
                                 # print "key=",p+e+s+v+f+'Tot'
                                 histoDict[p+e+s+v+f+'Tot']= histoDict[p+e+s+v+'WToMuNuTot'].Clone(p+'_'+e+'_'+'DataLike_'+s+'_'+name+'_Tot')
                                 if(MtCond) : mtDict[e+s+f+'Tot'] = mtDict[e+s+'WToMuNuTot'].Clone('Mt_'+e+'_'+'DataLike_'+s+'_'+'_Tot')
+                                if(PVCond) : PVDict[s+f+'Tot'] = PVDict[s+'WToMuNuTot'].Clone('Mt_'+'DataLike_'+s+'_'+'_Tot')
                                 # print "><>>><<>><<>><<>>>>>>><<>><>>>>>>>>"
                                 for ff in self.sampleList :
                                     if (ff =="WToMuNu" or ff=="Data" or ff=="DataLike"):  continue
@@ -585,6 +593,7 @@ class bkg_fakerateAnalyzer:
                                     # print "key summed=",p+e+s+v+ff+'Tot'
                                     histoDict[p+e+s+v+f+'Tot'].Add(histoDict[p+e+s+v+ff+'Tot'])
                                     if(MtCond) : mtDict[e+s+f+'Tot'].Add(mtDict[e+s+ff+'Tot'])
+                                    if(PVDict) : PVDict[s+f+'Tot'].Add(PVDict[s+ff+'Tot'])
                                 
                                 #DEBUUUG
                                 errore = ROOT.Double(0)
@@ -648,7 +657,15 @@ class bkg_fakerateAnalyzer:
                 hIsoPrompt[c].Write() 
                 hIsoEWKbkg[d].Write()  
   
-              
+        PV_dir = output.mkdir("PV")
+        PV_dir.cd()        
+        for s in self.signList :
+                if(self.onData) : dataNameMt = 'Data'
+                else : dataNameMt = 'DataLike'
+                PVDict[s+'WToMuNuTot'].Write()
+                PVDict[s+'EWKbkgTot'].Write()
+                PVDict[s+'QCDTot'].Write() 
+                PVDict[s+dataNameMt+'Tot'].Write()                
         
         if(self.fakerate) :
             # print "processing fakerate"
@@ -699,6 +716,69 @@ class bkg_fakerateAnalyzer:
         stackDict ={}
         
         for s in self.signList :
+            #---------------------------------------------PV PLOTS ---------------------------------------------#
+            
+            c_PV = ROOT.TCanvas("c_PV_{sign}".format(sign=s),"c_PV_{sign}".format(sign=s),800,600)
+            c_PV.cd()
+            c_PV.SetGridx()
+            c_PV.SetGridy()
+            
+            if(self.onData) : dataNameMt = 'Data'
+            else : dataNameMt = 'DataLike' 
+            
+            h_PV_data = inputFile.Get("PV/PV_"+dataNameMt+"_"+s+"_Tot")
+            h_PV_bkg = inputFile.Get("PV/PV_QCD_"+s+"_Tot")
+            h_PV_sig = inputFile.Get("PV/PV_WToMuNu_"+s+"_Tot")
+            h_PV_EWKbkg = inputFile.Get("PV/PV_EWKbkg_"+s+"_Tot")
+            h_PV_sig.Add(h_PV_EWKbkg)
+            
+            h_PV_sig.Rebin(3)
+            h_PV_bkg.Rebin(3)
+            h_PV_data.Rebin(3)
+            
+            h_PV_data.SetLineWidth(3)
+            h_PV_bkg.SetLineWidth(3)
+            h_PV_sig.SetLineWidth(3)
+            # h_fake.SetLineWidth(3)
+            
+            # h_PV_data.SetLineColor(632+2) #red
+            h_PV_data.SetLineColor(1) #black
+            h_PV_bkg.SetLineColor(600-4) #blue
+            h_PV_sig.SetLineColor(416+2) #green
+            h_PV_bkg.SetFillColor(600-4) #blue
+            h_PV_sig.SetFillColor(416+2) #green                    
+            # h_fake.SetLineColor(1) #black
+            
+            h_PV_data.Sumw2()
+            h_PV_data.SetMarkerStyle(20)
+            h_PV_data.Draw()
+            
+            
+            stackDict[s+"PV"] = ROOT.THStack("PV"+s,"")
+            stackDict[s+"PV"].Add(h_PV_sig)
+            stackDict[s+"PV"].Add(h_PV_bkg)
+            stackDict[s+"PV"].Draw("SAME HIST")
+            h_PV_data.DrawCopy("SAME")
+            # h_PV_bkg.Draw("SAME")
+            # h_PV_sig.Draw("SAME")
+            # h_fake.Draw("SAME")
+            
+            h_PV_data.GetYaxis().SetTitle("dN/dPV/{size} [1/GeV]".format(size=h_PV_data.GetBinWidth(1)))
+            h_PV_data.GetYaxis().SetTitleOffset(1)
+            h_PV_data.GetXaxis().SetTitle("N PV good")
+            # h_PV_data.SetTitle("Fake Rates, {min}<#eta<{max}, W {sign}".format(min=self.etaBinning[self.etaBinning.index(float(e))-1], max=e, sign=s))
+            h_PV_data.SetTitle("Number of Primary vertices, W {sign}".format(sign=s))
+            
+            legDict[s+"PV"] = ROOT.TLegend(0.1,0.7,0.48,0.9)
+            legDict[s+"PV"].AddEntry(h_PV_data,"Data")
+            legDict[s+"PV"].AddEntry(h_PV_bkg, "QCD MC")
+            legDict[s+"PV"].AddEntry(h_PV_sig, "EWK MC")
+            # legDict[e+s].AddEntry(h_fake, "Data")
+            legDict[s+"PV"].Draw("SAME")
+            
+            canvasList.append(c_PV)
+            # c_comparison.SaveAs(self.outdir+"/plot/"+c_Mt_EWSF.GetName()+'.png')
+            
             for e in self.etaBinningS :
                 
                     #---------------------------------------------COMPARISON PLOTS ---------------------------------------------#
