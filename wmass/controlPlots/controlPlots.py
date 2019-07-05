@@ -1,6 +1,6 @@
 import math 
 import ROOT
-
+import re
 import sys
 sys.path.append('../../framework')
 from module import *
@@ -44,6 +44,7 @@ class controlPlots(module):
 
         selection = self.selections[self.dataType]['cut']
         weight = self.selections[self.dataType]['weight']
+        print "DEBUG Info:", weight, type(weight)
 
         # define mc specific weights (nominal)
         
@@ -52,30 +53,36 @@ class controlPlots(module):
                     .Define('totweight', 'lumiweight*{}'.format(weight))
         else:
             self.d = self.d.Define('totweight', '1')
+        
+
 
         for nom,variations in self.syst.iteritems():
-            if "SF" in nom or "Weight" in nom: #if this is a systematic of type "weight variations"
+            if "SF" in nom or "Weight" in nom or "weight" in nom: #if this is a systematic of type "weight variations"
 
                 print nom, "this is a systematic of type weight variations"
                 if not self.dataType == 'MC': break 
-
+                print "Variations of this weight:", variations
                 for v in variations:
-                    newWeight = weight.replace(nom,v)
-                    print weight, newWeight
-
                     # define mc specific weights
                     if self.dataType == 'MC':           
-                        self.d = self.d.Define('totweight_{}'.format(v), 'lumiweight*{}[0]'.format(v))
-                    else:
+                        if re.search("[0-9]", v):
+                            variation = v[:re.search("[0-9]", v).start()]
+                            index = v[re.search("[0-9]", v).start():]
+                            print 'lumiweight*{}[{}]'.format(variation,index)
+                            nw = '{}[{}]'.format(nom + "*" + variation,index)
+                            newWeight = weight.replace(nom,nw)
+                        else:
+                            newWeight = weight.replace(nom,v)
+                        print "Original Weight:", weight
+                        print "New Weight", newWeight
+                        self.d = self.d.Define('totweight_{}'.format(v), 'lumiweight*{}'.format(newWeight))
+                    else:#is this else required?
                         self.d = self.d.Define('totweight', '1') # to be checked what to do with data
-                          
-
                 
                 # loop over variables
                 for Collection,dic in self.variables.iteritems():
                     
                     collectionName = dic['inputCollection']
-
                     # first of all define new variables in the input collection
                     if dic.has_key('newvariables'):
                         for newvar, definition in dic['newvariables'].iteritems():
@@ -93,31 +100,34 @@ class controlPlots(module):
 
                         for nom, variations in self.syst.iteritems():
                             for v in variations:
-                    
                                 self.d = self.d.Filter(selection)
-                                
                                 h =self.d.Histo1D((Collection+'_'+var+'_'+v, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight_{}'.format(v))
-                                
                                 self.myTH1.append(h)  
 
             else:        
                 print nom, "this is a systematic of type Up/Down variations"
-
                 # loop over variables
                 for Collection,dic in self.variables.iteritems():
                     collectionName = dic['inputCollection']
-
+                    
                     # first of all define new variables in the input collection
                     if dic.has_key('newvariables'):
                         for newvar, definition in dic['newvariables'].iteritems():
-                            
-                            self.d = self.d.Define(collectionName+'_'+newvar, definition[4]) # 4th entries in tuple is the string that defines the new variable
+                            print("DEBUG INFO:newVar, definition=%s,%s", (newvar, definition)) 
+                            print "New var=", collectionName+'_'+newvar 
+                                                     
+                            # 4th entries in tuple is the string that defines the new variable
+                            self.d = self.d.Define(collectionName+'_'+newvar, definition[4]) 
+                            #Define variations of the new columns
+                            for v in variations:
+                                if not nom in newvar: continue
+                                self.d = self.d.Define(collectionName+'_'+newvar.replace(nom,v), definition[4].replace(nom,v))
                         dic['variables'].update(dic['newvariables'])
 
                     if dic.has_key('newCollection') and dic['newCollection'] != '':
                         if 'index' in dic:                    
                             # define a new subcollection with all the columns of the original collection 
-                            if self.dataType == 'MC':                 
+                            if self.dataType == 'MC':
                                 self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d, self.syst)
                             else:
                                 self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d)
@@ -125,8 +135,7 @@ class controlPlots(module):
                             collectionName = dic['newCollection']
                         
                     for var,tools in dic['variables'].iteritems():
-
-                    
+                        
                         if not self.dataType == 'MC': 
                             h = self.d.Filter(selection).Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')
                             
