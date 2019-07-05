@@ -154,6 +154,4 @@ class controlPlots(module):
                                         h = self.d.Filter(selection.replace(nom,v)).Histo1D((Collection+'_'+var.replace(nom,v), " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var.replace(nom,v), 'totweight')
                                         self.myTH1.append(h)
 
-        for h in self.myTH1:
-            print h.GetName() 
         return self.d
