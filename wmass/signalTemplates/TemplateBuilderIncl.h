@@ -1,6 +1,5 @@
-#ifndef GETWEIGHTS_H
-#define GETWEIGHTS_H
-
+#ifndef TEMPLATEBUILDERINCL_H
+#define TEMPLATEBUILDERINCL_H
 
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RVec.hxx"
@@ -16,26 +15,30 @@ using RNode = ROOT::RDF::RNode;
 using rvec_f = const RVec<float> &;
 using rvec_i = const RVec<int> &;
 
-
-class GetWeights : public Module {
-
+class TemplateBuilderIncl : public Module{
+  
     private:
 
     std::vector<ROOT::RDF::RResultPtr<TH1D>> _h1List;
     std::vector<ROOT::RDF::RResultPtr<TH2D>> _h2List;
     std::vector<ROOT::RDF::RResultPtr<TH3D>> _h3List;
-    std::string _myString;
     
     public:
     
-    GetWeights(std::string s): _myString(s) {};
-    ~GetWeights() {};
+    ~TemplateBuilderIncl() {};
     RNode run(RNode) override;
     std::vector<ROOT::RDF::RResultPtr<TH1D>> getTH1() override;
     std::vector<ROOT::RDF::RResultPtr<TH2D>> getTH2() override;
     std::vector<ROOT::RDF::RResultPtr<TH3D>> getTH3() override;
     void reset() override;
-
+    
 };
 
 #endif
+
+
+
+
+
+
+	

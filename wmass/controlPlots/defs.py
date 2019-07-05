@@ -32,6 +32,7 @@ parser.add_argument('-hadd', '--hadd',type=int, default=False, help="")
 parser.add_argument('-plot', '--plot',type=int, default=False, help="")
 parser.add_argument('-rdf', '--rdf',type=int, default=True, help="")
 parser.add_argument('-pretend', '--pretend',type=bool, default=False, help="")
+parser.add_argument('-restrict', '--restrict',type=str, default="", help="")
 args = parser.parse_args()
 tag = args.tag
 dataYear = args.dataYear
@@ -39,6 +40,8 @@ hadd = args.hadd
 plot = args.plot
 rdf = args.rdf
 pretend = args.pretend
+restricDataset = [ x for x in args.restrict.split(',') ]
+
 print "tag =", bcolors.OKGREEN, tag, bcolors.ENDC, \
     ", dataYear =", bcolors.OKGREEN, str(dataYear), bcolors.ENDC
 
@@ -87,6 +90,7 @@ def RDFprocess(outDir, inputFile, selections, sample):
             myselection[dataType]['cut'] += subsel if subsel_key!='none' else ''
             subsel_str= subsel if subsel_key!='none' else ''
             p.branch(nodeToStart='input',
+                        #nodeToEnd='controlPlots'+sel_key+subsel_str,
                         nodeToEnd='controlPlots'+sel_key,
                         outputFile=outputFile,
                         modules = [controlPlots(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile)])
@@ -107,18 +111,15 @@ for cut in ['Signal', 'Sideband', 'Dimuon']:
         myselections['%sMinus' % cut][d]['cut']   += ' && Muon_charge[Idx_mu1]<0'
 
 
-# inputDir = ('/scratch/bertacch/NanoAOD%s-%s/' % (str(dataYear), tag))
+#inputDir = ('/scratch/bertacch/NanoAOD%s-%s/' % (str(dataYear), tag))
 inputDir = ('/scratch/sroychow/NanoAOD%s-%s/' % (str(dataYear), tag))
-
 
 outDir =  'NanoAOD%s-%s/' % (str(dataYear), tag) 
 if not os.path.isdir(outDir): os.system('mkdir '+outDir) 
 
 outputFiles = []
 
-# parser = sampleParser(restrict= ['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'])
-parser = sampleParser(restrict= ['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'],tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt')
-#parser = sampleParser()
+parser = sampleParser(restrict= restricDataset,tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt')
 samples_dict = parser.getSampleDict()
 
 for sample_key, sample in samples_dict.iteritems():
@@ -146,8 +147,9 @@ if rdf:
         print '\tsubselections =', bcolors.OKBLUE, sample['subsel'] , bcolors.ENDC
 
         inputFile = ROOT.std.vector("std::string")()
-        for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
-            
+        for x in sample['dir']: {
+                inputFile.push_back(inputDir+x+"/tree*.root")
+        }
         p = Process(target=RDFprocess, args=(outDir, inputFile, myselections,sample))
         p.start()
         
@@ -157,7 +159,7 @@ if rdf:
         p.join()
     
     
-    #ROOT.ROOT.EnableImplicitMT(24)
+    ROOT.ROOT.EnableImplicitMT(24)
 
     for sample_key, sample in samples_dict.iteritems():
 
@@ -174,8 +176,9 @@ if rdf:
         print '\tsubselections =', bcolors.OKBLUE, sample['subsel'] , bcolors.ENDC
 
         inputFile = ROOT.std.vector("std::string")()
-        for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
-            
+        for x in sample['dir']: {
+                inputFile.push_back(inputDir+x+"/tree*.root")
+        }
         RDFprocess(outDir, inputFile, myselections, sample)
         
 
@@ -193,6 +196,7 @@ samples_merging = {
 print 'Samples to be merged:'
 print bcolors.OKBLUE, samples_merging, bcolors.ENDC
 
+"""
 outputMergedFiles = []
 for sample_merging_key, sample_merging_value in samples_merging.iteritems():
         if len(sample_merging_value)>0:
@@ -206,9 +210,23 @@ for sample_merging_key, sample_merging_value in samples_merging.iteritems():
 
 print 'Final samples:'
 print bcolors.OKBLUE, outputMergedFiles, bcolors.ENDC
+"""
 
+outputMergedFiles = []
+for sample_merging_key, sample_merging in samples_merging.iteritems():
+        if len(sample_merging)>0:
+            outputMergedFiles.append( '%s.root' % (sample_merging_key))
+            cmd = 'hadd -f -k %s/%s.root' % (outDir,sample_merging_key)
+            for isample in sample_merging:
+                cmd += ' %s/%s.root' % (outDir,isample)
+            if hadd:
+                print bcolors.OKGREEN, cmd, bcolors.ENDC
+                os.system(cmd)
+
+print 'Final samples:'
+print bcolors.OKBLUE, outputMergedFiles, bcolors.ENDC
    
-
+"""
 if plot:
 
     for sel_key, sel in myselections.iteritems():
@@ -218,5 +236,19 @@ if plot:
 
         plt = plotter(outdir=outDir+'/'+sel_key, folder=outDir, tag = sel_key, syst=systematics , fileList=selected, norm = 35.922)
         plt.plotStack()
+"""
 
+outputMergedFiles = []
+for sample_merging_key, sample_merging in samples_merging.iteritems():
+        if len(sample_merging)>0:
+            outputMergedFiles.append( '%s.root' % (sample_merging_key))
+            cmd = 'hadd -f -k %s/%s.root' % (outDir,sample_merging_key)
+            for isample in sample_merging:
+                cmd += ' %s/%s.root' % (outDir,isample)
+            if hadd:
+                print bcolors.OKGREEN, cmd, bcolors.ENDC
+                os.system(cmd)
 
+print 'Final samples:'
+#print bcolors.OKBLUE, outputMergedFiles, bcolors.EN
+print outputMergedFiles

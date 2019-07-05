@@ -63,7 +63,7 @@ class controlPlots(module):
                 if not self.dataType == 'MC': break 
                 print "Variations of this weight:", variations
                 for v in variations:
-                    #print nom,v
+
                     # define mc specific weights
                     if self.dataType == 'MC':           
                         if re.search("[0-9]", v):
@@ -77,18 +77,13 @@ class controlPlots(module):
                         print "Original Weight:", weight
                         print "New Weight", newWeight
                         self.d = self.d.Define('totweight_{}'.format(v), 'lumiweight*{}'.format(newWeight))
-                        #else:
-                        #    self.d = self.d.Define('totweight_{}'.format(v), 'lumiweight*{}'.format(v))
-                    else:
+                    else:#is this else required?
                         self.d = self.d.Define('totweight', '1') # to be checked what to do with data
-                          
-
                 
                 # loop over variables
                 for Collection,dic in self.variables.iteritems():
                     
                     collectionName = dic['inputCollection']
-
                     # first of all define new variables in the input collection
                     if dic.has_key('newvariables'):
                         for newvar, definition in dic['newvariables'].iteritems():
@@ -107,25 +102,13 @@ class controlPlots(module):
                         for nom, variations in self.syst.iteritems():
                             for v in variations:
                                 self.d = self.d.Filter(selection)
-                                #if "LHE" in v:
-                                #for i in range(0,99):
-                                #        variation = v + str(i)
-                                #        print "New histogram name=", Collection +'_' + var+'_'+ variation
-                                #        #print "DEBUG INFO:", tools[0], tools[1], tools[2], tools[3]
-                                #        h =self.d.Histo1D((Collection +'_' + var+'_'+ variation, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+ var , 'totweight_{}'.format(variation))
-                                #       self.myTH1.append(h)
-                                #else:
                                 h =self.d.Histo1D((Collection+'_'+var+'_'+v, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight_{}'.format(v))
                                 self.myTH1.append(h)  
 
             else:        
                 print nom, "this is a systematic of type Up/Down variations"
-                print "DEBUG INFO:", self.variables.iteritems()
-                # loop over variables
                 for Collection,dic in self.variables.iteritems():
                     collectionName = dic['inputCollection']
-                    print "DEBUG INFO:CollectionName=", collectionName
-                  
                     # first of all define new variables in the input collection
                     if dic.has_key('newvariables'):
                         for newvar, definition in dic['newvariables'].iteritems():
@@ -134,7 +117,7 @@ class controlPlots(module):
                                                      
                             # 4th entries in tuple is the string that defines the new variable
                             self.d = self.d.Define(collectionName+'_'+newvar, definition[4]) 
-
+                            #Define variations of the new columns
                             for v in variations:
                                 if not nom in newvar: continue
                                 self.d = self.d.Define(collectionName+'_'+newvar.replace(nom,v), definition[4].replace(nom,v))
@@ -151,8 +134,7 @@ class controlPlots(module):
                             collectionName = dic['newCollection']
                         
                     for var,tools in dic['variables'].iteritems():
-
-                    
+                        
                         if not self.dataType == 'MC': 
                             h = self.d.Filter(selection).Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')
                             

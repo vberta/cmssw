@@ -10,3 +10,11 @@ std::vector<ROOT::RDF::RResultPtr<TH2D>> Module::getTH2(){
 std::vector<ROOT::RDF::RResultPtr<TH3D>> Module::getTH3(){ 
 	return _h3List;
 }
+
+void Module::reset(){
+	
+	_h1List.clear();
+	_h2List.clear();
+	_h3List.clear();
+
+}
