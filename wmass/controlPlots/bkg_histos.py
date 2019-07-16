@@ -237,7 +237,6 @@ class bkg_histos(module):
                                     for ipt in range(1, h_fake.GetNbinsY()+1): #for each pt bin
                                         lowEdgePt = h_fake.GetYaxis().GetBinLowEdge(ipt)
                                         upEdgePt = h_fake.GetYaxis().GetBinUpEdge(ipt)
-                                        # print "bin eta, pt  : ", ieta, ipt
                                         hbin = self.d.Filter(selection+'&& Muon_eta[Idx_mu1]<{upEta} && Muon_eta[Idx_mu1]>{lowEta} && Muon_corrected_pt[Idx_mu1]<{upPt} && Muon_corrected_pt[Idx_mu1]>{lowPt}'.format(upEta=upEdgeEta, lowEta=lowEdgeEta, upPt=upEdgePt, lowPt=lowEdgePt)).Histo2D((Collection+'_'+var+'_{eta:.2g}_{pt:.2g}'.format(eta=lowEdgeEta, pt=lowEdgePt), " ; {}; ".format(tools[0]), tools[4],tools[5], tools[6],tools[1],tools[2], tools[3]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y','totweight')    
                                         self.myTH2.append(hbin)   
                                         
@@ -255,15 +254,9 @@ class bkg_histos(module):
                                             for ipt in range(1, h_fake.GetNbinsY()+1): #for each pt bin
                                                 lowEdgePt = h_fake.GetYaxis().GetBinLowEdge(ipt)
                                                 upEdgePt = h_fake.GetYaxis().GetBinUpEdge(ipt)
-                                                # print "bin eta, pt  : ", ieta, ipt
                                                 hbin = self.d.Filter(selection+'&& Muon_eta[Idx_mu1]<{upEta} && Muon_eta[Idx_mu1]>{lowEta} && Muon_corrected_pt[Idx_mu1]<{upPt} && Muon_corrected_pt[Idx_mu1]>{lowPt}'.format(upEta=upEdgeEta, lowEta=lowEdgeEta, upPt=upEdgePt, lowPt=lowEdgePt)).Histo2D((Collection+'_'+var+'_{eta:.2g}_{pt:.2g}'.format(eta=lowEdgeEta, pt=lowEdgePt), " ; {}; ".format(tools[0]), tools[4],tools[5], tools[6],tools[1],tools[2], tools[3]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y','totweight')    
                                                 self.myTH2.append(hbin)                                        
-
-
-                                            
-                                            
-                                            # print "SELEZIONE=======", selection+'&& Muon_eta[Idx_mu1]<{up} && Muon_eta[Idx_mu1]>{low}'.format(up=upEdgeEta, low=lowEdgeEta)
-                                            # print "Nome=", Collection+'_'+var+'_{}'.format(lowEdgeEta), collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y'
+                                                
                                             # h3D = ROOT.TH3D(Collection+'_'+var+'_{}'.format(lowEdgeEta),Collection+'_'+var+'_{}'.format(lowEdgeEta),tools[4],array('f',xbins),tools[1],array('f',ybins),len(self.ptBins)-1, array('f',self.ptBins))
                                             # hbin = self.d.Filter(selection+'&& Muon_eta[Idx_mu1]<{up} && Muon_eta[Idx_mu1]>{low}'.format(up=upEdgeEta, low=lowEdgeEta)).Histo3D(h3D,collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_corrected_pt[Idx_mu1]','totweight')    
                                             # # hbin = self.d.Filter(selection+'&& Muon_eta[Idx_mu1]<{up} && Muon_eta[Idx_mu1]>{low}'.format(up=upEdgeEta, low=lowEdgeEta)).Histo3D((Collection+'_'+var+'_{}'.format(lowEdgeEta), " ; {}; ".format(tools[0]),  tools[4],tools[5], tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsY(), self.ptBins[0], self.ptBins[len(self.ptBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_corrected_pt[Idx_mu1]','totweight')    

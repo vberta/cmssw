@@ -14,14 +14,11 @@ from bkg_selections import *
 
 # class bkg_fakerateAnalyzer(module):
 class bkg_fakerateAnalyzer:  
-    # def __init__(self, outdir='./bkg', folder='./', norm = 1, skipHisto = 1, fileList,)  :
     def __init__(self, ptBinning, etaBinning, outdir='./bkg', folder='./', norm = 1, varFake = 'pfRelIso04_all_corrected_MET_nom_mt', tightCut = 0.15, looseCut=40, fitOnTemplate=False, onData=True, nameSuff = '')  :
     
         self.outdir = outdir
         self.folder = folder
         self.norm = norm
-        # self.skipHisto = skipHisto
-        # self.fileList = fileList 
         self.ptBinning = ptBinning
         self.etaBinning = etaBinning
         self.varFake = varFake
@@ -33,9 +30,9 @@ class bkg_fakerateAnalyzer:
         self.onData = onData
         
         self.rootFiles = []
-        self.relisoCUT = 0.15
-        self.isoCUT = 5
-        self.QCDmult = 1. #multiplication factor to QCD bkg
+        # self.relisoCUT = 0.15
+        self.isoCUT = 5 # used for ratios VS Mt in preliminary studies only
+        self.QCDmult = 1. #multiplication factor to QCD bkg, not implemented
         
         self.sampleList = ['WToMuNu','QCD','EWKbkg','Data','DataLike']
         # self.sampleList = ['WToMuNu','QCD','EWKbkg','DataLike']
@@ -100,16 +97,7 @@ class bkg_fakerateAnalyzer:
                 y = s*ysig+b*ybkg
                 # print "value y",y
                 return y  
-        
-        # def linearHistoFit(x, parameters) :
-        #         s = parameters[0] # weight signal
-        #         b = parameters[1] # weight bkg
-        #         x = x[0]
-        #         ysig = hsig.GetBinContent(hsig.GetXaxis().FindFixBin(x));
-        #         ybkg = hbkg.GetBinContent(hbkg.GetXaxis().FindFixBin(x));
-        #         y = s*hsig+b*hbkg
-        #         return y              
-                
+                        
         hsig = mtDict[self.eta+self.sign+'WToMuNuTot']
         hsig.Add(mtDict[self.eta+self.sign+'EWKbkgTot'])
         hbkg = mtDict[self.eta+self.sign+'QCDTot']
@@ -365,12 +353,6 @@ class bkg_fakerateAnalyzer:
         hFakes.update(hEWSF_Fit)
         return hFakes        
     
-    
-    # def ptVSeta_map(self, hdict) :
-    #     self.hdict = hdict 
-
-    # def ABCD_hypo(self, hdict) :
-        #  self.hdict = hdict         
         
     def bkg_template(self, kind, fakedict, promptdict, hdict, fit = False, tightcut = 0.15, loosecut=40, varname = 'pfRelIso04_all_corrected_MET_nom_mt') :
         self.kind = kind
@@ -520,7 +502,7 @@ class bkg_fakerateAnalyzer:
             for v,name in map(None,self.varList,self.varName) :
                 for f in self.sampleList :
                     # print 'ratio_'+histoDict[s+v+f+'Tot'].GetName()
-                    if 'relIso' in name : cutvalue =  self.relisoCUT
+                    if 'relIso' in name : cutvalue =  self.tightCut #self.relisoCUT 
                     else : cutvalue = self.isoCUT
                     ratios.append(self.ratio_2Dto1D(histoDict[s+v+f+'Tot'],cutvalue,'ratio_'+histoDict[s+v+f+'Tot'].GetName()))
         
@@ -618,7 +600,7 @@ class bkg_fakerateAnalyzer:
                     for v,name in map(None,self.varList,self.varName) :
                         for f in self.sampleList :
                             # print 'ratio_'+histoDict[p+e+s+v+f+'Tot'].GetName()
-                            if 'relIso' in name : cutvalue =  self.relisoCUT
+                            if 'relIso' in name : cutvalue =  self.tightCut #self.relisoCUT
                             else : cutvalue = self.isoCUT
                             ratios.append(self.ratio_2Dto1D(histoDict[p+e+s+v+f+'Tot'],cutvalue,'ratio_'+histoDict[p+e+s+v+f+'Tot'].GetName()))
                 
@@ -1197,118 +1179,8 @@ class bkg_fakerateAnalyzer:
                         # c_comparison.SaveAs(self.outdir+"/plot/"+c_QCDtrend.GetName()+'.png')
 
                         
-                            
-        
-        # c_EWSF_chi2 = ROOT.TCanvas("c_EWSF_chi2","c_EWSF_chi2",800,600)
-        # c_EWSF_chi2.cd()
-        # c_EWSF_chi2.SetGridx()
-        # c_EWSF_chi2.SetGridy()
-        # hEWSF_chi2_fakeMC_Plus = inputFile.Get("Fakerate/hEWSF_chi2_fakeMC_Plus")
-        # hEWSF_chi2_fakeMC_Minus = inputFile.Get("Fakerate/hEWSF_chi2_fakeMC_Minus")
-        # # hEWSF_chi2_fake_Plus = inputFile.Get("Fakerate/hEWSF_chi2_fake_Plus")
-        # # hEWSF_chi2_fake_Minus = inputFile.Get("Fakerate/hEWSF_chi2_fake_Minus")    
-        # hEWSF_chi2_fakeMC_Plus.SetLineWidth(3)
-        # hEWSF_chi2_fakeMC_Minus.SetLineWidth(3)
-        # hEWSF_chi2_fakeMC_Plus.SetLineColor(632+2) #red
-        # hEWSF_chi2_fakeMC_Minus.SetLineColor(600-4) #blue
-        # hEWSF_chi2_fakeMC_Plus.Draw()
-        # hEWSF_chi2_fakeMC_Minus.Draw("SAME")
-        # hEWSF_chi2_fakeMC_Plus.GetYaxis().SetTitle("#chi^{2}")
-        # hEWSF_chi2_fakeMC_Plus.GetYaxis().SetTitleOffset(1)
-        # hEWSF_chi2_fakeMC_Plus.GetXaxis().SetTitle("#eta^{#mu}")
-        # hEWSF_chi2_fakeMC_Plus.SetTitle("EWSF Fit, Reduced #chi^{2}")
-        # legDict['EWSF_chi2'] = ROOT.TLegend(0.1,0.7,0.48,0.9)
-        # legDict['EWSF_chi2'].AddEntry(hEWSF_chi2_fakeMC_Plus,"W plus")
-        # legDict['EWSF_chi2'].AddEntry(hEWSF_chi2_fakeMC_Minus, "W minus")
-        # legDict['EWSF_chi2'].Draw("SAME")
-        # canvasList.append(c_EWSF_chi2)
-        # 
-        # c_EWSF_pars = ROOT.TCanvas("c_EWSF_pars","c_EWSF_pars",800,600)
-        # c_EWSF_pars.cd()
-        # c_EWSF_pars.SetGridx()
-        # c_EWSF_pars.SetGridy()
-        # hEWSF_bkg_fakeMC_Plus = inputFile.Get("Fakerate/hEWSF_bkg_fakeMC_Plus")
-        # hEWSF_bkg_fakeMC_Minus = inputFile.Get("Fakerate/hEWSF_bkg_fakeMC_Minus")
-        # hEWSF_sig_fakeMC_Plus = inputFile.Get("Fakerate/hEWSF_sig_fakeMC_Plus")
-        # hEWSF_sig_fakeMC_Minus = inputFile.Get("Fakerate/hEWSF_sig_fakeMC_Minus")
-        # hEWSF_bkg_fakeMC_Plus.SetLineWidth(3)
-        # hEWSF_bkg_fakeMC_Minus.SetLineWidth(3)
-        # hEWSF_sig_fakeMC_Plus.SetLineWidth(3)
-        # hEWSF_sig_fakeMC_Minus.SetLineWidth(3)
-        # hEWSF_bkg_fakeMC_Plus.SetLineColor(632+2) #red
-        # hEWSF_bkg_fakeMC_Minus.SetLineColor(600-4) #blue
-        # hEWSF_sig_fakeMC_Plus.SetLineColor(416+2) #green
-        # hEWSF_sig_fakeMC_Minus.SetLineColor(1) #black
-        # hEWSF_bkg_fakeMC_Plus.Draw()
-        # hEWSF_bkg_fakeMC_Minus.Draw("SAME")
-        # hEWSF_sig_fakeMC_Plus.Draw("SAME")
-        # hEWSF_sig_fakeMC_Minus.Draw("SAME")    
-        # hEWSF_bkg_fakeMC_Plus.GetYaxis().SetTitle("EWSF")
-        # hEWSF_bkg_fakeMC_Plus.GetYaxis().SetTitleOffset(1)
-        # hEWSF_bkg_fakeMC_Plus.GetXaxis().SetTitle("#eta^{#mu}")
-        # hEWSF_bkg_fakeMC_Plus.SetTitle("EWSF Fit, Scale Factors")
-        # legDict['EWSF_pars'] = ROOT.TLegend(0.1,0.7,0.48,0.9)
-        # legDict['EWSF_pars'].AddEntry(hEWSF_bkg_fakeMC_Plus,"bkg, W^{+}")
-        # legDict['EWSF_pars'].AddEntry(hEWSF_bkg_fakeMC_Minus, "bkg, W^{-}")
-        # legDict['EWSF_pars'].AddEntry(hEWSF_sig_fakeMC_Plus,"Signal, W^{+}")
-        # legDict['EWSF_pars'].AddEntry(hEWSF_sig_fakeMC_Minus, "Signal, W^{-}")
-        # legDict['EWSF_pars'].Draw("SAME")
-        # canvasList.append(c_EWSF_pars)
-        # 
-        # c_Templ_chi2 = ROOT.TCanvas("c_Templ_chi2","c_Templ_chi2",800,600)
-        # c_Templ_chi2.cd()
-        # c_Templ_chi2.SetGridx()
-        # c_Templ_chi2.SetGridy()
-        # hTempl_chi2_fakeMC_Plus = inputFile.Get("Fakerate/hTempl_chi2_fakeMC_Plus")
-        # hTempl_chi2_fakeMC_Minus = inputFile.Get("Fakerate/hTempl_chi2_fakeMC_Minus")
-        # # hTempl_chi2_fake_Plus = inputFile.Get("Fakerate/hTempl_chi2_fake_Plus")
-        # # hTempl_chi2_fake_Minus = inputFile.Get("Fakerate/hTempl_chi2_fake_Minus")    
-        # hTempl_chi2_fakeMC_Plus.SetLineWidth(3)
-        # hTempl_chi2_fakeMC_Minus.SetLineWidth(3)
-        # hTempl_chi2_fakeMC_Plus.SetLineColor(632+2) #red
-        # hTempl_chi2_fakeMC_Minus.SetLineColor(600-4) #blue
-        # hTempl_chi2_fakeMC_Plus.Draw()
-        # hTempl_chi2_fakeMC_Minus.Draw("SAME")
-        # hTempl_chi2_fakeMC_Plus.GetYaxis().SetTitle("#chi^{2}")
-        # hTempl_chi2_fakeMC_Plus.GetYaxis().SetTitleOffset(1)
-        # hTempl_chi2_fakeMC_Plus.GetXaxis().SetTitle("#eta^{#mu}")
-        # hTempl_chi2_fakeMC_Plus.SetTitle("Templ Fit, Reduced #chi^{2}")
-        # legDict['Templ_chi2'] = ROOT.TLegend(0.1,0.7,0.48,0.9)
-        # legDict['Templ_chi2'].AddEntry(hTempl_chi2_fakeMC_Plus,"W plus")
-        # legDict['Templ_chi2'].AddEntry(hTempl_chi2_fakeMC_Minus, "W minus")
-        # legDict['Templ_chi2'].Draw("SAME")
-        # canvasList.append(c_Templ_chi2)                
-        # 
-        # c_Templ_chi2 = ROOT.TCanvas("c_Templ_chi2","c_Templ_chi2",800,600)
-        # c_Templ_chi2.cd()
-        # c_Templ_chi2.SetGridx()
-        # c_Templ_chi2.SetGridy()
-        # hTempl_chi2_fakeMC_Plus = inputFile.Get("Fakerate/hTempl_chi2_fakeMC_Plus")
-        # hTempl_chi2_fakeMC_Minus = inputFile.Get("Fakerate/hTempl_chi2_fakeMC_Minus")
-        # # hTempl_chi2_fake_Plus = inputFile.Get("Fakerate/hTempl_chi2_fake_Plus")
-        # # hTempl_chi2_fake_Minus = inputFile.Get("Fakerate/hTempl_chi2_fake_Minus")    
-        # hTempl_chi2_fakeMC_Plus.SetLineWidth(3)
-        # hTempl_chi2_fakeMC_Minus.SetLineWidth(3)
-        # hTempl_chi2_fakeMC_Plus.SetLineColor(632+2) #red
-        # hTempl_chi2_fakeMC_Minus.SetLineColor(600-4) #blue
-        # hTempl_chi2_fakeMC_Plus.Draw()
-        # hTempl_chi2_fakeMC_Minus.Draw("SAME")
-        # hTempl_chi2_fakeMC_Plus.GetYaxis().SetTitle("#chi^{2}")
-        # hTempl_chi2_fakeMC_Plus.GetYaxis().SetTitleOffset(1)
-        # hTempl_chi2_fakeMC_Plus.GetXaxis().SetTitle("#eta^{#mu}")
-        # hTempl_chi2_fakeMC_Plus.SetTitle("Templ Fit, Reduced #chi^{2}")
-        # legDict['Templ_chi2'] = ROOT.TLegend(0.1,0.7,0.48,0.9)
-        # legDict['Templ_chi2'].AddEntry(hTempl_chi2_fakeMC_Plus,"W plus")
-        # legDict['Templ_chi2'].AddEntry(hTempl_chi2_fakeMC_Minus, "W minus")
-        # legDict['Templ_chi2'].Draw("SAME")
-        # canvasList.append(c_Templ_chi2)                                          
-                    
-                                        
-        
         outputFake = ROOT.TFile(self.outdir+"/bkg_plots"+self.nameSuff+".root","recreate")
         for h in range(len(canvasList)) :
-            # print "name" , canvasList[h]
-            # print "index", h
             if "h2qcd" in canvasList[h].GetName() :
                  continue
             else :
@@ -1336,66 +1208,4 @@ class bkg_fakerateAnalyzer:
 
 
 
-    def integrated_preliminary_OLD_NOT_USE(self) :
-        # lvar = [0 for v in range(len(self.varList))]
-        # lreg = [lvar for r in range(len(self.regionList))]
-        # lsig = [lreg for s in range(len(self.signList))]
-        # histos = [lsig for f in range(len(self.sampleList))]
-        
-        lreg = [0 for r in range(len(self.regionList))]
-        lsam = [copy.deepcopy(lreg) for f in range(len(self.sampleList))]
-        lvar = [copy.deepcopy(lsam) for v in range(len(self.varList))]
-        histos = [copy.deepcopy(lvar) for s in range(len(self.signList))]
-        # for f in range(len(self.sampleList)) :
-        #     if (self.sampleList[f]!='DataLike') : rootfile = ROOT.TFile.Open(self.folder+'/'+self.sampleList[f]+'.root')
-        #     for s in range(len(self.signList)) :
-        #         for r in range(len(self.regionList)) :
-        #             for v in range(len(self.varList)) :
-        #                 if(self.sampleList[f]!='DataLike' and self.regionList[f]!='Tot') :
-        #                     histos[f][s][r][v] =  rootfile.Get('controlPlotsbkg_'+self.regionList[r]+self.signList[s]+'/nom/+Muon1_'+self.varList[v])
-        print histos      
-        print "getting histos"                          
-        for s in range(len(self.signList)) :
-            # if (self.sampleList[f]!='DataLike') : rootfile = ROOT.TFile.Open(self.folder+'/'+self.sampleList[f]+'.root')
-            for v in range(len(self.varList)) :
-                for f in range(len(self.sampleList)) :
-                    if(self.sampleList[f]!='DataLike') :
-                        for r in range(len(self.regionList)) :
-                            if(self.regionList[r]!='Tot') :
-                                print "Get histo:" 'controlPlotsbkg_'+self.regionList[r]+self.signList[s]+'/nom/+Muon1_'+self.varList[v]#, "from file:",self.rootFiles[f] 
-                                histos[s][v][f][r] =  self.rootFiles[f].Get('controlPlotsbkg_'+self.regionList[r]+self.signList[s]+'/nom/Muon1_'+self.varList[v])
-                                
-                                #line below the dictionary approach, not used.
-                                # hdict[self.sampleList[f]+'_'+self.regionList[r]+'_'+self.signList[s]+'_'+self.varList[v]] = self.rootFiles[f].Get('controlPlotsbkg_'+self.regionList[r]+self.signList[s]+'/nom/Muon1_'+self.varList[v])
-                                # print "HISTO", s,v,f,r, "name", histos[s][v][f][r]
-                            else:
-                                print "clone histo:", self.sampleList[f]+'_'+self.signList[s]+'_'+histos[s][v][f][r-1].GetName()+'_Tot'
-                                histos[s][v][f][r] = histos[s][v][f][r-1].Clone(self.sampleList[f]+'_'+self.signList[s]+'_'+self.varName[v]+'_Tot')
-                                for rr in range(len(self.regionList)-2) :
-                                    print "Added histo:", histos[s][v][f][rr].GetName()
-                                    histos[s][v][f][r].Add(histos[s][v][f][rr])
-                                # print "HISTO",  s,v,f,r, histos[s][v][f][r]
-
-                    else :
-                        print "cloned (datalike) histo:", 'DataLike_'+self.signList[s]+'_'+histos[s][v][f-2][len(self.regionList)-1].GetName()+'_Tot'
-                        histos[s][v][f][len(self.regionList)-1] = histos[s][v][f-2][len(self.regionList)-1].Clone('DataLike_'+self.signList[s]+'_'+self.varName[v]+'_Tot')
-                        for ff in range(len(self.sampleList)-3) :
-                            print "Added (data like) histo:", histos[s][v][ff][len(self.regionList)-1].GetName()
-                            histos[s][v][f][len(self.regionList)-1].Add(histos[s][v][ff][len(self.regionList)-1])
-                        # print "HISTO",  s,v,f,r, histos[s][v][f][len(self.regionList)-1]
-                print "======================================================================="
-
-        # print histos            
-        print "ratios (integrated, preliminary)"
-        ratios = []
-        for s in range(len(self.signList)) :
-            for v in range(len(self.varList)) :
-                for f in range(len(self.sampleList)) :
-                    print 'ratio_'+histos[s][v][f][len(self.regionList)-1].GetName()
-                    if v == 0 or v==2 : cutvalue =  self.relisoCUT
-                    else : cutvalue = self.isoCUT
-                    ratios.append(self.ratio_2Dto1D(histos[s][v][f][len(self.regionList)-1],cutvalue,'ratio_'+histos[s][v][f][len(self.regionList)-1].GetName()))
-        
-        output = ROOT.TFile(self.outdir+"/bkg_integrated_preliminary"+self.nameSuff+".root","recreate")
-        for h in range(len(ratios)):
-            ratios[h].Write()
+    

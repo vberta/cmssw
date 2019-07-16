@@ -35,16 +35,22 @@ parser.add_argument('-dataYear', '--dataYear',type=int, default=2016, help="")
 parser.add_argument('-hadd', '--hadd',type=int, default=False, help="")
 parser.add_argument('-plot', '--plot',type=int, default=False, help="")
 parser.add_argument('-fakerate', '--fakerate',type=int, default=False, help="")
+parser.add_argument('-fakerateVar', '--fakerateVar',type=int, default=False, help="variation of tight and loose cut for fakerate")
 parser.add_argument('-rdf', '--rdf',type=int, default=True, help="")
 parser.add_argument('-pretend', '--pretend',type=bool, default=False, help="")
+parser.add_argument('-restrict', '--restrict',type=str, default="", help="")
+
 args = parser.parse_args()
 tag = args.tag
 dataYear = args.dataYear
 hadd = args.hadd
 plot = args.plot
 fakerate = args.fakerate
+fakerateVar = args.fakerateVar
 rdf = args.rdf
 pretend = args.pretend
+restrictDataset = [ x for x in args.restrict.split(',') ]
+
 print "tag =", bcolors.OKGREEN, tag, bcolors.ENDC, \
     ", dataYear =", bcolors.OKGREEN, str(dataYear), bcolors.ENDC
 
@@ -119,21 +125,7 @@ if not os.path.isdir(outDir): os.system('mkdir '+outDir)
 
 outputFiles = []
 
-# parser = sampleParser(restrict= ['QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8'],tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt')
-parser = sampleParser(tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt')
-# parser = sampleParser(restrict= ['WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8'], tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt')
-#WJ+QCD
-# parser = sampleParser(restrict= ['WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8','QCD_Pt-1000toInf_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-1000toInf_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-120to170_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-15to20_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-170to300_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-170to300_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-20to30_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-30to50_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-50to80_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-600to800_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-600to800_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1'])
-
-#data only
-# parser = sampleParser(restrict= ['SingleMuon_Run2016B_ver2', 'SingleMuon_Run2016C', 'SingleMuon_Run2016D', 'SingleMuon_Run2016E', 'SingleMuon_Run2016F', 'SingleMuon_Run2016G', 'SingleMuon_Run2016H'])
-
-#data example
-# parser = sampleParser(restrict= ['SingleMuon_Run2016B_ver2'])
-
-# WJ+QCD+EWK+DY (w/o  data)
-# parser = sampleParser(restrict= ['WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8','DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8', 'DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_ext1','DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_ext2','ST_s-channel_4f_leptonDecays_13TeV-amcatnlo-pythia8_TuneCUETP8M1', 'ST_t-channel_antitop_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1', 'ST_t-channel_top_4f_inclusiveDecays_13TeV-powhegV2-madspin-pythia8_TuneCUETP8M1', 'ST_tW_antitop_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1_ext1', 'ST_tW_top_5f_inclusiveDecays_13TeV-powheg-pythia8_TuneCUETP8M1_ext1', 'TTJets_DiLept_TuneCUETP8M1_13TeV-madgraphMLM-pythia8', 'TTJets_DiLept_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_ext1', 'TTJets_SingleLeptFromTbar_TuneCUETP8M1_13TeV-madgraphMLM-pythia8', 'TTJets_SingleLeptFromTbar_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_ext1', 'TTJets_SingleLeptFromT_TuneCUETP8M1_13TeV-madgraphMLM-pythia8', 'TTJets_SingleLeptFromT_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_ext1', 'WW_TuneCUETP8M1_13TeV-pythia8', 'WW_TuneCUETP8M1_13TeV-pythia8_ext1', 'WZ_TuneCUETP8M1_13TeV-pythia8', 'ZZ_TuneCUETP8M1_13TeV-pythia8','QCD_Pt-1000toInf_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-1000toInf_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-120to170_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-15to20_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-170to300_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-170to300_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-20to30_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-300to470_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-30to50_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-470to600_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-50to80_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-600to800_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-600to800_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1','QCD_Pt-800to1000_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext2','QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8', 'QCD_Pt-80to120_MuEnrichedPt5_TuneCUETP8M1_13TeV_pythia8_ext1'])
-
+parser = sampleParser(restrict = restrictDataset, tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt')
 
 samples_dict = parser.getSampleDict()
 
@@ -231,20 +223,20 @@ if fakerate :
         skipHisto = True
     if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg') 
     if not os.path.isdir(outDir+'/bkg/bkg_plot'): os.system('mkdir '+outDir+'/bkg/bkg_plot')
-    # fake = fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir, fileList=selected, norm = 35.922, skipHisto = skipHisto)
     fake = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
     fake.integrated_preliminary()
     fake.differential_preliminary(fakerate=True)
     tightCutList = [0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5]
     looseCutList = [10,20,30,35,40,45,50,60,70,80]
     print "starting variation"
-    # for lcut in looseCutList :
-    #         for tcut in tightCutList :
-    #             print "---variation (l, t)",lcut, tcut
-    #             fake_i = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=False, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, tightCut = tcut, looseCut=lcut, nameSuff="_"+str(lcut)+"_"+str(tcut))
-    #             fake_i.differential_preliminary(fakerate=True)
+    if(fakerateVar) : 
+        for lcut in looseCutList :
+                for tcut in tightCutList :
+                    print "---variation (l, t)",lcut, tcut
+                    fake_i = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=False, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, tightCut = tcut, looseCut=lcut, nameSuff="_"+str(lcut)+"_"+str(tcut))
+                    fake_i.differential_preliminary(fakerate=True)
     print "plotting"    
-    fake.fakerate_plots(variations=False,tightCutList=tightCutList,looseCutList=looseCutList )
+    fake.fakerate_plots(variations=fakerateVar,tightCutList=tightCutList,looseCutList=looseCutList )
 
 
 if (plot and 0):
