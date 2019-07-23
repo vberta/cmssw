@@ -9,19 +9,6 @@ from header import *
 from array import array
 import numpy as np
 
-# sel_code = '''
-#
-#     ROOT::RDF::RResultPtr<TH3D> sel(ROOT::RDF::RNode df, float lowEdgePt, float upEdgePt){
-#
-#         auto sel= [=](float pt) { return (pt >lowEdgePt && pt < upEdgePt);};
-#
-#         Float_t arr[] = {0,1,2,3,4};
-#         int arrl = sizeof(arr)/sizeof(Float_t);
-#
-#         return df.Filter(sel, {"bkgSelMuon1_corrected_pt"}).Histo3D(TH3D(Form("h3_%.2f",lowEdgePt), Form("h3_%.2f",lowEdgePt), arrl,arr,arrl,arr,arrl,arr),  "bkgSelMuon1_corrected_MET_nom_mt", "bkgSelMuon1_pfRelIso04_all", "bkgSelMuon1_eta");
-#     }
-# '''
-
 sel_code = '''
 
     ROOT::RDF::RNode sel(ROOT::RDF::RNode df, float lowEdgePt, float upEdgePt, TString selection, std::string_view varPt){
@@ -110,7 +97,6 @@ class bkg_histos_standalone(module):
                 if(var=='corrected_MET_nom_mt') :
                     h2 = self.d.Filter(selection).Histo2D((Collection+'_'+var+"_VS_eta", " ; {}; ".format(tools[0]),  tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]), collectionName+'_'+var,collectionName+'_eta', 'totweight')
                     self.myTH2.append(h2)
-
 
             if dic.has_key('D2variables'):
                 for var,tools in dic['D2variables'].iteritems():
