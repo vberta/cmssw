@@ -58,7 +58,6 @@ class bkg_histos_standalone(module):
         weight = self.selections[self.dataType]['weight']
 
         # define mc specific weights (nominal)
-
         if self.dataType == 'MC':
             self.d = self.d.Define('lumiweight', '({L}*{xsec})/({genEventSumw})'.format(L=self.targetLumi, genEventSumw = genEventSumw, xsec = self.xsec)) \
                     .Define('totweight', 'lumiweight*{}'.format(weight))
@@ -101,19 +100,17 @@ class bkg_histos_standalone(module):
             if dic.has_key('D2variables'):
                 for var,tools in dic['D2variables'].iteritems():
 
-                    if not self.dataType == 'MC':
+                    h3 = self.d.Filter(selection).Histo3D((Collection+'_'+var, " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_'+var+'_Z','totweight')
+                    self.myTH3.append(h3)
 
-                                h3 = self.d.Filter(selection).Histo3D((Collection+'_'+var, " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_'+var+'_Z','totweight')
-                                self.myTH3.append(h3)
+                    for ipt in range(1, h_fake.GetNbinsY()+1): #for each pt bin
+                        lowEdgePt = h_fake.GetYaxis().GetBinLowEdge(ipt)
+                        upEdgePt = h_fake.GetYaxis().GetBinUpEdge(ipt)
 
-                                for ipt in range(1, h_fake.GetNbinsY()+1): #for each pt bin
-                                    lowEdgePt = h_fake.GetYaxis().GetBinLowEdge(ipt)
-                                    upEdgePt = h_fake.GetYaxis().GetBinUpEdge(ipt)
+                        dfilter = ROOT.sel(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, "bkgSelMuon1_corrected_pt")
 
-                                    dfilter = ROOT.sel(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, "bkgSelMuon1_corrected_pt")
+                        h3_ptbin = dfilter.Histo3D((Collection+'_'+var+'_{eta:.2g}'.format(eta=lowEdgePt), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_'+var+'_Z','totweight')
 
-                                    h3_ptbin = dfilter.Histo3D((Collection+'_'+var+'_{eta:.2g}'.format(eta=lowEdgePt), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_'+var+'_Z','totweight')
-
-                                    self.myTH3.append(h3_ptbin)
+                        self.myTH3.append(h3_ptbin)
 
         return self.d
