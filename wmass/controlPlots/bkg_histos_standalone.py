@@ -11,15 +11,14 @@ import numpy as np
 
 sel_code = '''
 
-    ROOT::RDF::RNode sel(ROOT::RDF::RNode df, float lowEdgePt, float upEdgePt, TString selection, std::string_view varPt){
+    ROOT::RDF::RNode sels(ROOT::RDF::RNode df, float lowEdgePt, float upEdgePt, TString selection, std::string_view varPt){
 
-        auto sel= [=](float pt) { return (pt >lowEdgePt && pt < upEdgePt && selection);};
+        auto sels= [=](float pt) { return (pt >lowEdgePt && pt < upEdgePt && selection);};
 
-        return df.Filter(sel, {"bkgSelMuon1_corrected_pt"});
+        return df.Filter(sels, {"bkgSelMuon1_corrected_pt"});
     }
 '''
 ROOT.gInterpreter.Declare(sel_code)
-
 
 
 
@@ -48,6 +47,7 @@ class bkg_histos_standalone(module):
     def run(self,d):
 
         self.d = d
+        print "-"
 
         RDF = ROOT.ROOT.RDataFrame
         runs = RDF('Runs', self.inputFile)
@@ -64,22 +64,28 @@ class bkg_histos_standalone(module):
         else:
             self.d = self.d.Define('totweight', '1')
 
-        # loop over variables
+        
         for Collection,dic in self.variables.iteritems():
             collectionName = dic['inputCollection']
+            if 'newCollection' in dic: collectionNameNew = dic['newCollection'] 
+            for var,tools in dic['variables'].iteritems():
+                if 'index' in dic:   
+                    print collectionName, var
+                    self.d = self.d.Define(collectionNameNew+'_'+var,collectionName+'_'+var+'['+dic['index']+']')
+
+                else :
+                    print collectionName, var
+                    self.d = self.d.Define(collectionNameNew+'_'+var,collectionName+'_'+var)
+                
+                # self.d = self.d.Define(collectionName+'_'+var,'{coll}_{var}[{id}]'.forma(coll=collectionName,var=var,id=dic['index']))
 
             # first of all define new variables in the input collection
             if dic.has_key('newvariables'):
                 for newvar, definition in dic['newvariables'].iteritems():
-                    self.d = self.d.Define(collectionName+'_'+newvar, definition[4]) # 4th entries in tuple is the string that defines the new variable
+                    self.d = self.d.Define(collectionNameNew+'_'+newvar, definition[4]) # 4th entries in tuple is the string that defines the new variable
                 dic['variables'].update(dic['newvariables'])
 
-            if dic.has_key('newCollection') and dic['newCollection'] != '':
-                if 'index' in dic:
-                    # define a new subcollection with all the columns of the original collection
-                    self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d)
-
-                    collectionName = dic['newCollection']
+            collectionName = dic['newCollection']
 
             if dic.has_key('D2variables'):
                 for D2var, definition in dic['D2variables'].iteritems():
@@ -107,7 +113,7 @@ class bkg_histos_standalone(module):
                         lowEdgePt = h_fake.GetYaxis().GetBinLowEdge(ipt)
                         upEdgePt = h_fake.GetYaxis().GetBinUpEdge(ipt)
 
-                        dfilter = ROOT.sel(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, "bkgSelMuon1_corrected_pt")
+                        dfilter = ROOT.sels(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, "bkgSelMuon1_corrected_pt")
 
                         h3_ptbin = dfilter.Histo3D((Collection+'_'+var+'_{eta:.2g}'.format(eta=lowEdgePt), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_'+var+'_Z','totweight')
 
