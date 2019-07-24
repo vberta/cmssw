@@ -7,12 +7,14 @@ sys.path.append('../../framework')
 import ROOT
 from RDFtreeV2 import RDFtree
 
-from bkg_histos import *
+# from bkg_histos import *
+from bkg_histos_standalone import *
 from plotter import *
 
 from sampleParser import *
 from bkg_selections import *
-from bkg_variables import *
+# from bkg_variables import *
+from bkg_variables_standalone import *
 from systematics import *
 from bkg_fakerateAnalyzer import *
 
@@ -74,7 +76,38 @@ def filterVariables(variables={}, selection='Signal', verbose=False):
         del new_variables[ivar]  
     if verbose: print '<<', new_variables
     return new_variables
-
+    
+def filterVariables(variables={}, selection='Signal', verbose=False):
+    if verbose: print '>>', variables
+    new_variables = copy.deepcopy(variables)
+    delete_vars = []
+    appliesTo = new_variables['appliesTo']
+    for applyTo in appliesTo:
+        if applyTo[-1]=="*":
+            if applyTo[0:-1] in selection: 
+                match = True
+        else:
+            if applyTo==selection:  match = True 
+    if not match: 
+        new_variables.clear()
+    return new_variables
+        
+    # for ivar,var in new_variables.iteritems():
+    #     match = False
+    #     appliesTo = var['appliesTo']
+    #     for applyTo in appliesTo:
+    #         if applyTo[-1]=="*":
+    #             if applyTo[0:-1] in selection: 
+    #                 match = True
+    #         else:
+    #             if applyTo==selection:  match = True                
+    #     if not match: 
+    #         delete_vars.append(ivar)
+    # for ivar in delete_vars: 
+    #     del new_variables[ivar]  
+    # if verbose: print '<<', new_variables
+    # return new_variables
+    
 def RDFprocess(outDir, inputFile, selections, sample):
 
     outDir = outDir
@@ -91,9 +124,11 @@ def RDFprocess(outDir, inputFile, selections, sample):
         outputFiles.append("%s" % (sample_key))
         for sel_key, sel in myselections.iteritems():
             if len(sample['subsel'])>1 and subsel_key=='none': continue
-            myvariables = filterVariables(bkg_variables, sel_key)
+            myvariables = filterVariables(bkg_variables_standalone, sel_key)
             print '\tBranching: subselection', bcolors.OKBLUE, subsel_key, bcolors.ENDC, 'with selection' , bcolors.OKBLUE, sel_key, bcolors.ENDC
-            print '\tAdding variables for collections', bcolors.OKBLUE, myvariables.keys(), bcolors.ENDC
+            # print '\tAdding variables for collections', bcolors.OKBLUE, myvariables.keys(), bcolors.ENDC
+            print '\tAdding variables for collections', bcolors.OKBLUE, myvariables['variables'].keys(), myvariables['D2variables'].keys(), bcolors.ENDC
+
            
             myselection = copy.deepcopy(sel)
             myselection[dataType]['cut'] += subsel if subsel_key!='none' else ''
@@ -101,7 +136,7 @@ def RDFprocess(outDir, inputFile, selections, sample):
             p.branch(nodeToStart='input',
                         nodeToEnd='controlPlots'+sel_key,
                         outputFile=outputFile,
-                        modules = [bkg_histos(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning)])
+                        modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning)])
     
     p.getOutput()
 
