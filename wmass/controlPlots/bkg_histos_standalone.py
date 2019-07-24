@@ -77,8 +77,6 @@ class bkg_histos_standalone(module):
                     print collectionName, var
                     self.d = self.d.Define(collectionNameNew+'_'+var,collectionName+'_'+var)
                 
-                # self.d = self.d.Define(collectionName+'_'+var,'{coll}_{var}[{id}]'.forma(coll=collectionName,var=var,id=dic['index']))
-
             # first of all define new variables in the input collection
             if dic.has_key('newvariables'):
                 for newvar, definition in dic['newvariables'].iteritems():
