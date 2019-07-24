@@ -57,25 +57,25 @@ print "tag =", bcolors.OKGREEN, tag, bcolors.ENDC, \
     ", dataYear =", bcolors.OKGREEN, str(dataYear), bcolors.ENDC
 
 
-def filterVariables(variables={}, selection='Signal', verbose=False):
-    if verbose: print '>>', variables
-    new_variables = copy.deepcopy(variables)
-    delete_vars = []
-    for ivar,var in new_variables.iteritems():
-        match = False
-        appliesTo = var['appliesTo']
-        for applyTo in appliesTo:
-            if applyTo[-1]=="*":
-                if applyTo[0:-1] in selection: 
-                    match = True
-            else:
-                if applyTo==selection:  match = True                
-        if not match: 
-            delete_vars.append(ivar)
-    for ivar in delete_vars: 
-        del new_variables[ivar]  
-    if verbose: print '<<', new_variables
-    return new_variables
+# def filterVariables(variables={}, selection='Signal', verbose=False):
+#     if verbose: print '>>', variables
+#     new_variables = copy.deepcopy(variables)
+#     delete_vars = []
+#     for ivar,var in new_variables.iteritems():
+#         match = False
+#         appliesTo = var['appliesTo']
+#         for applyTo in appliesTo:
+#             if applyTo[-1]=="*":
+#                 if applyTo[0:-1] in selection: 
+#                     match = True
+#             else:
+#                 if applyTo==selection:  match = True                
+#         if not match: 
+#             delete_vars.append(ivar)
+#     for ivar in delete_vars: 
+#         del new_variables[ivar]  
+#     if verbose: print '<<', new_variables
+#     return new_variables
     
 def filterVariables(variables={}, selection='Signal', verbose=False):
     if verbose: print '>>', variables
@@ -91,23 +91,7 @@ def filterVariables(variables={}, selection='Signal', verbose=False):
     if not match: 
         new_variables.clear()
     return new_variables
-        
-    # for ivar,var in new_variables.iteritems():
-    #     match = False
-    #     appliesTo = var['appliesTo']
-    #     for applyTo in appliesTo:
-    #         if applyTo[-1]=="*":
-    #             if applyTo[0:-1] in selection: 
-    #                 match = True
-    #         else:
-    #             if applyTo==selection:  match = True                
-    #     if not match: 
-    #         delete_vars.append(ivar)
-    # for ivar in delete_vars: 
-    #     del new_variables[ivar]  
-    # if verbose: print '<<', new_variables
-    # return new_variables
-    
+            
 def RDFprocess(outDir, inputFile, selections, sample):
 
     outDir = outDir
