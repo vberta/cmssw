@@ -18,8 +18,10 @@ bkg_variables = {
             'pfRelIso04_all_corrected_pt': ('muon pfAbsIso04',800, 0., 40,'Muon_pfRelIso04_all*Muon_corrected_pt'),
         },
         'D2variables':{
-            'pfRelIso04_all_corrected_MET_nom_mt':   ('M_{T} (Rochester corr./smear MET) VS muon pfRelIso04', 400, 0., 0.5,120, 0, 120, "Muon_pfRelIso04_all[Idx_mu1]","Muon_corrected_MET_nom_mt[Idx_mu1]"),
-            'pfRelIso04_all_corrected_pt_corrected_MET_nom_mt':   ('M_{T} (Rochester corr./smear MET) VS muon pfIso04', 800, 0., 40,120, 0, 120, "Muon_pfRelIso04_all_corrected_pt[Idx_mu1]","Muon_corrected_MET_nom_mt[Idx_mu1]"),
+            'pfRelIso04_all_corrected_MET_nom_mt':   ('M_{T} (Rochester corr./smear MET) VS muon pfRelIso04', 400, 0., 0.5,120, 0, 120, "Muon_pfRelIso04_all[Idx_mu1]","Muon_corrected_MET_nom_mt[Idx_mu1]", "Muon_eta[Idx_mu1]"),
+            # 'pfRelIso04_all_corrected_pt_corrected_MET_nom_mt':   ('M_{T} (Rochester corr./smear MET) VS muon pfIso04', 800, 0., 40,120, 0, 120, "bkgSelMuon1_pfRelIso04_all_corrected_pt[Idx_mu1]","Muon_corrected_MET_nom_mt[Idx_mu1]", "Muon_eta[Idx_mu1]"),   #out-of -ontrolplots implementation only          
+            'pfRelIso04_all_corrected_pt_corrected_MET_nom_mt':   ('M_{T} (Rochester corr./smear MET) VS muon pfIso04', 800, 0., 40,120, 0, 120, "Muon_pfRelIso04_all_corrected_pt[Idx_mu1]","Muon_corrected_MET_nom_mt[Idx_mu1]", "Muon_eta[Idx_mu1]"), #INTEGRATED WITH CONTROL PLOTS IMPLEMENTATION
+
             # 'pfRelIso04_all_MET_pt':   ('MET p_{T} VS muon pfRelIso04', 400, 0., 0.5,120, 0, 120, "Muon_pfRelIso04_all[Idx_mu1]","MET_pt"),
             # 'pfRelIso04_all_corrected_pt_MET_pt':   ('MET p_{T} VS muon pfIso04', 800, 0., 40, 120, 0, 120,"Muon_pfRelIso04_all_corrected_pt[Idx_mu1]","MET_pt"),
         },
@@ -27,6 +29,7 @@ bkg_variables = {
     'MET' :{
         'appliesTo' : ['bkg_Signal*','bkg_Sideband*'],
         'inputCollection' : 'MET',
+        # 'newCollection': 'bkgSelMET',#out-of -ontrolplots implementation only     
         'variables': {
             'pt':  ('MET P_{T}',  120, 0, 120),
         },
@@ -35,6 +38,7 @@ bkg_variables = {
     'PV' : {
         'appliesTo' : ['Signal*','Sideband*'],
         'inputCollection' : 'PV',
+        # 'newCollection': 'bkgSelPV',#out-of -ontrolplots implementation only     
         'variables': {
             'npvsGood' :  ('Number of good primary vertices',  100, 0, 100),
             },

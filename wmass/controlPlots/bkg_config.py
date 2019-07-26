@@ -15,7 +15,7 @@ from sampleParser import *
 from bkg_selections import *
 # from bkg_variables import *
 from bkg_variables_standalone import *
-from systematics import *
+# from systematics import *
 from bkg_fakerateAnalyzer import *
 
 ROOT.gROOT.Reset()
@@ -100,8 +100,9 @@ def RDFprocess(outDir, inputFile, selections, sample):
     sample = sample
 
     outputFile = "%s.root" % (sample_key) 
-
-    p = RDFtree(outputDir=outDir, outputFile = outputFile,inputFile=inputFile,pretend = pretend, syst = systematics)
+    
+    ROOT.ROOT.DisableImplicitMT()
+    p = RDFtree(outputDir=outDir, outputFile = outputFile,inputFile=inputFile,pretend = pretend)
 
       # create branches
     for subsel_key, subsel in sample['subsel'].iteritems(): 
@@ -174,7 +175,7 @@ if rdf:
 
         inputFile = ROOT.std.vector("std::string")()
         for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
-            
+        
         p = Process(target=RDFprocess, args=(outDir, inputFile, myselections,sample))
 
         p.start()
@@ -185,7 +186,7 @@ if rdf:
         p.join()
     
     
-    ROOT.ROOT.EnableImplicitMT(30)#24
+    # ROOT.ROOT.EnableImplicitMT(30)#24
 
     for sample_key, sample in samples_dict.iteritems():
 
