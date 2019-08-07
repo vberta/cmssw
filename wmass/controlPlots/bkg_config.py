@@ -186,7 +186,7 @@ if rdf:
         p.join()
     
     
-    # ROOT.ROOT.EnableImplicitMT(30)#24
+    ROOT.ROOT.EnableImplicitMT(32)#24
 
     for sample_key, sample in samples_dict.iteritems():
 
