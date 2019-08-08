@@ -17,6 +17,7 @@ from bkg_selections import *
 from bkg_variables_standalone import *
 # from systematics import *
 from bkg_fakerateAnalyzer import *
+from bkg_systematics import *
 
 ROOT.gROOT.Reset()
 ROOT.gROOT.SetBatch(True);
@@ -105,23 +106,27 @@ def RDFprocess(outDir, inputFile, selections, sample):
     p = RDFtree(outputDir=outDir, outputFile = outputFile,inputFile=inputFile,pretend = pretend)
 
       # create branches
-    for subsel_key, subsel in sample['subsel'].iteritems(): 
-        outputFiles.append("%s" % (sample_key))
-        for sel_key, sel in myselections.iteritems():
-            if len(sample['subsel'])>1 and subsel_key=='none': continue
+    # for subsel_key, subsel in sample['subsel'].iteritems(): 
+    outputFiles.append("%s" % (sample_key))
+    for sel_key, sel in myselections.iteritems():
+            # if len(sample['subsel'])>1 and subsel_key=='none': continue
             myvariables = filterVariables(bkg_variables_standalone, sel_key)
-            print '\tBranching: subselection', bcolors.OKBLUE, subsel_key, bcolors.ENDC, 'with selection' , bcolors.OKBLUE, sel_key, bcolors.ENDC
+            # print '\tBranching: subselection', bcolors.OKBLUE, subsel_key, bcolors.ENDC, 'with selection' , bcolors.OKBLUE, sel_key, bcolors.ENDC
+            print '\tBranching selection' , bcolors.OKBLUE, sel_key, bcolors.ENDC
             # print '\tAdding variables for collections', bcolors.OKBLUE, myvariables.keys(), bcolors.ENDC
             print '\tAdding variables for collections', bcolors.OKBLUE, myvariables['variables'].keys(), myvariables['D2variables'].keys(), bcolors.ENDC
 
-           
             myselection = copy.deepcopy(sel)
-            myselection[dataType]['cut'] += subsel if subsel_key!='none' else ''
-            subsel_str= subsel if subsel_key!='none' else ''
-            p.branch(nodeToStart='input',
+            # myselection[dataType]['cut'] += subsel if subsel_key!='none' else ''
+            # subsel_str= subsel if subsel_key!='none' else ''
+            
+            for sKind, sList in bkg_systematics.iteritems():
+                for sName in sList :
+                    print "systematic kind", bcolors.OKBLUE, sKind, bcolors.ENDC, "name=",bcolors.OKBLUE, sName, bcolors.ENDC
+                    p.branch(nodeToStart='input',
                         nodeToEnd='controlPlots'+sel_key,
                         outputFile=outputFile,
-                        modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning)])
+                        modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning, systKind=sKind, systName=sName)])
     
     p.getOutput()
 
@@ -150,7 +155,7 @@ parser = sampleParser(restrict = restrictDataset, tag=tag, inputDir=inputDir, pr
 samples_dict = parser.getSampleDict()
 
 for sample_key, sample in samples_dict.iteritems():
-    for subsel_key, subsel in sample['subsel'].iteritems(): 
+    # for subsel_key, subsel in sample['subsel'].iteritems(): 
         outputFiles.append("%s" % (sample_key))
 
 if rdf:
