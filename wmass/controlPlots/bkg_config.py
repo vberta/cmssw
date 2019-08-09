@@ -120,13 +120,13 @@ def RDFprocess(outDir, inputFile, selections, sample):
             # myselection[dataType]['cut'] += subsel if subsel_key!='none' else ''
             # subsel_str= subsel if subsel_key!='none' else ''
             
-            for sKind, sList in bkg_systematics.iteritems():
-                for sName in sList :
-                    print "systematic kind", bcolors.OKBLUE, sKind, bcolors.ENDC, "name=",bcolors.OKBLUE, sName, bcolors.ENDC
-                    p.branch(nodeToStart='input',
-                        nodeToEnd=sel_key+'_'+sKind+'_'+sName,
+            # for sKind, sList in bkg_systematics.iteritems():
+            #     for sName in sList :
+                    # print "systematic kind", bcolors.OKBLUE, sKind, bcolors.ENDC, "name=",bcolors.OKBLUE, sName, bcolors.ENDC
+            p.branch(nodeToStart='input',
+                        nodeToEnd=sel_key,#+'_'+sKind+'_'+sName,
                         outputFile=outputFile,
-                        modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning, systKind=sKind, systName=sName)])
+                        modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning, systDict=bkg_systematics)])
     
     p.getOutput()
 
