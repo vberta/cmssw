@@ -124,7 +124,7 @@ def RDFprocess(outDir, inputFile, selections, sample):
                 for sName in sList :
                     print "systematic kind", bcolors.OKBLUE, sKind, bcolors.ENDC, "name=",bcolors.OKBLUE, sName, bcolors.ENDC
                     p.branch(nodeToStart='input',
-                        nodeToEnd='controlPlots'+sel_key,
+                        nodeToEnd=sel_key+'_'+sKind+'_'+sName,
                         outputFile=outputFile,
                         modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning, systKind=sKind, systName=sName)])
     
