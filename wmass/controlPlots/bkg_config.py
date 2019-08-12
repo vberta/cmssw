@@ -191,7 +191,7 @@ if rdf:
         p.join()
     
     
-    ROOT.ROOT.EnableImplicitMT(32)#24
+    ROOT.ROOT.EnableImplicitMT(48)#24
 
     for sample_key, sample in samples_dict.iteritems():
 
@@ -248,7 +248,7 @@ if fakerate :
         skipHisto = True
     if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg') 
     if not os.path.isdir(outDir+'/bkg/bkg_plot'): os.system('mkdir '+outDir+'/bkg/bkg_plot')
-    fake = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
+    fake = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
     fake.integrated_preliminary()
     fake.differential_preliminary(fakerate=True)
     tightCutList = [0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5]
