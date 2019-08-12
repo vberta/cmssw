@@ -52,7 +52,6 @@ class bkg_histos_standalone(module):
         self.inputFile = inputFile
         
         #debugger
-        self.defineCounter = 0
     
     def dictReplacerVar(self, old,new) :
         self.old = old
@@ -111,7 +110,6 @@ class bkg_histos_standalone(module):
                 newWeight = weight.replace(self.systKind,self.systName)
                 colWeightName = 'totweight_{}'.format(self.systName)
                 self.d = self.d.Define(colWeightName, 'lumiweight*{}'.format(newWeight))
-                self.DefineCounter = self.DefineCounter+1
 
             elif "nom" in self.systKind or "corrected" in self.systKind :
                 self.dictReplacerVar(self.systKind,self.systName)
@@ -124,7 +122,6 @@ class bkg_histos_standalone(module):
         for var,tools in self.variables['variables'].iteritems():
             if ((not self.systName in var) and self.systName!='nom'): continue
             self.d = self.d.Define(collName+'_'+var,tools[4])
-            self.DefineCounter= self.DefineCounter+1
         
         # for D2var, tools in self.variables['D2variables'].iteritems():
         #         if ((not self.systName in D2var) and self.systName!='nom'): continue
@@ -177,16 +174,15 @@ class bkg_histos_standalone(module):
             self.d = self.d.Define('lumiweight', '({L}*{xsec})/({genEventSumw})'.format(L=self.targetLumi, genEventSumw = genEventSumw, xsec = self.xsec)) 
             colWeightName = 'totweight'
             self.d = self.d.Define(colWeightName, 'lumiweight*{}'.format(weight))
-            self.DefineCounter= self.DefineCounter+2
         else:
             colWeightName = 'totweight'
             self.d = self.d.Define('totweight', '1')   
-            self.DefineCounter= self.DefineCounter+1
         
         self.bkg_histos("nom","nom",selection,weight,colWeightName)    
         
         for sKind, sList in self.systDict.iteritems():
             for sName in sList :
                 self.bkg_histos(sKind,sName,selection,weight,colWeightName)
-        print "DEFINE COUNTING:", self.DefineCounter
+                
+        # print "number of defined columns=", len(self.d.GetDefinedColumnNames())
         return self.d
