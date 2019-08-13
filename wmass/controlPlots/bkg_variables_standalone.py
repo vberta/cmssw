@@ -15,10 +15,10 @@ bkg_variables_standalone = {
         
     },
     'D2variables':{
-        'Muon_pfRelIso04_all_corrected_MET_nom_mt':   ('M_{T} (Rochester corr./smear MET) VS muon pfRelIso04', 50, 0., 0.5,60, 0, 120, "Muon_pfRelIso04_all","Muon_corrected_MET_nom_mt", "Muon_eta"),      
-        # 'Muon_pfRelIso04_all_corrected_pt_corrected_MET_nom_mt': ('M_{T} (Rochester corr./smear MET) VS muon pfAbsIso04', 40, 0., 40,60, 0, 120, "Muon_pfRelIso04_all_corrected_pt","Muon_corrected_MET_nom_mt","Muon_eta"),         
-        # 'Muon_pfRelIso04_all_MET_pt':   ('MET p_{T} VS muon pfRelIso04', 50, 0., 0.5,60, 0, 120, "Muon_pfRelIso04_all","MET_pt", "Muon_eta"),        
-        # 'Muon_pfRelIso04_all_corrected_pt_MET_pt':   ('MET p_{T} VS muon pfIso04', 40, 0., 40, 60, 0, 120,"Muon_pfRelIso04_all_corrected_pt","MET_pt", "Muon_eta"),
+        'Muon_pfRelIso04_all_corrected_MET_nom_mt':   ('M_{T} (Rochester corr./smear MET) VS muon pfRelIso04', 60, 0, 120, 50, 0., 0.5,"Muon_corrected_MET_nom_mt", "Muon_pfRelIso04_all","Muon_eta"),      
+        'Muon_pfRelIso04_all_corrected_pt_corrected_MET_nom_mt': ('M_{T} (Rochester corr./smear MET) VS muon pfAbsIso04',60, 0, 120, 40, 0., 40, "Muon_corrected_MET_nom_mt","Muon_pfRelIso04_all_corrected_pt","Muon_eta"),         
+        'Muon_pfRelIso04_all_MET_pt':   ('MET p_{T} VS muon pfRelIso04', 60, 0, 120,50, 0., 0.5,"MET_pt","Muon_pfRelIso04_all", "Muon_eta"),        
+        'Muon_pfRelIso04_all_corrected_pt_MET_pt':   ('MET p_{T} VS muon pfIso04',  60, 0, 120,40, 0., 40,"MET_pt", "Muon_pfRelIso04_all_corrected_pt","Muon_eta"),
     }
 }
 

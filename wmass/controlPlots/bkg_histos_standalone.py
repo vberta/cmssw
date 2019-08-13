@@ -143,7 +143,7 @@ class bkg_histos_standalone(module):
                 self.myTH2.append(h2)
 
         for D2var, tools in self.variables['D2variables'].iteritems():
-                h3 = self.d.Filter(selection).Histo3D((collName+'_'+D2var, " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
+                h3 = self.d.Filter(selection).Histo3D((collName+'_'+D2var, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
                 self.myTH3.append(h3)
                          
                 for ipt in range(1, h_fake.GetNbinsY()+1): #for each pt bin
@@ -152,7 +152,7 @@ class bkg_histos_standalone(module):
                     
                     dfilter = ROOT.sels(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, varPt)
                 
-                    h3_ptbin = dfilter.Histo3D((collName+'_'+D2var+'_{eta:.2g}'.format(eta=lowEdgePt), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
+                    h3_ptbin = dfilter.Histo3D((collName+'_'+D2var+'_{eta:.2g}'.format(eta=lowEdgePt), " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
                 
                     self.myTH3.append(h3_ptbin)
                     
