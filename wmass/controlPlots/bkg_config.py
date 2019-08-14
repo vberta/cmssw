@@ -102,7 +102,6 @@ def RDFprocess(outDir, inputFile, selections, sample):
 
     outputFile = "%s.root" % (sample_key) 
     
-    ROOT.ROOT.DisableImplicitMT()
     p = RDFtree(outputDir=outDir, outputFile = outputFile,inputFile=inputFile,pretend = pretend)
 
       # create branches
@@ -145,12 +144,12 @@ for cut in ['bkg_Signal', 'bkg_Sideband']:
 inputDir = ('/scratch/sroychow/NanoAOD%s-%s/' % (str(dataYear), tag))
 
 
-outDir =  'NanoAOD%s-%s/' % (str(dataYear), tag) 
+outDir =  'NanoAOD%s-%s_RAW/' % (str(dataYear), tag) 
 if not os.path.isdir(outDir): os.system('mkdir '+outDir) 
 
 outputFiles = []
 
-parser = sampleParser(restrict = restrictDataset, tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt')
+parser = sampleParser(restrict = restrictDataset, tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt', exclude = ['DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8','WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8'])
 
 samples_dict = parser.getSampleDict()
 
@@ -191,7 +190,7 @@ if rdf:
         p.join()
     
     
-    ROOT.ROOT.EnableImplicitMT(48)#24
+    ROOT.ROOT.EnableImplicitMT(24)#48
 
     for sample_key, sample in samples_dict.iteritems():
 
@@ -241,27 +240,69 @@ for sample_merging_key, sample_merging_value in samples_merging.iteritems():
 print 'Final samples:'
 print bcolors.OKBLUE, outputMergedFiles, bcolors.ENDC
 
-if fakerate :
-    print "----> FakeRate analyzer:"
-    selected = [s for s in outputMergedFiles]
-    if not rdf : #if rdf=false --->expected already created the rootfiles with proper histos (done previously by rdf)
-        skipHisto = True
-    if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg') 
-    if not os.path.isdir(outDir+'/bkg/bkg_plot'): os.system('mkdir '+outDir+'/bkg/bkg_plot')
-    fake = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
+def fakerate_analysis(systName='nom',outdir=outDir+'/bkg',folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=True,fakerate=True,variations=fakerateVar, tightCutList=[0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5],looseCutList=[10,20,30,35,40,45,50,60,70,80]) :
+    # systName = self.systName
+    # outdir = self.outdir
+    # folder = self.folder
+    # norm = self.norm
+    # fitOnTemplate = self.fitOnTemplate
+    # ptBinning = self.ptBinning
+    # etaBinning = self.etaBinning
+    # onData = self.onData
+    # slicing = self.slicing
+    # fakerate = self.fakerate
+    # variations = self.variations
+    # tightCutList = self.tightCutList
+    # looseCutList = self.looseCutList
+    
+    outdirBkg = outdir+'/bkg_'+systName
+    if not os.path.isdir(outdirBkg): os.system('mkdir '+outdirBkg)
+    if not os.path.isdir(outdirBkg+'_plot'): os.system('mkdir '+outdirBkg+'_plot')
+    
+    fake = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=onData, slicing=slicing)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
     fake.integrated_preliminary()
-    fake.differential_preliminary(fakerate=True)
-    tightCutList = [0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5]
-    looseCutList = [10,20,30,35,40,45,50,60,70,80]
+    fake.differential_preliminary(fakerate=fakerate)
+
     print "starting variation"
     if(fakerateVar) : 
         for lcut in looseCutList :
                 for tcut in tightCutList :
                     print "---variation (l, t)",lcut, tcut
-                    fake_i = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=False, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, tightCut = tcut, looseCut=lcut, nameSuff="_"+str(lcut)+"_"+str(tcut))
+                    fake_i = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, tightCut = tcut, looseCut=lcut, nameSuff="_"+str(lcut)+"_"+str(tcut))
                     fake_i.differential_preliminary(fakerate=True)
     print "plotting"    
-    fake.fakerate_plots(variations=fakerateVar,tightCutList=tightCutList,looseCutList=looseCutList )
+    fake.fakerate_plots(variations=variations,tightCutList=tightCutList,looseCutList=looseCutList )
+
+
+if fakerate :
+    print "----> FakeRate analyzer:"
+    selected = [s for s in outputMergedFiles]
+    if not rdf : #if rdf=false --->expected already created the rootfiles with proper histos (done previously by rdf)
+        skipHisto = True
+    if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg')
+    tightCutList = [0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5]
+    looseCutList = [10,20,30,35,40,45,50,60,70,80]   
+    
+    fakerate_analysis(systName='nom') 
+    for sKind, sList in bkg_systematics.iteritems():
+        for sName in sList :
+            fakerate_analysis(systName=sName,tightCutList=tightCutList,looseCutList=looseCutList )
+                
+            # if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg_'+sName)
+            # if not os.path.isdir(outDir+'/bkg/bkg_plot'): os.system('mkdir '+outDir+'/bkg/bkg_plot')
+            # fake = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
+            # fake.integrated_preliminary()
+            # fake.differential_preliminary(fakerate=True)
+            # 
+            # print "starting variation"
+            # if(fakerateVar) : 
+            #     for lcut in looseCutList :
+            #             for tcut in tightCutList :
+            #                 print "---variation (l, t)",lcut, tcut
+            #                 fake_i = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=False, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, tightCut = tcut, looseCut=lcut, nameSuff="_"+str(lcut)+"_"+str(tcut))
+            #                 fake_i.differential_preliminary(fakerate=True)
+            # print "plotting"    
+            # fake.fakerate_plots(variations=fakerateVar,tightCutList=tightCutList,looseCutList=looseCutList )
 
 
 if (plot and 0):
