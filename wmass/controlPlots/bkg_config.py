@@ -190,7 +190,7 @@ if rdf:
         p.join()
     
     
-    ROOT.ROOT.EnableImplicitMT(24)#48
+    ROOT.ROOT.EnableImplicitMT(48)#48
 
     for sample_key, sample in samples_dict.iteritems():
 
@@ -240,7 +240,7 @@ for sample_merging_key, sample_merging_value in samples_merging.iteritems():
 print 'Final samples:'
 print bcolors.OKBLUE, outputMergedFiles, bcolors.ENDC
 
-def fakerate_analysis(systName='nom',outdir=outDir+'/bkg',folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=True,fakerate=True,variations=fakerateVar, tightCutList=[0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5],looseCutList=[10,20,30,35,40,45,50,60,70,80]) :
+def fakerate_analysis(systName='nom',systKind='nom', outdir=outDir+'/bkg',folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False,fakerate=True,variations=fakerateVar, tightCutList=[0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5],looseCutList=[10,20,30,35,40,45,50,60,70,80]) :
     # systName = self.systName
     # outdir = self.outdir
     # folder = self.folder
@@ -259,18 +259,19 @@ def fakerate_analysis(systName='nom',outdir=outDir+'/bkg',folder=outDir,norm = 3
     if not os.path.isdir(outdirBkg): os.system('mkdir '+outdirBkg)
     if not os.path.isdir(outdirBkg+'_plot'): os.system('mkdir '+outdirBkg+'_plot')
     
-    fake = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=onData, slicing=slicing)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
+    fake = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=onData, slicing=slicing,systName=systName,systKind=systKind)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
     fake.integrated_preliminary()
     fake.differential_preliminary(fakerate=fakerate)
 
-    print "starting variation"
+    
     if(fakerateVar) : 
+        print "starting variation"
         for lcut in looseCutList :
                 for tcut in tightCutList :
                     print "---variation (l, t)",lcut, tcut
-                    fake_i = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, tightCut = tcut, looseCut=lcut, nameSuff="_"+str(lcut)+"_"+str(tcut))
+                    fake_i = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, tightCut = tcut, looseCut=lcut, nameSuff="_"+str(lcut)+"_"+str(tcut),systName=systName, systKind=systKind)
                     fake_i.differential_preliminary(fakerate=True)
-    print "plotting"    
+    # print "plotting"    
     fake.fakerate_plots(variations=variations,tightCutList=tightCutList,looseCutList=looseCutList )
 
 
@@ -283,11 +284,15 @@ if fakerate :
     tightCutList = [0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5]
     looseCutList = [10,20,30,35,40,45,50,60,70,80]   
     
-    fakerate_analysis(systName='nom') 
+    fakerate_analysis(systName='nom',systKind='nom') 
     for sKind, sList in bkg_systematics.iteritems():
         for sName in sList :
-            fakerate_analysis(systName=sName,tightCutList=tightCutList,looseCutList=looseCutList )
-                
+            print "systemtatic:", sKind,sName
+            fakerate_analysis(systKind=sKind,systName=sName,tightCutList=tightCutList,looseCutList=looseCutList )
+    
+    print "final plots"
+    fakeFinal = bkg_fakerateAnalyzer(outdir=outDir+'/bkg/', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False, systName='nom',systKind='nom')
+    fakeFinal.finalPlots(systDict=bkg_systematics)        
             # if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg_'+sName)
             # if not os.path.isdir(outDir+'/bkg/bkg_plot'): os.system('mkdir '+outDir+'/bkg/bkg_plot')
             # fake = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')

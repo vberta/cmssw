@@ -8,13 +8,14 @@ from module import *
 from header import *
 from bkg_variables_standalone import *
 from bkg_selections import *
+from bkg_systematics import *
 
 
 
 
 # class bkg_fakerateAnalyzer(module):
 class bkg_fakerateAnalyzer:  
-    def __init__(self, ptBinning, etaBinning, outdir='./bkg', folder='./', norm = 1, varFake = 'Muon_pfRelIso04_all_corrected_MET_nom_mt', tightCut = 0.15, looseCut=40, fitOnTemplate=False, onData=True, nameSuff = '',slicing=True)  :
+    def __init__(self, ptBinning, etaBinning, outdir='./bkg', folder='./', norm = 1, varFake = 'Muon_pfRelIso04_all_corrected_MET_nom_mt', tightCut = 0.15, looseCut=40, fitOnTemplate=False, onData=True, nameSuff = '',slicing=True,systKind='nom',systName='nom')  :
     
         self.outdir = outdir
         self.folder = folder
@@ -25,6 +26,8 @@ class bkg_fakerateAnalyzer:
         self.tightCut = tightCut
         self.looseCut = looseCut
         self.nameSuff = nameSuff
+        self.systKind = systKind
+        self.systName = systName
 
         self.fitOnTemplate = fitOnTemplate
         self.onData = onData
@@ -66,7 +69,6 @@ class bkg_fakerateAnalyzer:
         if self.slicing  :
             self.slicer()
 
-
         self.rootFiles = []
         for f in range(len(self.sampleList)-1) :
                 if (self.sampleList[f]!='DataLike') : self.rootFiles.append(ROOT.TFile.Open(self.outdir+"/"+self.sampleList[f]+"_sliced"+".root"))
@@ -98,12 +100,20 @@ class bkg_fakerateAnalyzer:
                     
                     #COPY 1D
                     for v in var1DList :
-                        histo1DDict[s+r+v] = self.rootFilesRaw[f].Get('bkg_'+r+s+'/nom/bkgSel_'+v+'_nom')
+                        v_var = v
+                        if "nom" in self.systKind or "corrected" in self.systKind :
+                            if  not "Data.root" in self.rootFilesRaw[f].GetName() : v_var = v.replace(self.systKind,self.systName)
+                        histo1DDict[s+r+v] = self.rootFilesRaw[f].Get('bkg_'+r+s+'/nom/bkgSel_'+v_var+'_'+self.systName)
+                        print "histo name", 'bkgSel_'+v_var+'_'+self.systName
                         histo1DDict[s+r+v].SetName('bkgSel_'+v)
                         histo1DDict[s+r+v].Write()
                     
                     #SLICE 2D
-                    histo2DDict[s+r] = self.rootFilesRaw[f].Get('bkg_'+r+s+'/nom/bkgSel_Muon_corrected_MET_nom_mt_VS_eta'+'_nom')
+                    name2D = 'Muon_corrected_MET_nom_mt_VS_eta'
+                    name2D_var = name2D
+                    if "nom" in self.systKind or "corrected" in self.systKind :
+                        if not "Data.root" in self.rootFilesRaw[f].GetName() : name2D_var = name2D.replace(self.systKind,self.systName) 
+                    histo2DDict[s+r] = self.rootFilesRaw[f].Get('bkg_'+r+s+'/nom/bkgSel_'+name2D_var+'_'+self.systName)
                     for eta in range(1, histo2DDict[s+r].GetNbinsY()+1) :
                         histo2DDict[s+r+str(eta)] = histo2DDict[s+r].ProjectionX("bkgSel_Muon_corrected_MET_nom_mt_"+self.etaBinningS[eta-1],eta,eta+1,"e")
                         histo2DDict[s+r+str(eta)].Write()
@@ -112,9 +122,12 @@ class bkg_fakerateAnalyzer:
                     
                     #SLICE 3D
                     for v in self.varList :
-                        histo3DDict[s+r+v+"int"] =  self.rootFilesRaw[f].Get('bkg_'+r+s+'/nom/bkgSel_'+v+'_VS_eta_'+self.ptBinningS[0]+'_nom').Project3D("yxe")
+                        v_var = v
+                        if "nom" in self.systKind or "corrected" in self.systKind :
+                            if not "Data.root" in self.rootFilesRaw[f].GetName() : v_var = v.replace(self.systKind,self.systName)
+                        histo3DDict[s+r+v+"int"] =  self.rootFilesRaw[f].Get('bkg_'+r+s+'/nom/bkgSel_'+v_var+'_VS_eta_'+self.ptBinningS[0]+'_'+self.systName).Project3D("yxe")
                         for p in self.ptBinningS :
-                            histo3DDict[s+r+v] = self.rootFilesRaw[f].Get('bkg_'+r+s+'/nom/bkgSel_'+v+'_VS_eta_'+p+'_nom')
+                            histo3DDict[s+r+v] = self.rootFilesRaw[f].Get('bkg_'+r+s+'/nom/bkgSel_'+v_var+'_VS_eta_'+p+'_'+self.systName)
                             for eta in range(0, histo3DDict[s+r+v].GetNbinsZ()+1) :
                                 histo3DDict[s+r+v].GetZaxis().SetRange(eta,eta+1)
                                 histo3DDict[s+r+v+str(eta)] = histo3DDict[s+r+v].Project3D("yxe")
@@ -179,7 +192,7 @@ class bkg_fakerateAnalyzer:
         fitFunc.SetParNames("sig","bkg")
         mtDict[self.eta+self.sign+self.datakind+'Tot'].Fit(fitFunc,"Q","",0,120)
         
-        print "FIT RESULTS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Post fit, values:", fitFunc.GetParameter(0), fitFunc.GetParameter(1)
+        # print "FIT RESULTS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Post fit, values:", fitFunc.GetParameter(0), fitFunc.GetParameter(1) PRINT THIS ONE
         # print "Pre fit values: (tot,w,QCD)   ", mtDict[self.sign+self.datakind+'Tot'].GetBinContent(10), mtDict[self.sign+'WToMuNuTot'].GetBinContent(10)+mtDict[self.sign+'QCDTot'].GetBinContent(10)+mtDict[self.sign+'EWKbkgTot'].GetBinContent(10)
         
         outlist = [fitFunc.GetParameter(0), fitFunc.GetParError(0),fitFunc.GetParameter(1), fitFunc.GetParError(1),fitFunc.GetChisquare()/fitFunc.GetNDF(),math.sqrt(2*fitFunc.GetNDF())/fitFunc.GetNDF() ]
@@ -271,7 +284,7 @@ class bkg_fakerateAnalyzer:
                         EWKInt = EWKInt + mtDict[e+s+'EWKbkgTot'].Integral(minBin,maxBin)
                         dataInt = mtDict[e+s+datakind+'Tot'].Integral(minBin,maxBin)
                         scaleFactorEW = EWKInt/dataInt
-                        print "SCALE FACTOR (eta,sign)",e, s, ",   VALUE=", scaleFactorEW, "  fit one=",scaleFactorEWPars[0], "   ratio (int/fit)=",scaleFactorEW/scaleFactorEWPars[0]
+                        # print "SCALE FACTOR (eta,sign)",e, s, ",   VALUE=", scaleFactorEW, "  fit one=",scaleFactorEWPars[0], "   ratio (int/fit)=",scaleFactorEW/scaleFactorEWPars[0] #PRINT THIS ONE
                     hEWSF_bkg.SetBinContent(self.etaBinningS.index(e)+1,scaleFactorEWPars[0])
                     hEWSF_bkg.SetBinError(self.etaBinningS.index(e)+1,scaleFactorEWPars[1])
                     hEWSF_sig.SetBinContent(self.etaBinningS.index(e)+1,scaleFactorEWPars[2])
@@ -767,7 +780,7 @@ class bkg_fakerateAnalyzer:
         output.Close()
             
     def fakerate_plots(self, variations=False,tightCutList=[0.15],looseCutList=[40] ) :
-        print "plotting fakerate..."
+        print "plotting fakerate"
         
         self.variations = variations
         self.tightCutList= tightCutList
@@ -781,7 +794,7 @@ class bkg_fakerateAnalyzer:
         
         for s in self.signList :
             #---------------------------------------------PV PLOTS ---------------------------------------------#
-            print "PV plots"
+            # print "PV plots"
             
             c_PV = ROOT.TCanvas("c_PV_{sign}".format(sign=s),"c_PV_{sign}".format(sign=s),800,600)
             c_PV.cd()
@@ -848,7 +861,7 @@ class bkg_fakerateAnalyzer:
                 
                     #---------------------------------------------COMPARISON PLOTS ---------------------------------------------#
                     
-                    print "comparison plots"
+                    # print "comparison plots"
 
                     c_comparison = ROOT.TCanvas("c_comparison_{sign}_{eta}".format(sign=s,eta=e),"c_comparison_{sign}_{eta}".format(sign=s,eta=e),800,600)
                     c_comparison.cd()
@@ -895,7 +908,7 @@ class bkg_fakerateAnalyzer:
                     # c_comparison.SaveAs(self.outdir+"/plot/"+c_comparison.GetName()+'.png')
                     
                     #---------------------------------------------ABCD cehcks PLOTS ---------------------------------------------#
-                    print "ABCD check plots"
+                    # print "ABCD check plots"
 
                     c_ABCDcheck = ROOT.TCanvas("c_ABCDcheck_{sign}_{eta}".format(sign=s,eta=e),"c_ABCDcheck_{sign}_{eta}".format(sign=s,eta=e),800,600)
                     c_ABCDcheck.cd()
@@ -943,7 +956,7 @@ class bkg_fakerateAnalyzer:
                     
                     
                     #---------------------------------------------TEMPLATE PLOTS ---------------------------------------------#
-                    print "template plots"
+                    # print "template plots"
 
                     c_template = ROOT.TCanvas("c_template_{sign}_{eta}".format(sign=s,eta=e),"c_template_{sign}_{eta}".format(sign=s,eta=e),800,600)
                     c_template.cd()
@@ -990,7 +1003,7 @@ class bkg_fakerateAnalyzer:
 
                     
                     #---------------------------------------------Mt EWSF PLOTS ---------------------------------------------#
-                    print "Mt EWSF plots"
+                    # print "Mt EWSF plots"
 
                     c_Mt_EWSF = ROOT.TCanvas("c_Mt_EWSF_{sign}_{eta}".format(sign=s,eta=e),"c_Mt_EWSF_{sign}_{eta}".format(sign=s,eta=e),800,600)
                     c_Mt_EWSF.cd()
@@ -1057,7 +1070,7 @@ class bkg_fakerateAnalyzer:
                     for p in self.ptBinningS :
                         if(notIsoPlots) : continue
                         #---------------------------------------------ISO PLOTS ---------------------------------------------#
-                        print "ISO plots"
+                        # print "ISO plots"
 
                         c_Iso = ROOT.TCanvas("c_Iso_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),"c_Iso_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),800,600)
                         c_Iso.cd()
@@ -1125,7 +1138,7 @@ class bkg_fakerateAnalyzer:
                     
                     
         #---------------------------------------------FIT CHECK PLOTS ---------------------------------------------#
-        print "Fit check plots"
+        # print "Fit check plots"
 
         typeFitDict = {
             'EWSF' : ['chi2', 'bkg', 'sig' ],
@@ -1178,7 +1191,7 @@ class bkg_fakerateAnalyzer:
         #---------------------------------------------VARIATION OF CUTS PLOTS ---------------------------------------------#
                     
         if(self.variations) :
-            print "Cut Variation plots"
+            # print "Cut Variation plots"
 
             fileVarDict = {}
             graphVarDict = {}
@@ -1237,7 +1250,7 @@ class bkg_fakerateAnalyzer:
                         canvasList.append(c_variation)
                         # c_comparison.SaveAs(self.outdir+"/plot/"+c_variation.GetName()+'.png')
             #---------------------------------------------QCD TRENDS with VARIAION OF CUTS PLOTS ---------------------------------------------#        
-            print "QCD trends plots"
+            # print "QCD trends plots"
     
             for s in self.signList :
                 for e in self.etaBinningS :
@@ -1280,15 +1293,207 @@ class bkg_fakerateAnalyzer:
             else :
                 canvasList[h].Write()
                 # canvasList[h].SaveAs(self.outdir+"/bkg_plot/"+canvasList[h].GetName()+'.png')
-            
+    
         
-                    
-                    
-                    
-                                        
+    def finalPlots(self, systDict =bkg_systematics) :  
+        self.systDict = systDict
+        
+        histoNameDict = {
+        'comparison' : {
+            'Fakes' : ['fake', 'prompt', 'validation']
+            },
+        'ABCDcheck' : {
+            'Fakes' : ['promptSideband','prompt', 'validation','validationSigReg']
+            },
+        'template' : {
+            'templ' : ['fake', 'prompt', 'validation']
+            }
+        } 
+        
+        #getting canvas and histoss
+        finalCanvasDict = {}
+        finalPlotFileDict = {}
+        finalHistoDict = {}
+        finalLegDict = {}
+        # finalPlotFileDict['nom']=ROOT.TFile.Open(self.outdir+"/bkg_"+"nom"+"/bkg_plots"+self.nameSuff+".root")
+        # for s in self.signList :
+        #     for e in self.etaBinningS :
+        #         for canvas in histoNameDict :
+        #             finalCanvasDict['nom'+canvas+s+e] = finalPlotFileDict['nom'].Get('c_'+canvas+'_'+s+'_'+e).Clone()
+        #             # finalCanvasDict['nom'+canvas+s+e].SetDirectory(0)
+        #             for name in histoNameDict[canvas] :
+        #                 for histo in histoNameDict[canvas][name] :
+        #                     finalHistoDict['nom'+canvas+histo+s+e] = finalCanvasDict['nom'+canvas+s+e].GetPrimitive('h'+name+'_pt_'+histo+'_'+s+'_'+e)
+        #                     # finalHistoDict['nom'+canvas+histo+s+e+'error'] =finalHistoDict['nom'+canvas+histo+s+e].Clone(finalHistoDict['nom'+canvas+histo+s+e].GetName()+'_error')
+        #                     print "DEUBUG", type(finalHistoDict['nom'+canvas+histo+s+e])
+        #                     finalHistoDict['nom'+canvas+histo+s+e+'error'] = ROOT.TGraphAsymmErrors()#finalCanvasDict['nom'+canvas+s+e]
+        #                     
+        #                     # finalHistoDict['nom'+canvas+histo+s+e+'error'] =finalCanvasDict['nom'+canvas+s+e].GetPrimitive('h'+name+'_pt_'+histo+'_'+s+'_'+e)
+        #                     finalHistoDict['nom'+canvas+histo+s+e+'error'].SetName(finalHistoDict['nom'+canvas+histo+s+e].GetName()+'_error')
+                            
+                            
+                # finalCanvasDict['nom'+'comparison'+s+e] = finalPlotFileDict['nom'].Get('c_comparison_'+s+'_'+e+'.root')
+                # finalCanvasDict['nom'+'ABCDcheck'+s+e] =finalPlotFileDict['nom'].Get('c_ABCDcheck_'+s+'_'+e+'.root')
+                # finalCanvasDict['nom'+'template'+s+e] =finalPlotFileDict['nom'].Get('c_template_'+s+'_'+e+'.root')    
+                # finalHistoDict['nom'+'comparison'+'fake'+s+e] = finalCanvasDict['nom'+'comparison'+s+e].GetPrimitive('hFakes_pt_'+'fake'+s+e)
+                # finalHistoDict['nom'+'comparison'+'prompt'+s+e] = finalCanvasDict['nom'+'comparison'+s+e].GetPrimitive('hFakes_pt_'+'prompt'+s+e)
+                # finalHistoDict['nom'+'comparison'+'validation'+s+e] = finalCanvasDict['nom'+'comparison'+s+e].GetPrimitive('hFakes_pt_'+'validation'+s+e)
+                # finalHistoDict['nom'+'template'+'fake'+s+e] = finalCanvasDict['nom'+'template'+s+e].GetPrimitive('htempl_pt_'+'fake'+s+e)
+                # finalHistoDict['nom'+'template'+'prompt'+s+e] = finalCanvasDict['nom'+'template'+s+e].GetPrimitive('htempl_pt_'+'prompt'+s+e)
+                # finalHistoDict['nom'+'template'+'validation'+s+e] = finalCanvasDict['nom'+'template'+s+e].GetPrimitive('htempl_pt_'+'validation'+s+e)                                    
+        for sKind, sList in self.systDict.iteritems():
+            for sName in sList :
+                finalPlotFileDict[sName]=ROOT.TFile.Open(self.outdir+"/bkg_"+sName+"/bkg_plots"+self.nameSuff+".root")
+                for s in self.signList :
+                    for e in self.etaBinningS :
+                        for canvas in histoNameDict :
+                            # finalCanvasDict[sName+canvas+s+e] = finalPlotFileDict[sName].Get('c_'+canvas+'_'+s+'_'+e)
+                            for name in histoNameDict[canvas] :
+                                for histo in histoNameDict[canvas][name] :
+                                    # finalHistoDict[sName+canvas+histo+s+e] = finalCanvasDict[sName+canvas+s+e].GetPrimitive('h'+name+'_pt_'+histo+'_'+s+'_'+e)           
+                                    finalHistoDict[sName+canvas+histo+s+e] =   finalPlotFileDict[sName].Get('c_'+canvas+'_'+s+'_'+e).GetPrimitive('h'+name+'_pt_'+histo+'_'+s+'_'+e)              
+                            # finalCanvasDict[sName+'comparison'+s+e] = finalPlotFileDict[sKind+sName].Get('c_comparison_'+s+'_'+e+'.root')
+                            # finalCanvasDict[sName+'ABCDcheck'+s+e] =finalPlotFileDict[sKind+sName].Get('c_ABCDcheck_'+s+'_'+e+'.root')
+                            # finalCanvasDict[sName+'template'+s+e] =finalPlotFileDict[sKind+sName].Get('c_template_'+s+'_'+e+'.root')
 
-
-                
+        #building of error bands on the "nom" hisotgrams  
+        # outputFinal = ROOT.TFile(self.outdir+"/final_plots"+self.nameSuff+".root","recreate")   
+        # outputFinal.cd()
+        finalPlotFileDict['nom']=ROOT.TFile.Open(self.outdir+"/bkg_"+"nom"+"/bkg_plots"+self.nameSuff+".root")                    
+        for s in self.signList :
+            for e in self.etaBinningS :    
+                for canvas in histoNameDict :
+                    finalCanvasDict['nom'+canvas+s+e] = finalPlotFileDict['nom'].Get('c_'+canvas+'_'+s+'_'+e).Clone()
+                    finalCanvasDict['nom'+canvas+s+e].cd()
+                    fillSyle =0
+                    for name in histoNameDict[canvas] :
+                        for histo in histoNameDict[canvas][name] :
+                            finalHistoDict['nom'+canvas+histo+s+e] = finalCanvasDict['nom'+canvas+s+e].GetPrimitive('h'+name+'_pt_'+histo+'_'+s+'_'+e)
+                            finalHistoDict['nom'+canvas+histo+s+e+'error'] = ROOT.TGraphAsymmErrors()#finalCanvasDict['nom'+canvas+s+e]
+                            finalHistoDict['nom'+canvas+histo+s+e+'error'].SetName(finalHistoDict['nom'+canvas+histo+s+e].GetName()+'_error')
+                            
+                            for p in self.ptBinning :
+                                if(p==self.ptBinning[-1]) : continue
+                                varErr = []
+                                varErr.append(finalHistoDict['nom'+canvas+histo+s+e].GetBinContent(self.ptBinning.index(float(p))+1))
+                                for sKind, sList in self.systDict.iteritems():
+                                    for sName in sList :
+                                        varErr.append(finalHistoDict[sName+canvas+histo+s+e].GetBinContent(self.ptBinning.index(float(p))+1))
+                                varErr.sort()
+                                minBand = varErr[0]
+                                maxBand = varErr[len(varErr)-1]
+                                errLow = finalHistoDict['nom'+canvas+histo+s+e].GetBinContent(self.ptBinning.index(float(p))+1)-minBand
+                                errHigh = maxBand-finalHistoDict['nom'+canvas+histo+s+e].GetBinContent(self.ptBinning.index(float(p))+1)
+                                # if histo == 'fake' :
+                                    # print "DEBUG", name, "s,e,p", s,e,p,"___   err=",errLow, errHigh, minBand, maxBand, finalHistoDict['nom'+canvas+histo+s+e].GetBinContent(self.ptBinning.index(float(p))+1)
+                                # print "DEBUG:",histo, self.ptBinning.index(float(p)),finalHistoDict['nom'+canvas+histo+s+e].GetBinCenter(self.ptBinning.index(float(p))+1), errLow, errHigh
+                                # symBand = (maxBand-minBand)/2
+                                # print "WARNING: SYMMETRIC BANDS FOR SYST USED!!!"
+                                # finalHistoDict['nom'+canvas+histo+s+e+'error'].SetBinError(self.ptBinning.index(float(p))+1,symBand)
+                                finalHistoDict['nom'+canvas+histo+s+e+'error'].SetPoint(self.ptBinning.index(float(p)),finalHistoDict['nom'+canvas+histo+s+e].GetBinCenter(self.ptBinning.index(float(p))+1),finalHistoDict['nom'+canvas+histo+s+e].GetBinContent(self.ptBinning.index(float(p))+1))
+                                finalHistoDict['nom'+canvas+histo+s+e+'error'].SetPointEYhigh(self.ptBinning.index(float(p)),errHigh)
+                                finalHistoDict['nom'+canvas+histo+s+e+'error'].SetPointEYlow(self.ptBinning.index(float(p)),errLow)
+                                finalHistoDict['nom'+canvas+histo+s+e+'error'].SetPointEXhigh(self.ptBinning.index(float(p)),finalHistoDict['nom'+canvas+histo+s+e].GetBinWidth(self.ptBinning.index(float(p))+1)/2)
+                                finalHistoDict['nom'+canvas+histo+s+e+'error'].SetPointEXlow(self.ptBinning.index(float(p)),finalHistoDict['nom'+canvas+histo+s+e].GetBinWidth(self.ptBinning.index(float(p))+1)/2)
+                                # print "DEBUG, p=", finalHistoDict['nom'+canvas+histo+s+e].GetBinCenter(self.ptBinning.index(float(p))+1), "|||||", p, "|||||", self.ptBinning.index(float(p))+1
+                            
+                            finalHistoDict['nom'+canvas+histo+s+e+'error'].SetLineColor(finalHistoDict['nom'+canvas+histo+s+e].GetLineColor()-3)
+                            finalHistoDict['nom'+canvas+histo+s+e+'error'].SetMarkerColor(finalHistoDict['nom'+canvas+histo+s+e].GetLineColor()-3)
+                            finalHistoDict['nom'+canvas+histo+s+e+'error'].SetFillColor(finalHistoDict['nom'+canvas+histo+s+e].GetLineColor()-3)
+                            finalHistoDict['nom'+canvas+histo+s+e+'error'].SetFillStyle(3003+fillSyle)
+                            finalHistoDict['nom'+canvas+histo+s+e+'error'].SetLineWidth(1)
+                            
+                            finalHistoDict['nom'+canvas+histo+s+e+'error'].Draw("SAME 0P5")
+                            finalCanvasDict['nom'+canvas+s+e].Update()
+                            finalCanvasDict['nom'+canvas+s+e].Modified()
+                            fillSyle =fillSyle+1
+                            
+                            # c1 = finalCanvasDict['nom'+canvas+s+e].Clone()
+                            # c1.cd()
+                            # c1.Update()
+                            # c1.Modified()
+                            # c1.Write()
+                            # finalCanvasDict['nom'+canvas+s+e].Write()
+                            # outputFinal.cd()
+                            # print "DEBUG >>>>", canvas, s, e, histo 
+                            # print "name", finalCanvasDict['nom'+canvas+s+e].GetName()
+                            # print "primitive:", list(finalCanvasDict['nom'+canvas+s+e].GetListOfPrimitives())
+                            # print "error name", finalHistoDict['nom'+canvas+histo+s+e+'error'].GetName()
+                            
+                            #ratio plot creation
+                            
+        for s in self.signList :
+            for e in self.etaBinningS :    
+                for canvas in histoNameDict :
+                    for name in histoNameDict[canvas] :
+                        for histo in histoNameDict[canvas][name] :
+                            c_ratioSyst = ROOT.TCanvas("c_ratioSyst_{sign}_{eta}_{canvas}_{histo}".format(sign=s,eta=e,canvas=canvas,histo=histo),"c_ratioSyst_{sign}_{eta}_{canvas}_{histo}".format(sign=s,eta=e,canvas=canvas,histo=histo),800,600)
+                            c_ratioSyst.cd()
+                            c_ratioSyst.SetGridx()
+                            c_ratioSyst.SetGridy()
+                            finalLegDict[e+s+canvas+histo+"ratioSyst"] = ROOT.TLegend(0.1,0.7,0.48,0.9)
+                            
+                            sameFlag = True
+                            colorNumber = 1 
+                            colorList = [600,616,416,632,432,800,900]
+                            colorCounter = 0
+                            
+                            for sKind, sList in self.systDict.iteritems():
+                                colorNumber = colorList[colorCounter]
+                                colorCounter = colorCounter+1
+                                for sName in sList :
+                                    colorNumber = colorNumber-2
+                                    if colorNumber < colorList[colorCounter-1]-10 :
+                                        colorNumber = colorList[colorCounter]+2
+                                    # hRatio = finalHistoDict['nom'+canvas+histo+s+e].Clone(finalHistoDict[sName+canvas+histo+s+e].GetName()+'_'+sName+'_ratio')
+                                    # print finalHistoDict[sName+canvas+histo+s+e].GetName()+'_ratio'
+                                    finalHistoDict[sName+canvas+histo+s+e+'ratio'] = ROOT.TH1F(finalHistoDict[sName+canvas+histo+s+e].GetName()+'_'+sName+'_ratio',finalHistoDict[sName+canvas+histo+s+e].GetName()+'_'+sName+'_ratio',len(self.ptBinning)-1, array('f',self.ptBinning))
+                                    finalHistoDict[sName+canvas+histo+s+e+'ratio'].SetName(finalHistoDict[sName+canvas+histo+s+e].GetName()+'_'+sName+'_ratio')
+                                    finalHistoDict[sName+canvas+histo+s+e+'ratio'].SetTitle(finalHistoDict[sName+canvas+histo+s+e].GetName()+'_'+sName+'_ratio')
+                                    # print sName, finalHistoDict[sName+canvas+histo+s+e].GetNbinsX(), "nom", finalHistoDict['nom'+canvas+histo+s+e].GetNbinsX(), finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetNbinsX()
+                                    finalHistoDict[sName+canvas+histo+s+e+'ratio'].Divide(finalHistoDict[sName+canvas+histo+s+e],finalHistoDict['nom'+canvas+histo+s+e],1,1)  
+                                    finalHistoDict[sName+canvas+histo+s+e+'ratio'].SetLineColor(colorNumber)
+                                    c_ratioSyst.cd()
+                                    if sameFlag : 
+                                        finalHistoDict[sName+canvas+histo+s+e+'ratio'].Draw()
+                                        finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetYaxis().SetRangeUser(0.8,1.2)
+                                        # print "quante volte entro qui?"
+                                    else : 
+                                        finalHistoDict[sName+canvas+histo+s+e+'ratio'].Draw("SAME")
+                                        finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetYaxis().SetRangeUser(0,3)
+                                        # print "same!", sName
+                                    finalHistoDict[sName+canvas+histo+s+e+'ratio'].SetLineWidth(3)
+                                    sameFlag=False                                    
+                                    finalLegDict[e+s+canvas+histo+"ratioSyst"].AddEntry(finalHistoDict[sName+canvas+histo+s+e+'ratio'], sName)
+                                    
+                            finalLegDict[e+s+canvas+histo+"ratioSyst"].Draw("SAME")
+                            
+                            finalCanvasDict['ratio'+canvas+histo+s+e] = c_ratioSyst
+                            # print "DEBUG", list(finalCanvasDict['ratio'+canvas+histo+s+e].GetListOfPrimitives())
+                            
+                    
+        # outputFinal.Close()   
+        outputFinal = ROOT.TFile(self.outdir+"/final_plots"+self.nameSuff+".root","recreate")   
+        # outputFinal.cd()
+        # preliminary_dir = output.mkdir("RatiosVSMt")
+        # preliminary_dir.cd()
+        dirFinalDict = {}
+        for s in self.signList :
+            for e in self.etaBinningS : 
+                dirFinalDict[s+e] =    outputFinal.mkdir(s+"_eta"+e) 
+                # dirFinalDict[s+e+'bis'] =    dirFinalDict[s+e].GetDirectory()
+                dirFinalDict[s+e].cd()                          
+        for ind, obj in finalCanvasDict.iteritems():
+                # print ind, obj.GetName()
+                for s in self.signList :
+                    for e in self.etaBinningS :
+                        
+                        if s in ind and ind.endswith(e) :
+                            # if "ratio" in ind : continue
+                            dirFinalDict[s+e].cd()
+                            obj.Write()
+        # for ind, obj in finalHistoDict.iteritems():
+        #         if 'error' in ind : obj.Write()
                        
         
         
