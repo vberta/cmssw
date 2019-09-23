@@ -28,7 +28,7 @@ ROOT.gInterpreter.Declare(sel_code)
 
 class bkg_histos_standalone(module):
 
-    def __init__(self, selections, variables, dataType, xsec, inputFile, ptBins,etaBins,systDict, targetLumi = 1.):
+    def __init__(self, selections, variables, dataType, xsec, inputFile, ptBins,etaBins,systDict, targetLumi = 1., clousureFlag=False):
 
         # TH lists
         self.myTH1 = []
@@ -50,6 +50,7 @@ class bkg_histos_standalone(module):
         self.xsec = xsec / 0.001
         self.targetLumi = targetLumi
         self.inputFile = inputFile
+        self.clousureFlag = clousureFlag
         
         #debugger
     
@@ -101,6 +102,7 @@ class bkg_histos_standalone(module):
         # print "----------------------------ITERAZIONE:", self.systKind, self.systName
         
         varMT='Muon_corrected_MET_nom_mt'
+        varMET='MET_pt'
         varPt="bkgSel_Muon_corrected_pt"
         
         #Apply sistematics            
@@ -115,6 +117,7 @@ class bkg_histos_standalone(module):
                 self.dictReplacerVar(self.systKind,self.systName)
                 selection = selection.replace(self.systKind,self.systName)            
                 varMT = varMT.replace(self.systKind,self.systName)
+                varMET = varMET.replace(self.systKind,self.systName)
                 varPt = varPt.replace(self.systKind,self.systName)                          
                         
         # define variables 
@@ -138,7 +141,7 @@ class bkg_histos_standalone(module):
             h = self.d.Filter(selection).Histo1D((collName+'_'+var+'_'+self.systName, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collName+'_'+var, colWeightName)
             self.myTH1.append(h)
             
-            if(var==varMT) :
+            if(var==varMT or var==varMET) :
                 h2 = self.d.Filter(selection).Histo2D((collName+'_'+var+'_VS_eta_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+var,collName+'_Muon_eta', colWeightName)
                 self.myTH2.append(h2)
 
@@ -152,10 +155,13 @@ class bkg_histos_standalone(module):
                     
                     dfilter = ROOT.sels(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, varPt)
                 
-                    h3_ptbin = dfilter.Histo3D((collName+'_'+D2var+'_VS_eta_{eta:.2g}_'.format(eta=lowEdgePt)+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
+                    h3_ptbin = dfilter.Filter(selection).Histo3D((collName+'_'+D2var+'_VS_eta_{eta:.2g}_'.format(eta=lowEdgePt)+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
                 
                     self.myTH3.append(h3_ptbin)
-                    
+        if self.clousureFlag :
+            for Cvar, tools in self.variables['ClousureVariables'].iteritems():
+                    h3 = self.d.Filter(selection).Histo3D((collName+'_'+Cvar+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],h_fake.GetNbinsY(), self.ptBins[0],self.ptBins[len(self.etaBins)-1], h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[4],collName+'_'+tools[5],collName+'_'+tools[6],colWeightName)
+                    self.myTH3.append(h3)                    
                     
     def run(self,d):
 

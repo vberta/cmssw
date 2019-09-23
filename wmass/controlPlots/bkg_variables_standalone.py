@@ -7,10 +7,10 @@ bkg_variables_standalone = {
         'Muon_corrected_MET_nom_mt':   ('M_{T} (Rochester corr./smear MET)',  120, 0, 120, 'Muon_corrected_MET_nom_mt[Idx_mu1]',True),
         'MET_pt':  ('MET P_{T}',  120, 0, 120, 'MET_pt',True),
         'PV_npvsGood' :  ('Number of good primary vertices',  100, 0, 100, 'PV_npvsGood',True),
-        # 'Muon_pfRelIso04_all_corrected_pt': ('muon pfAbsIso04',100, 0., 40,'Muon_pfRelIso04_all[Idx_mu1]*Muon_corrected_pt[Idx_mu1]',False),
-        # 'Muon_pfRelIso04_all': ('muon pfRelIso04', 100, 0., 0.5, 'Muon_pfRelIso04_all[Idx_mu1]',False),
-        # 'Muon_eta':            ('muon eta', 100, -2.5, 2.5, 'Muon_eta[Idx_mu1]',False),
-        # 'Muon_corrected_pt':   ('muon p_{T} (Rochester corr.)',  100, 25, 65, 'Muon_corrected_pt[Idx_mu1]',False),
+        'Muon_pfRelIso04_all_corrected_pt': ('muon pfAbsIso04',100, 0., 40,'Muon_pfRelIso04_all[Idx_mu1]*Muon_corrected_pt[Idx_mu1]',False),
+        'Muon_pfRelIso04_all': ('muon pfRelIso04', 100, 0., 0.5, 'Muon_pfRelIso04_all[Idx_mu1]',False),
+        'Muon_eta':            ('muon eta', 100, -2.5, 2.5, 'Muon_eta[Idx_mu1]',False),
+        'Muon_corrected_pt':   ('muon p_{T} (Rochester corr.)',  100, 25, 65, 'Muon_corrected_pt[Idx_mu1]',False),
 
         
     },
@@ -19,7 +19,13 @@ bkg_variables_standalone = {
         # 'Muon_pfRelIso04_all_corrected_pt_corrected_MET_nom_mt': ('M_{T} (Rochester corr./smear MET) VS muon pfAbsIso04',60, 0, 120, 40, 0., 40, "Muon_corrected_MET_nom_mt","Muon_pfRelIso04_all_corrected_pt","Muon_eta"),         
         # 'Muon_pfRelIso04_all_MET_pt':   ('MET p_{T} VS muon pfRelIso04', 60, 0, 120,50, 0., 0.5,"MET_pt","Muon_pfRelIso04_all", "Muon_eta"),        
         # 'Muon_pfRelIso04_all_corrected_pt_MET_pt':   ('MET p_{T} VS muon pfIso04',  60, 0, 120,40, 0., 40,"MET_pt", "Muon_pfRelIso04_all_corrected_pt","Muon_eta"),
-    }
+    },
+    'ClousureVariables' : {
+        'Muon_corrected_MET_nom_mt_VS_pt_VS_eta' :  ("M_{T} (Rochester corr./smear MET)", 60, 0, 120, "Muon_corrected_MET_nom_mt","Muon_corrected_pt","Muon_eta"),
+        'MET_pt_VS_pt_VS_eta' :     ('MET P_{T}', 120, 0, 120, "MET_pt","Muon_corrected_pt","Muon_eta"),
+        'Muon_eta_VS_pt_VS_eta':    ('muon eta', 100, -2.5, 2.5, "Muon_eta","Muon_corrected_pt","Muon_eta"),
+        'Muon_corrected_pt_VS_pt_VS_eta':   ('muon p_{T} (Rochester corr.)',100, 25, 65, "Muon_corrected_pt","Muon_corrected_pt","Muon_eta"),
+        }
 }
 
 # bkg_variables = {
