@@ -6,6 +6,7 @@
 <use name="RecoPixelVertexing/PixelTrackFitting"/>
 <use name="RecoPixelVertexing/PixelLowPtUtilities"/>
 <use name="PhysicsTools/TensorFlow"/>
+<use name="SimDataFormats/TrackingAnalysis"/>
 <library file="*.cc" name="RecoTrackerTkSeedGeneratorPlugins">
   <flags EDM_PLUGIN="1"/>
   <use name="DataFormats/TrackerRecHit2D"/>
