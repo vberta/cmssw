@@ -18,6 +18,8 @@ from bkg_variables_standalone import *
 # from systematics import *
 from bkg_fakerateAnalyzer import *
 from bkg_systematics import *
+from bkg_WptReweighter import *
+
 
 ROOT.gROOT.Reset()
 ROOT.gROOT.SetBatch(True);
@@ -44,8 +46,10 @@ parser.add_argument('-fakeFinal', '--fakeFinal',type=int, default=False, help="c
 parser.add_argument('-fakeSS', '--fakeSS',type=int, default=False, help="strategy systemtatics plots")
 parser.add_argument('-fakeSyst', '--fakeSyst',type=int, default=False, help="input systemtatics plots")
 parser.add_argument('-rdf', '--rdf',type=int, default=True, help="")
-parser.add_argument('-pretend', '--pretend',type=bool, default=False, help="")
+parser.add_argument('-pretend', '--pretend',type=int, default=False, help="")
 parser.add_argument('-restrict', '--restrict',type=str, default="", help="")
+parser.add_argument('-wpt', '--wpt',type=int, default=False, help="W pt rewight option")
+
 
 args = parser.parse_args()
 tag = args.tag
@@ -60,6 +64,7 @@ fakerateStraSyst = args.fakeSS
 fakerateSyst = args.fakeSyst
 rdf = args.rdf
 pretend = args.pretend
+wpt =args.wpt 
 restrictDataset = [ x for x in args.restrict.split(',') ]
 
 print "tag =", bcolors.OKGREEN, tag, bcolors.ENDC, \
@@ -136,19 +141,21 @@ def RDFprocess(outDir, inputFile, selections, sample):
             p.branch(nodeToStart='input',
                         nodeToEnd=sel_key,#+'_'+sKind+'_'+sName,
                         outputFile=outputFile,
-                        modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning, systDict=bkg_systematics,clousureFlag=QCDFlag)])
-    
+                        modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning, systDict=bkg_systematics,clousureFlag=QCDFlag, wpt=wpt)])    
     p.getOutput()
 
 
 myselections = {}
 
-for cut in ['bkg_Signal', 'bkg_Sideband']:
-    myselections['%sPlus' % cut]  = copy.deepcopy(bkg_selections['%s' % cut])
-    myselections['%sMinus' % cut] = copy.deepcopy(bkg_selections['%s' % cut])
-    for d in ['MC','DATA']:
-        myselections['%sPlus' % cut][d]['cut']    += ' && Muon_charge[Idx_mu1]>0'
-        myselections['%sMinus' % cut][d]['cut']   += ' && Muon_charge[Idx_mu1]<0'
+if not wpt :
+    for cut in ['bkg_Signal', 'bkg_Sideband']:
+        myselections['%sPlus' % cut]  = copy.deepcopy(bkg_selections['%s' % cut])
+        myselections['%sMinus' % cut] = copy.deepcopy(bkg_selections['%s' % cut])
+        for d in ['MC','DATA']:
+            myselections['%sPlus' % cut][d]['cut']    += ' && Muon_charge[Idx_mu1]>0'
+            myselections['%sMinus' % cut][d]['cut']   += ' && Muon_charge[Idx_mu1]<0'
+else :
+    myselections['Dimuon'] = copy.deepcopy(bkg_selections['Dimuon'])
 
 
 # inputDir = ('/scratch/bertacch/NanoAOD%s-%s/' % (str(dataYear), tag))
@@ -157,8 +164,16 @@ inputDir = ('/scratch/sroychow/NanoAOD%s-%s/' % (str(dataYear), tag))
 
 # outDir =  'NanoAOD%s-%s_RAW_multivar/' % (str(dataYear), tag) 
 # outDir =  'NanoAOD%s-%s_RAW_clousure/' % (str(dataYear), tag) 
-outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED/' % (str(dataYear), tag) 
+# outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_highPU/' % (str(dataYear), tag) 
+# outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_lowPU/' % (str(dataYear), tag) 
+# outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_rewighted/' % (str(dataYear), tag)  #buona per fare i plot di Zpt
+# outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_rewighted_2/' % (str(dataYear), tag)  #davvero ripesato
+# outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_rewighted_2_ratiomass_noPUcut/' % (str(dataYear), tag)  #davvero ripesato con rapporto masse
+
+# outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED/' % (str(dataYear), tag) 
 # outDir =  'NanoAOD%s-%s/' % (str(dataYear), tag) 
+outDir =  'NanoAOD%s-%s_ptStudy_syst/' % (str(dataYear), tag) 
+
 
 if not os.path.isdir(outDir): os.system('mkdir '+outDir) 
 
@@ -255,13 +270,13 @@ for sample_merging_key, sample_merging_value in samples_merging.iteritems():
 print 'Final samples:'
 print bcolors.OKBLUE, outputMergedFiles, bcolors.ENDC
 
-def fakerate_analysis(systName='nom',systKind='nom', outdir=outDir+'/bkg',folder=outDir,norm = 35.922, tightCut = 0.15, looseCut=40, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=True,fakerate=True,variations=fakerateVar, tightCutList=[0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5],looseCutList=[10,20,30,35,40,45,50,60,70,80], parabolaFit = False, EWSFfit=True) :
-    
+def fakerate_analysis(systName='nom',systKind='nom', outdir=outDir+'/bkg',folder=outDir,norm = 35.922, tightCut = 0.15, looseCut=40, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=True,fakerate=True,variations=fakerateVar, tightCutList=[0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5],looseCutList=[10,20,30,35,40,45,50,60,70,80], parabolaFit = False, EWSF='Fit') :
+    # possible EWSF option: Fit, Fit_pt, Iso_pt, Mt, Mt_pt, 1, 0   
     outdirBkg = outdir+'/bkg_'+systName
     if not os.path.isdir(outdirBkg): os.system('mkdir '+outdirBkg)
     if not os.path.isdir(outdirBkg+'_plot'): os.system('mkdir '+outdirBkg+'_plot')
     
-    fake = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=onData, slicing=slicing,systName=systName,systKind=systKind, parabolaFit=parabolaFit, EWSFfit=EWSFfit,tightCut = tightCut, looseCut=looseCut)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
+    fake = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=onData, slicing=slicing,systName=systName,systKind=systKind, parabolaFit=parabolaFit, EWSF=EWSF,tightCut = tightCut, looseCut=looseCut)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
     fake.integrated_preliminary()
     fake.differential_preliminary(fakerate=fakerate)
 
@@ -270,7 +285,7 @@ def fakerate_analysis(systName='nom',systKind='nom', outdir=outDir+'/bkg',folder
         for lcut in looseCutList :
                 for tcut in tightCutList :
                     print "---variation (l, t)",lcut, tcut
-                    fake_i = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, tightCut = tcut, looseCut=lcut, nameSuff="_"+str(lcut)+"_"+str(tcut),systName=systName, systKind=systKind, parabolaFit=parabolaFit,EWSFfit=EWSFfit)
+                    fake_i = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, tightCut = tcut, looseCut=lcut, nameSuff="_"+str(lcut)+"_"+str(tcut),systName=systName, systKind=systKind, parabolaFit=parabolaFit,EWSF=EWSF)
                     fake_i.differential_preliminary(fakerate=True)
                     
     fake.fakerate_plots(variations=variations,tightCutList=tightCutList,looseCutList=looseCutList, parabolaFit = parabolaFit)
@@ -286,7 +301,7 @@ if fakerate :
     looseCutList = [10,20,30,35,40,45,50,60,70,80]   
     
     if fakerateAnalysis :
-        fakerate_analysis(systName='nom',systKind='nom', EWSFfit=True, parabolaFit=False, tightCut = 0.15, looseCut=40, slicing = True) 
+        fakerate_analysis(systName='nom',systKind='nom', EWSF='Iso_pt', parabolaFit=False, looseCut=40, tightCut = 0.15, slicing = False) 
         for sKind, sList in bkg_systematics.iteritems():
             for sName in sList :
                 print "systematatic:", sKind,sName
@@ -295,13 +310,17 @@ if fakerate :
     
     if fakerateFinalPlots :
         print "final plots"
-        fakeFinal = bkg_fakerateAnalyzer(outdir=outDir+'/bkg/', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False, systName='nom',systKind='nom')
+        fakeFinal = bkg_fakerateAnalyzer(outdir=outDir+'/bkg/', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=True, systName='nom',systKind='nom')
         fakeFinal.finalPlots(systDict=bkg_systematics, sum2Bands=True)  
     
     if fakerateStraSyst :    
         fakeFinal.strategy_syst(preOutDir=outDir)
     
-    
+
+if wpt :
+    if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg')
+    wpt_rewighter= bkg_WptReweighter(outdir=outDir+'/bkg/', folder=outDir, norm = 35.922, ptBinning=ptBinning, etaBinning=etaBinning, systName='nom', systKind='nom')
+    wpt_rewighter.ratio_fitter()
             # if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg_'+sName)
             # if not os.path.isdir(outDir+'/bkg/bkg_plot'): os.system('mkdir '+outDir+'/bkg/bkg_plot')
             # fake = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')

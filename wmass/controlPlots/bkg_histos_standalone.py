@@ -28,7 +28,7 @@ ROOT.gInterpreter.Declare(sel_code)
 
 class bkg_histos_standalone(module):
 
-    def __init__(self, selections, variables, dataType, xsec, inputFile, ptBins,etaBins,systDict, targetLumi = 1., clousureFlag=False):
+    def __init__(self, selections, variables, dataType, xsec, inputFile, ptBins,etaBins,systDict, targetLumi = 1., clousureFlag=False, wpt=False):
 
         # TH lists
         self.myTH1 = []
@@ -51,6 +51,7 @@ class bkg_histos_standalone(module):
         self.targetLumi = targetLumi
         self.inputFile = inputFile
         self.clousureFlag = clousureFlag
+        self.wpt= wpt #wpt calibration of Z ONLY
         
         #debugger
     
@@ -89,13 +90,14 @@ class bkg_histos_standalone(module):
         del self.variables["D2variables"]
         self.variables["D2variables"] =  mod_D2variables  
     
-    def bkg_histos(self,sKind,sName, selection,weight,colWeightName) :
+    def bkg_histos(self,sKind,sName, selection,weight,colWeightName,wpt) :
 
         self.systKind = sKind
         self.systName = sName
         self.colWeightName= colWeightName
         self.selection= selection
         self.weight= weight
+        self.wpt = wpt
         
         self.variables = copy.deepcopy(self.variablesUnvaried)
 
@@ -121,50 +123,75 @@ class bkg_histos_standalone(module):
                 varPt = varPt.replace(self.systKind,self.systName)                          
                         
         # define variables 
-        collName =  self.variables['prefix']
-        for var,tools in self.variables['variables'].iteritems():
-            if ((not self.systName in var) and self.systName!='nom'): continue
-            self.d = self.d.Define(collName+'_'+var,tools[4])
         
-        # for D2var, tools in self.variables['D2variables'].iteritems():
-        #         if ((not self.systName in D2var) and self.systName!='nom'): continue
-        #         # print "DEBUG DEFINE 2:", collName, D2var, tools[7], tools[8], tools[9]
-        #         self.d = self.d.Define(collName+'_'+D2var+'_Y', tools[7])
-        #         self.d = self.d.Define(collName+'_'+D2var+'_X', tools[8])
-        #         self.d = self.d.Define(collName+'_'+D2var+'_Z', tools[9])
+        collName =  self.variables['prefix']
+        if not self.wpt: 
 
-        # save histograms (1D, 2D, 3D)
-        h_fake = ROOT.TH2F("h_fake", "h_fake", len(self.etaBins)-1, array('f',self.etaBins), len(self.ptBins)-1, array('f',self.ptBins)) #fake hiso for binning only
-        for var,tools in self.variables['variables'].iteritems():
-            if(not tools[5]): continue #variable for 3D histo axis only
-
-            h = self.d.Filter(selection).Histo1D((collName+'_'+var+'_'+self.systName, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collName+'_'+var, colWeightName)
-            self.myTH1.append(h)
+            for var,tools in self.variables['variables'].iteritems():
+                if ((not self.systName in var) and self.systName!='nom'): continue
+                self.d = self.d.Define(collName+'_'+var,tools[4])
             
-            if(var==varMT or var==varMET) :
-                h2 = self.d.Filter(selection).Histo2D((collName+'_'+var+'_VS_eta_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+var,collName+'_Muon_eta', colWeightName)
-                self.myTH2.append(h2)
+            # for D2var, tools in self.variables['D2variables'].iteritems():
+            #         if ((not self.systName in D2var) and self.systName!='nom'): continue
+            #         # print "DEBUG DEFINE 2:", collName, D2var, tools[7], tools[8], tools[9]
+            #         self.d = self.d.Define(collName+'_'+D2var+'_Y', tools[7])
+            #         self.d = self.d.Define(collName+'_'+D2var+'_X', tools[8])
+            #         self.d = self.d.Define(collName+'_'+D2var+'_Z', tools[9])
 
-        for D2var, tools in self.variables['D2variables'].iteritems():
-                h3 = self.d.Filter(selection).Histo3D((collName+'_'+D2var+'_VS_eta_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
-                self.myTH3.append(h3)
-                         
-                for ipt in range(1, h_fake.GetNbinsY()+1): #for each pt bin
-                    lowEdgePt = h_fake.GetYaxis().GetBinLowEdge(ipt)
-                    upEdgePt = h_fake.GetYaxis().GetBinUpEdge(ipt)
+            # save histograms (1D, 2D, 3D)
+            h_fake = ROOT.TH2F("h_fake", "h_fake", len(self.etaBins)-1, array('f',self.etaBins), len(self.ptBins)-1, array('f',self.ptBins)) #fake hiso for binning only
+            for var,tools in self.variables['variables'].iteritems():
+                if(not tools[5]): continue #variable for 3D histo axis only
+
+                h = self.d.Filter(selection).Histo1D((collName+'_'+var+'_'+self.systName, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collName+'_'+var, colWeightName)
+                self.myTH1.append(h)
+                
+                if(var==varMT or var==varMET) :
+                    h2 = self.d.Filter(selection).Histo2D((collName+'_'+var+'_VS_eta_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+var,collName+'_Muon_eta', colWeightName)
+                    self.myTH2.append(h2)
+
+            for D2var, tools in self.variables['D2variables'].iteritems():
+                    h3 = self.d.Filter(selection).Histo3D((collName+'_'+D2var+'_VS_eta_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
+                    self.myTH3.append(h3)
+                             
+                    for ipt in range(1, h_fake.GetNbinsY()+1): #for each pt bin
+                        lowEdgePt = h_fake.GetYaxis().GetBinLowEdge(ipt)
+                        upEdgePt = h_fake.GetYaxis().GetBinUpEdge(ipt)
+                        
+                        dfilter = ROOT.sels(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, varPt)
                     
-                    dfilter = ROOT.sels(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, varPt)
+                        h3_ptbin = dfilter.Filter(selection).Histo3D((collName+'_'+D2var+'_VS_eta_{eta:.2g}_'.format(eta=lowEdgePt)+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
+                    
+                        self.myTH3.append(h3_ptbin)
+            if self.clousureFlag :
+                for Cvar, tools in self.variables['ClousureVariables'].iteritems():
+                        h3 = self.d.Filter(selection).Histo3D((collName+'_'+Cvar+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],h_fake.GetNbinsY(), self.ptBins[0],self.ptBins[len(self.ptBins)-1], h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[4],collName+'_'+tools[5],collName+'_'+tools[6],colWeightName)
+                        self.myTH3.append(h3)    
+        
+        else : #wpt=True
+            for var,tools in self.variables['WptVariables'].iteritems():
+                if ((not self.systName in var) and self.systName!='nom'): continue
+                self.d = self.d.Define(collName+'_'+var,tools[4])   
+                    
+            h_fake = ROOT.TH2F("h_fake", "h_fake", len(self.etaBins)-1, array('f',self.etaBins), len(self.ptBins)-1, array('f',self.ptBins)) #fake hiso for binning only
+            
+            wptvar='RecoZ_Muon_corrected_pt' #z-pt and z-pt VS eta-mu VS pt-mu
+            tools = self.variables['WptVariables'][wptvar]
+            h = self.d.Filter(selection).Histo1D((collName+'_'+wptvar+'_'+self.systName, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collName+'_'+wptvar, colWeightName)
+            h3 = self.d.Filter(selection).Histo3D((collName+'_'+wptvar+'_'+self.systName+'_VS_eta_VS_pt', " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],h_fake.GetNbinsY(), self.ptBins[0],self.ptBins[len(self.ptBins)-1], h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[4],collName+'_'+tools[5],collName+'_'+tools[6],colWeightName)
+            self.myTH1.append(h) 
+            self.myTH3.append(h3)
+            
+            wptvar='RecoZ_Muon_mass' #z-pt VS z-mass
+            tools = self.variables['WptVariables'][wptvar]
+            h2 = self.d.Filter(selection).Histo2D((collName+'_'+wptvar+'_'+self.systName+'_VS_Wpt', " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[5],tools[6],tools[7]),collName+'_'+tools[4],collName+'_'+tools[8],colWeightName)
+            self.myTH2.append(h2) 
+            
                 
-                    h3_ptbin = dfilter.Filter(selection).Histo3D((collName+'_'+D2var+'_VS_eta_{eta:.2g}_'.format(eta=lowEdgePt)+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
+
                 
-                    self.myTH3.append(h3_ptbin)
-        if self.clousureFlag :
-            for Cvar, tools in self.variables['ClousureVariables'].iteritems():
-                    h3 = self.d.Filter(selection).Histo3D((collName+'_'+Cvar+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],h_fake.GetNbinsY(), self.ptBins[0],self.ptBins[len(self.etaBins)-1], h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[4],collName+'_'+tools[5],collName+'_'+tools[6],colWeightName)
-                    self.myTH3.append(h3)                    
                     
     def run(self,d):
-
         self.d = d
         # print "-"
 
@@ -184,11 +211,11 @@ class bkg_histos_standalone(module):
             colWeightName = 'totweight'
             self.d = self.d.Define('totweight', '1')   
         
-        self.bkg_histos("nom","nom",selection,weight,colWeightName)    
+        self.bkg_histos("nom","nom",selection,weight,colWeightName, self.wpt)    
         
         for sKind, sList in self.systDict.iteritems():
             for sName in sList :
-                self.bkg_histos(sKind,sName,selection,weight,colWeightName)
+                self.bkg_histos(sKind,sName,selection,weight,colWeightName, self.wpt)
                 
         # print "number of defined columns=", len(self.d.GetDefinedColumnNames())
         return self.d

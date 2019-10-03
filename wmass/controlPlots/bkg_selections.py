@@ -8,6 +8,10 @@ else :version = 'BCDEF_'
 # nom = MET w/ jet smearing
 met = '_nom'
 
+mz_over_mw='1.135'
+mw_over_mz = '0.881'
+WptWeight = '(1.131-0.0105*GenV_preFSR_qt*%s+0.000145*(GenV_preFSR_qt*GenV_preFSR_qt*%s*%s))*' % (mw_over_mz,mw_over_mz,mw_over_mz) 
+
 bkg_selections = {
     'bkg_Signal' : {
         'MC' : {
@@ -65,6 +69,32 @@ bkg_selections = {
             'weight' : '',
             },
         },
+    'Dimuon' : {
+        'MC' : {
+            'cut': \
+                'Vtype==2 && '+ \
+                'HLT_SingleMu24 && '+ \
+                ('Muon%s_pt[Idx_mu1]>25. && Muon%s_pt[Idx_mu2]>20. && ' % (muon, muon) ) + \
+                'MET_filters==1 && '+ \
+                'nVetoElectrons==0 && '+ \
+                '1',
+            'weight' : 'Generator_weight*' +\
+                'puWeight*' +\
+                'Muon_Trigger_BCDEF_SF[Idx_mu1]*Muon_ISO_BCDEF_SF[Idx_mu1]*Muon_ID_BCDEF_SF[Idx_mu1]*' +\
+                'Muon_ISO_BCDEF_SF[Idx_mu2]*Muon_ID_BCDEF_SF[Idx_mu2]',
+            },
+        'DATA' : {
+            'cut': \
+                'Vtype==2 && '+ \
+                'HLT_SingleMu24 && '+ \
+                ('Muon%s_pt[Idx_mu1]>25. && Muon%s_pt[Idx_mu2]>20. && ' % (muon, muon))+ \
+                'MET_filters==1 && '+ \
+                'nVetoElectrons==0 && '+ \
+                '1',
+            'weight' : '1',
+            },
+        },
+
 }
 
 #marc
@@ -83,3 +113,9 @@ etaBinning = [0.0,0.2]
 # ptBinning = [30,31,32,33,34,35,36,37,38,40,42,44,46,48,50,52,54,57,60,65]
 # etaBinning = [0.0,0.2,0.4]
 
+# 'PV_npvsGood<35 && ' + \
+# 'PV_npvsGood<35 && ' + \
+# 'PV_npvsGood<35 && ' + \
+# 'PV_npvsGood<35 && ' + \
+# (WptWeight) +\
+# (WptWeight) +\

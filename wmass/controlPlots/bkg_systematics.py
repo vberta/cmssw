@@ -7,9 +7,6 @@ bkg_systematics = {
      "nom"       : ["jerUp", "jerDown", "jesTotalUp", "jesTotalDown", "unclustEnUp","unclustEnDown"],
 }
 # bkg_systematics = {
-#     "nom"       : ["nom","jerUp", "jerDown"],
+#     "nom"       : ["jerUp", "jerDown"],
 # }
-# 
-# bkg_systematics = {
-#     "nom"       : ["nom"]
-# }
+# bkg_systematics = {}
