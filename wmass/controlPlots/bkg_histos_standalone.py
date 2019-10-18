@@ -23,12 +23,48 @@ sel_code = '''
     }
 '''
 ROOT.gInterpreter.Declare(sel_code)
+# 
+# reweight_code2 = '''
+#     double weiPt2( Double_t GenV_preFSR_qt){
+#         double mw_over_mz = 0.881;
+#         double value = GenV_preFSR_qt*mw_over_mz;
+#         return value;
+#     };
+# '''
+# ROOT.gInterpreter.Declare(reweight_code2)
+
+reweight_code = '''
+    double weiPt(Double_t GenV_preFSR_qt){
+        TFile * file = TFile::Open("/home/users/bertacch/RDF_scratch/wmass/controlPlots/NanoAOD2016-V1MCFinal_ptStudy_TEST/WptReweight.root");
+        TSpline3* spline = (TSpline3*)file->Get("splineRatio");
+        double mw_over_mz = 0.881;
+        double value = spline->Eval(GenV_preFSR_qt*mw_over_mz);
+        return value;
+    };
+'''
+ROOT.gInterpreter.Declare(reweight_code)
+# ROOT.gInterpreter.Declare('''TSpline3 *cppspline; ''')
 
 
+# mult_code = '''
+#     double mult(Double_t x, Double_t y){
+#         return x*y;
+#     };
+# '''
+# ROOT.gInterpreter.Declare(mult_code)
+
+# 
+
+# reweight_code_merge = '''
+#     std::string weiPt_merge(double wptw, TString wei){
+#         return 'to_string(wptw)*wei';
+#     }
+# '''
+# ROOT.gInterpreter.Declare(reweight_code_merge)
 
 class bkg_histos_standalone(module):
 
-    def __init__(self, selections, variables, dataType, xsec, inputFile, ptBins,etaBins,systDict, targetLumi = 1., clousureFlag=False, wpt=False):
+    def __init__(self, selections, variables, dataType, xsec, inputFile, ptBins,etaBins,systDict, wptFunc, targetLumi = 1., clousureFlag=False, wpt=False, wptRew=False):
 
         # TH lists
         self.myTH1 = []
@@ -52,6 +88,8 @@ class bkg_histos_standalone(module):
         self.inputFile = inputFile
         self.clousureFlag = clousureFlag
         self.wpt= wpt #wpt calibration of Z ONLY
+        self.wptFunc = wptFunc #function to rewight wpt
+        self.wptRew = wptRew #activation of rewight wpt
         
         #debugger
     
@@ -90,7 +128,7 @@ class bkg_histos_standalone(module):
         del self.variables["D2variables"]
         self.variables["D2variables"] =  mod_D2variables  
     
-    def bkg_histos(self,sKind,sName, selection,weight,colWeightName,wpt) :
+    def bkg_histos(self,sKind,sName, selection,weight,colWeightName,wpt,wptFunc,wptRew) :
 
         self.systKind = sKind
         self.systName = sName
@@ -98,6 +136,9 @@ class bkg_histos_standalone(module):
         self.selection= selection
         self.weight= weight
         self.wpt = wpt
+        self.wptFunc = wptFunc #function to rewight wpt
+        self.wptRew = wptRew #activation of rewight wpt
+
         
         self.variables = copy.deepcopy(self.variablesUnvaried)
 
@@ -114,6 +155,9 @@ class bkg_histos_standalone(module):
                 newWeight = weight.replace(self.systKind,self.systName)
                 colWeightName = 'totweight_{}'.format(self.systName)
                 self.d = self.d.Define(colWeightName, 'lumiweight*{}'.format(newWeight))
+                if self.wptRew :
+                    self.d = self.d.Define(colWeightName+'_wptRew', colWeightName+'*wptRew')
+                    colWeightName = colWeightName+'_wptRew'
 
             elif "nom" in self.systKind or "corrected" in self.systKind :
                 self.dictReplacerVar(self.systKind,self.systName)
@@ -121,7 +165,8 @@ class bkg_histos_standalone(module):
                 varMT = varMT.replace(self.systKind,self.systName)
                 varMET = varMET.replace(self.systKind,self.systName)
                 varPt = varPt.replace(self.systKind,self.systName)                          
-                        
+            
+
         # define variables 
         
         collName =  self.variables['prefix']
@@ -165,7 +210,7 @@ class bkg_histos_standalone(module):
                         self.myTH3.append(h3_ptbin)
             if self.clousureFlag :
                 for Cvar, tools in self.variables['ClousureVariables'].iteritems():
-                        h3 = self.d.Filter(selection).Histo3D((collName+'_'+Cvar+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],h_fake.GetNbinsY(), self.ptBins[0],self.ptBins[len(self.ptBins)-1], h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[4],collName+'_'+tools[5],collName+'_'+tools[6],colWeightName)
+                        h3 = self.d.Filter(selection).Histo3D((collName+'_'+Cvar+'_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],h_fake.GetNbinsY(), self.ptBins[0],self.ptBins[len(self.ptBins)-1], h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[4],collName+'_'+tools[5],collName+'_'+tools[6],colWeightName)
                         self.myTH3.append(h3)    
         
         else : #wpt=True
@@ -207,15 +252,46 @@ class bkg_histos_standalone(module):
             self.d = self.d.Define('lumiweight', '({L}*{xsec})/({genEventSumw})'.format(L=self.targetLumi, genEventSumw = genEventSumw, xsec = self.xsec)) 
             colWeightName = 'totweight'
             self.d = self.d.Define(colWeightName, 'lumiweight*{}'.format(weight))
+            if self.wptRew :
+                self.d = self.d.Define('wptRew', 'weiPt(GenV_preFSR_qt)')
+                self.d = self.d.Define(colWeightName+'_wptRew','wptRew*'+colWeightName)
+
+                # self.d = self.d.Define(colWeightName+'_wptRew','mult(wptRew,wptRew)')
+            
         else:
             colWeightName = 'totweight'
             self.d = self.d.Define('totweight', '1')   
+            
+        # if self.wptRew and  self.dataType == 'MC': 
+            # self.d = self.d.Define('nome','GenV_preFSR_qt')
+            # print "SONO PASSATO DI QUI >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+                                # float mw_over_mz = 0.881;
+                                # float value = spline.Eval(GenV_preFSR_qt*mw_over_mz);
+                                # return to_string(value);
+            # def weiPtpy(v) :
+                # return v
+            # self.d = self.d.Define(self.variabsles['prefix']+'_wptRew'+self.systName, 'PV_npvsGood')   
+            # self.d = self.d.Define('wptRew', weiPtpy('GenV_preFSR_qt'})   
+               
+            # self.d = self.d.Define('wptRew', 'weiPt(GenV_preFSR_qt)')   
+            # self.d = self.d.Define('wptRew', ROOT.weiPt, {self.wptFunc,'GenV_preFSR_qt'})                        
+                             
+                        # colWeightName= colWeightName+'_wptRew'
+                        # if "SF" in self.systKind or "Weight" in self.systKind :
+                        #     modWeight = newWeight
+                        # else :
+                        #     modWeight = weight
+                        # self.d = self.d.Define(colWeightName, weiPt_merge,{'wptRew','lumiweight*{}'.format(modWeight)})
+            # print ">>>>>>>>>>>>>>>>>>>>>>",colWeightName
+            # mul = lambda x,y : x*y
+            # self.d = self.d.Define(colWeightName+'_wptRew', mul, {}'colWeightName * wptRew')
+            # self.d = self.d.Define(colWeightName+'_wptRew','mult(colWeightName,wptRew)')
         
-        self.bkg_histos("nom","nom",selection,weight,colWeightName, self.wpt)    
+        self.bkg_histos("nom","nom",selection,weight,colWeightName, self.wpt, self.wptFunc,self.wptRew)    
         
         for sKind, sList in self.systDict.iteritems():
             for sName in sList :
-                self.bkg_histos(sKind,sName,selection,weight,colWeightName, self.wpt)
+                self.bkg_histos(sKind,sName,selection,weight,colWeightName, self.wpt, self.wptFunc,self.wptRew, )
                 
         # print "number of defined columns=", len(self.d.GetDefinedColumnNames())
         return self.d

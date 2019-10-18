@@ -9,6 +9,8 @@ from header import *
 from bkg_variables_standalone import *
 from bkg_selections import *
 from bkg_systematics import *
+from scipy.special import erf
+# from mpmath import * 
 
 
 
@@ -251,8 +253,52 @@ class bkg_fakerateAnalyzer:
 
                     hIsos[p+e+s] = (hIso)
         return hIsos
-
-    def differential_fakerate(self, hdict, mtDict, tightcut = 0.15, loosecut=40, varname = 'pfRelIso04_all_corrected_MET_nom_mt', kind = 'fake', EWSF='Fit', highMtCut=90,parabolaFit=False ) :
+    
+    def asymmetryEW(self, p,e,hdict, NcutLoose, varname, NcutTight,ratio_differential=True,EWsubtraction=False) :
+        self.p = p 
+        self.e = e 
+        self.hdict = hdict
+        self.ratio_differential = ratio_differential
+        self.EWsubtraction = EWsubtraction
+        self.varname = varname
+        
+        hAsym = {}
+        nAsym = {}
+        rAsym = {}
+        ewkAsym = {}
+        for s in self.signList :
+            for kind in ['Data','WToMuNu', 'EWKbkg'] :
+                hAsym[kind+s] =  hdict[self.p+self.e+s+self.varname+kind+'Tot'].Clone(self.p+'_'+self.e+'_'+kind+s+'_'+self.varname)
+                if kind=='EWKbkg' : #merge W and EWKbkg
+                    hAsym['EWKbkg'+s].Add(hAsym['WToMuNu'+s])
+                nAsym[kind+s+'denErr'] = ROOT.Double(0)
+                nAsym[kind+s+'numErr'] = ROOT.Double(0)
+                nAsym[kind+s+'den'] = hAsym[kind+s].ProjectionX("den_"+self.p+'_'+self.e+'_'+kind+s+'_'+self.varname,NcutTight,-1,"e").IntegralAndError(0,NcutLoose-1,nAsym[kind+s+'denErr'])
+                nAsym[kind+s+'num'] = hAsym[kind+s].ProjectionX("num_"+self.p+'_'+self.e+'_'+kind+s+'_'+self.varname,0,NcutTight-1, "e").IntegralAndError(0,NcutLoose-1,nAsym[kind+s+'numErr'])
+            for reg in ['num', 'den'] : #EWsubtraction
+                if EWsubtraction :
+                    nAsym['QCD'+s+reg] = nAsym['Data'+s+reg]-nAsym['EWKbkg'+s+reg]
+                    nAsym['QCD'+s+reg+'Err'] = math.sqrt(nAsym['Data'+s+reg+'Err']**2+nAsym['EWKbkg'+s+reg+'Err']**2)    
+                else :
+                    nAsym['QCD'+s+reg] = nAsym['Data'+s+reg]
+                    nAsym['QCD'+s+reg+'Err'] = nAsym['Data'+s+reg+'Err']
+                    
+        for kind in ['QCD','EWKbkg'] : #building or asymmetry ratios
+            for reg in ['num', 'den'] :     
+                rAsym[kind+reg] = nAsym[kind+'Plus'+reg]/nAsym[kind+'Minus'+reg] 
+                # print "ratios",  kind, reg,  rAsym[kind+reg]
+                rAsym[kind+reg+'Err'] = 1/(nAsym[kind+'Minus'+reg]**2)*math.sqrt((nAsym[kind+'Plus'+reg]**2)*(nAsym[kind+'Minus'+reg+'Err']**2)+(nAsym[kind+'Plus'+reg]**2)*(nAsym[kind+'Minus'+reg+'Err']**2))
+        
+        deltaQCD = nAsym['QCD'+'Plus'+'den']*(1-1/rAsym['QCD'+'den'])
+        for reg in ['num', 'den'] :
+                # print reg, "+,-,q=", nAsym['Data'+'Plus'+reg], nAsym['Data'+'Minus'+reg], deltaQCD, 1/rAsym['EWKbkg'+reg], nAsym['Data'+'Plus'+reg]-nAsym['Data'+'Minus'+reg]-deltaQCD, 1-1/rAsym['EWKbkg'+reg]
+                ewkAsym[reg+'Plus'] = (nAsym['Data'+'Plus'+reg]-nAsym['Data'+'Minus'+reg]-deltaQCD)/(1-1/rAsym['EWKbkg'+reg])
+                ewkAsym[reg+'Minus'] = (nAsym['Data'+'Plus'+reg]-nAsym['Data'+'Minus'+reg]-deltaQCD)/(rAsym['EWKbkg'+reg]-1)
+                # print reg, ewkAsym[reg+'Plus'], ewkAsym[reg+'Minus']
+        return ewkAsym
+    
+    
+    def differential_fakerate(self, hdict, mtDict, tightcut = 0.15, loosecut=40, varname = 'pfRelIso04_all_corrected_MET_nom_mt', kind = 'fake', EWSF='Fit', highMtCut=90,parabolaFit=False, asymmetry_EW=False ) :
         self.loosecut = loosecut
         self.tightcut = tightcut
         self.varname = varname
@@ -262,6 +308,7 @@ class bkg_fakerateAnalyzer:
         self.EWSF = EWSF
         self.highMtCut = highMtCut
         self.parabolaFit = parabolaFit
+        self.asymmetry_EW = asymmetry_EW
         
         print "loosecut diff fakerate",self.loosecut
 
@@ -451,13 +498,22 @@ class bkg_fakerateAnalyzer:
 
                             # print "pt dependent EWSF=", EWKSF_pt, "pt=",p, "MC QCD % = ", hdict[p+e+s+varname+'QCD'+'Tot'].ProjectionX("histoNum",0,1, "e").Integral(NcutLoose-1,-1)/hsubtract.ProjectionX("histoNum",0,1, "e").Integral(NcutLoose-1,-1)
                             # EWKSF_pt =1 
-                            
+                                                        
+                            if(self.asymmetry_EW) :
                                 
-                            
-                            den = den - (den_EWKbkg + den_WToMuNu)*scaleFactorEW[self.EWSF]
-                            num = num - (num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF]
+                                asymmetry_EW = self.asymmetryEW(p=p,e=e,ratio_differential=False,EWsubtraction=True,hdict = hdict,varname = varname,NcutLoose=NcutLoose, NcutTight=NcutTight)
+                                    # print asymmetry_EW
+                                # print "rapporto=", s, num/asymmetry_EW['num'+s], asymmetry_EW['num'+s]
+                                den = den - asymmetry_EW['den'+s] -asymmetry_EW['num'+s] #num=C, den=A, in the asymmetryEW only!
+                                num = num -  asymmetry_EW['num'+s]
+                            else :
+                                den = den - (den_EWKbkg + den_WToMuNu)*scaleFactorEW[self.EWSF]
+                                num = num - (num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF]
+                            # print s, "DEN=",(den_EWKbkg + den_WToMuNu)*scaleFactorEW[self.EWSF], "NUM=", (num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF]
                             # den = den - (den_EWKbkg + den_WToMuNu)*EWKSF_pt
                             # num = num - (num_EWKbkg + num_WToMuNu)*EWKSF_pt
+
+                            
                             denErr = math.sqrt((denErr**2 + denErr_EWKbkg**2 + denErr_WToMuNu**2)*(scaleFactorEW[self.EWSF])**2+(scaleFactorEWErr[self.EWSF]**2)*(num**2))
                             numErr = math.sqrt((numErr**2 + numErr_EWKbkg**2 + numErr_WToMuNu**2)*(scaleFactorEW[self.EWSF])**2+(scaleFactorEWErr[self.EWSF]**2)*(den**2))
 
@@ -477,8 +533,8 @@ class bkg_fakerateAnalyzer:
                             hFakes_pt_Cweak.SetBinContent(self.ptBinningS.index(p)+1, num_EWKbkg + num_WToMuNu)
                             hFakes_pt_Aweak.SetBinContent(self.ptBinningS.index(p)+1, antiNum_EWKbkg + antiNum_WToMuNu)
                             hFakes_pt_ratioCA.SetBinContent(self.ptBinningS.index(p)+1, num/antiNum)    
-                            if self.kind == 'fake' :                            
-                                print "INSIDE; e,p", e,p, "num=", num+(num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF], ", ew num=", (num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF], ",   antinum=", antiNum+(antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[self.EWSF], ",   antinum ew=", (antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[self.EWSF]
+                            # if self.kind == 'fake' :                            
+                                # print "INSIDE; e,p", e,p, "num=", num+(num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF], ", ew num=", (num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF], ",   antinum=", antiNum+(antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[self.EWSF], ",   antinum ew=", (antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[self.EWSF]
  
 
                             # if(num!=0 and den!=0 and antiNum!=0) :
@@ -552,26 +608,49 @@ class bkg_fakerateAnalyzer:
                     
                 
                 hFakes[s+e] = hFakes_pt
-
-                if not self.parabolaFit :
-                    fitFake = ROOT.TF1("fitFake", 'pol1',30,65,2)
+                
+                if self.parabolaFit and self.kind=='prompt':
+                    # fitFake = ROOT.TF1("fitFake", 'pol2',0,100,3)
+                    # fitFake.SetParameters(0.5,0.1,-0.1)
+                    # fitFake.SetParNames("offset","slope",'2deg')
+                    
+                    # fitFake = ROOT.TF1("fitFake", "[0]*1/(1+[1]*exp(-[2]*x))",0,100,3)
+                    # fitFake.SetParameters(1,1,1)
+                    # fitFake.SetParNames("offset","slope",'2deg')
+                    
+                    fitFake = ROOT.TF1("fitFake", "[0]*erf([1]*(x-30)+[2])",0,100,3)
+                    fitFake = ROOT.TF1("fitFake", "[0]*erf([1]*(x)+[2])",0,100,3)
+                    fitFake.SetParameters(1,0.1,-10)
+                    fitFake.SetParNames("offset","slope",'2deg')
+                    
+                else :
+                    fitFake = ROOT.TF1("fitFake", 'pol1',0,100,2)
                     fitFake.SetParameters(0.5,0.1)
                     fitFake.SetParNames("offset","slope")
-                else :
-                    fitFake = ROOT.TF1("fitFake", 'pol2',30,65,2)
-                    fitFake.SetParameters(0.5,0.1,-0.1)
-                    fitFake.SetParNames("offset","slope",'2deg')                    
+
                 # fitFake = ROOT.TF1("fitFake", 'pol2',30,65,2)
                 # fitFake.SetParameters(0.5,0.1,0.1)
                 # fitFake.SetParNames("offset","slope","sndDeg")
-                hFakes_pt.Fit(fitFake,"Q","",0,120)
+                # fit_result = hFakes_pt.Fit(fitFake,"Q","",0,120)
+                fit_result = hFakes_pt.Fit(fitFake,"VS","",30,65)
+                print "--------------------------------------------------- s,e,", s,e
+                fit_result.Print("V")
+                cov = fit_result.GetCovarianceMatrix()
                 hFakes[s+e+'offset']=fitFake.GetParameter(0)
                 hFakes[s+e+'slope']=fitFake.GetParameter(1)#+0.1*fitFake.GetParameter(1) #systemtatic
                 hFakes[s+e+'offsetErr']=fitFake.GetParError(0)
                 hFakes[s+e+'slopeErr']=fitFake.GetParError(1)
-                if self.parabolaFit :
+                hFakes[s+e+'offset*slope'] = ROOT.TMatrixDRow(cov,0)(1) #covarinace
+                if self.parabolaFit and self.kind=='prompt':
                     hFakes[s+e+'2deg']=fitFake.GetParameter(2)
                     hFakes[s+e+'2degErr']=fitFake.GetParError(2)
+                    hFakes[s+e+'offset*2deg'] = ROOT.TMatrixDRow(cov,0)(2)
+                    hFakes[s+e+'slope*2deg'] = ROOT.TMatrixDRow(cov,1)(2)
+                else:  #only to have a coherent filling
+                    hFakes[s+e+'2deg']=0
+                    hFakes[s+e+'2degErr']=0
+                    hFakes[s+e+'offset*2deg'] = 0
+                    hFakes[s+e+'slope*2deg'] = 0
                 if(fitFake.GetNDF()>0) :
                     hTempl_chi2.SetBinContent(self.etaBinningS.index(e)+1,fitFake.GetChisquare()/fitFake.GetNDF())
                     hTempl_chi2.SetBinError(self.etaBinningS.index(e)+1,math.sqrt(2*fitFake.GetNDF())/fitFake.GetNDF())
@@ -579,9 +658,12 @@ class bkg_fakerateAnalyzer:
                     hTempl_slope.SetBinError(self.etaBinningS.index(e)+1,fitFake.GetParError(1))
                     hTempl_offset.SetBinContent(self.etaBinningS.index(e)+1,fitFake.GetParameter(0))
                     hTempl_offset.SetBinError(self.etaBinningS.index(e)+1,fitFake.GetParError(0))
-                    if self.parabolaFit :
+                    if self.parabolaFit  and self.kind=='prompt':
                         hTempl_2deg.SetBinContent(self.etaBinningS.index(e)+1,fitFake.GetParameter(2))
                         hTempl_2deg.SetBinError(self.etaBinningS.index(e)+1,fitFake.GetParError(2))
+                    else : #only to have a coherent filling
+                        hTempl_2deg.SetBinContent(self.etaBinningS.index(e)+1,0)
+                        hTempl_2deg.SetBinError(self.etaBinningS.index(e)+1,0)                        
                     
             h2Fakes[s] = h2Fakes_sign
             if self.kind == 'fake' or self.kind == 'fakeMC' :
@@ -591,7 +673,7 @@ class bkg_fakerateAnalyzer:
             hTempl_Fit["Templ_chi2"+s] = hTempl_chi2
             hTempl_Fit["Templ_slop"+s] = hTempl_slope # the index of the dict is not a typo, it is to avoid error in continue during writing.
             hTempl_Fit["Templ_offse"+s] = hTempl_offset # the index of the dict is not a typo, it is to avoid error in continue during writing.
-            if self.parabolaFit :
+            if self.parabolaFit : #and self.kind=='prompt':
                 hTempl_Fit["Templ_2de"+s] = hTempl_2deg # the index of the dict is not a typo, it is to avoid error in continue during writing.
             
 
@@ -662,19 +744,77 @@ class bkg_fakerateAnalyzer:
 
                     # print "Ntight,NnotTight",  Ntight, NnotTight
                     if(self.fit) :
-                        fr = fakedict[s+e+'offset']+fakedict[s+e].GetBinCenter(self.ptBinningS.index(p)+1)*fakedict[s+e+'slope']
-                        pr = promptdict[s+e+'offset']+promptdict[s+e].GetBinCenter(self.ptBinningS.index(p)+1)*promptdict[s+e+'slope']
+                        xf = fakedict[s+e].GetBinCenter(self.ptBinningS.index(p)+1)
+                        xp = promptdict[s+e].GetBinCenter(self.ptBinningS.index(p)+1)
+                        fr = fakedict[s+e+'offset']+xf*fakedict[s+e+'slope']
+                        pr = promptdict[s+e+'offset']+xp*promptdict[s+e+'slope']
                         dx_p =(promptdict[s+e].GetBinWidth(self.ptBinningS.index(p)+1))
                         dx_f = (fakedict[s+e].GetBinWidth(self.ptBinningS.index(p)+1))
-                        dfr = math.sqrt(fakedict[s+e+'offsetErr']**2+(dx_f**2)*(fakedict[s+e+'slope']**2)+((fakedict[s+e].GetBinCenter(self.ptBinningS.index(p)+1))**2)*(fakedict[s+e+'slopeErr']**2))
-                        dpr = math.sqrt(promptdict[s+e+'offsetErr']**2+(dx_p**2)*(promptdict[s+e+'slope']**2)+((promptdict[s+e].GetBinCenter(self.ptBinningS.index(p)+1))**2)*(promptdict[s+e+'slopeErr']**2))
+                        dfr = math.sqrt(fakedict[s+e+'offsetErr']**2+(dx_f**2)*(fakedict[s+e+'slope']**2)+(xf**2)*(fakedict[s+e+'slopeErr']**2)+2*xf*fakedict[s+e+'offset*slope'])
+                        dpr = math.sqrt(promptdict[s+e+'offsetErr']**2+(dx_p**2)*(promptdict[s+e+'slope']**2)+(xp**2)*(promptdict[s+e+'slopeErr']**2)+2*xp*promptdict[s+e+'offset*slope'])
                         
-                        if self.parabolaFit :
-                            fr = fr+(fakedict[s+e].GetBinCenter(self.ptBinningS.index(p)+1))**2*fakedict[s+e+'2deg']
-                            pr = pr+(promptdict[s+e].GetBinCenter(self.ptBinningS.index(p)+1))**2*promptdict[s+e+'2deg']
-                            dfr =math.sqrt(dfr**2+(4*fakedict[s+e+'2deg']**2*(fakedict[s+e].GetBinCenter(self.ptBinningS.index(p)+1))**2+4*fakedict[s+e+'2deg']*fakedict[s+e].GetBinCenter(self.ptBinningS.index(p)+1)*fakedict[s+e+'slope'])*dx_f**2)
-                            dpr =math.sqrt(dpr**2+(4*promptdict[s+e+'2deg']**2*(promptdict[s+e].GetBinCenter(self.ptBinningS.index(p)+1))**2+4*promptdict[s+e+'2deg']*promptdict[s+e].GetBinCenter(self.ptBinningS.index(p)+1)*promptdict[s+e+'slope'])*dx_f**2)
+                        if self.parabolaFit:
+                            # fr = fr+(xf)**2*fakedict[s+e+'2deg']
+                            # dfr =math.sqrt(dfr**2+(4*fakedict[s+e+'2deg']**2*(xf)**2+4*fakedict[s+e+'2deg']*xf*fakedict[s+e+'slope'])*(dx_f)**2+2*((xf**3)*fakedict[s+e+'slope*2deg']+(xf**2)*fakedict[s+e+'offset*2deg']))
+                            
+                            a= promptdict[s+e+'offset']
+                            b = promptdict[s+e+'slope']
+                            c = promptdict[s+e+'2deg']
+                            da= promptdict[s+e+'offsetErr']
+                            db = promptdict[s+e+'slopeErr']
+                            dc = promptdict[s+e+'2degErr']   
+                            dab=  promptdict[s+e+'offset*slope'] 
+                            dac=  promptdict[s+e+'offset*2deg']
+                            dbc=  promptdict[s+e+'slope*2deg']    
                                                         
+                            #parabolic error
+                            # pr = pr+(xp)**2*promptdict[s+e+'2deg']
+                            # dpr2 = dpr**2+4*(promptdict[s+e+'2degErr']**2)*(xp**4)+(4*promptdict[s+e+'2deg']**2*(xf)**2+4*promptdict[s+e+'2deg']*xp*promptdict[s+e+'slope'])*(dx_f)**2+2*((xp**3)*promptdict[s+e+'slope*2deg']+(xp**2)*promptdict[s+e+'offset*2deg'])
+                            
+                            #sigmoid error
+                            # pr= a*1/(1+b*math.exp(-c*xf))
+                            # dpr2 = (math.exp(2*c*xf)*(math.exp(2*c*xf)*da**2+2*math.exp(c*xf)*(a*b*dac*xf-a*dab+b*da**2)+c**2*a**2*b**2*dx_p**2+a**2*b**2*dc**2*xf**2-2*a*(a*dbc-b*dac)*b*xf+a**2*db**2-2*a*b*dab+b**2*da**2))/((math.exp(c*xf)+b)**4)
+                            
+                            #erf error
+                            # xp = xp-30
+                            pr= a*erf(b*xp+c)
+                            print "promt rate", pr,
+                            print "val exp", -2*c**2-4*c*b*xp-2*b**2*xp**2, c**2+4*c*b*xp+2*b**2*xp**2, c**2+2*c*b*xp+b**2*xp**2
+                            print "erf", erf(xp*b+c)
+                            print "exp", math.exp(-2*c**2-4*c*b*xp-2*b**2*xp**2), math.exp(c**2+4*c*b*xp+2*b**2*xp**2), math.exp(c**2+2*c*b*xp+b**2*xp**2)
+                            # dpr2 = ((4*math.exp(-2*c**2-4*c*b*xp-2*b**2*xp**2)*(math.exp(2*c**2+4*c*b*xp+2*b**2*xp**2)*(math.sqrt(math.pi)/2*erf(xp*b+c))**2*da**2+2*math.exp(c**2+2*c*b*xp+b**2*xp**2)*(math.sqrt(math.pi)/2*erf(xp*b+c))*a*(dab*xp+dac)+a**2*(b**2*dx_p**2+db**2*xp**2+2*dbc*xp+dc**2)))/(math.pi))
+                            dpr2 = ((4*math.exp(-2*c**2-4*c*b*xp-2*b**2*xp**2)*(math.exp(2*c**2+4*c*b*xp+2*b**2*xp**2)*(math.sqrt(math.pi)/2*erf(xp*b+c))**2*da**2+2*math.exp(c**2+2*c*b*xp+b**2*xp**2)*(math.sqrt(math.pi)/2*erf(xp*b+c))*a*(dab*xp+dac)+a**2*(b**2*dx_p**2+db**2*xp**2+2*dbc*xp+dc**2)))/(math.pi))
+                            
+                            
+                            
+                            print "----------------------------------------------------------"
+                            print "bin:", e, p, s
+                            print "pr=", pr, "+/-", math.sqrt(dpr2), ",    nofit values:", promptdict[s].GetBinContent(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1), "+/-", promptdict[s].GetBinError(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
+                            print "relative errors: fit=",math.sqrt(dpr2)/pr, ",   nofit=",promptdict[s].GetBinError(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)/promptdict[s].GetBinContent(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
+                            
+                            
+                            
+                            
+                            # print "3 pezzi",e,p,s, (promptdict[s+e+'offsetErr']**2+(dx_p**2)*(promptdict[s+e+'slope']**2)+(xp**2)*(promptdict[s+e+'slopeErr']**2)+2*xp*promptdict[s+e+'offset*slope']), 
+                            # print 4*(promptdict[s+e+'2degErr']**2)*(xp**4)+(4*promptdict[s+e+'2deg']**2*(xf)**2+4*promptdict[s+e+'2deg']*xp*promptdict[s+e+'slope'])*(dx_f)**2,
+                            # print 2*((xp**3)*promptdict[s+e+'slope*2deg']+(xp**2)*promptdict[s+e+'offset*2deg'])
+                            # print "splitted:", fakedict[s+e+'offsetErr']**2+(dx_f**2)*(fakedict[s+e+'slope']**2)+(xf**2)*(fakedict[s+e+'slopeErr']**2),
+                            # print 2*xp*promptdict[s+e+'offset*slope']
+                            # print 4*(promptdict[s+e+'2degErr']**2)*(xp**4)+(4*promptdict[s+e+'2deg']**2*(xf)**2+4*promptdict[s+e+'2deg']*xp*promptdict[s+e+'slope'])*(dx_f)**2,
+                            # print 2*((xp**3)*promptdict[s+e+'slope*2deg']+(xp**2)*promptdict[s+e+'offset*2deg'])
+                 
+                     
+                            if  dpr2 < 0:
+                                dpr =0
+                                print "WARNING!!!!!, error on prompt rate set to 0, original value=", dpr2, "bin", s,e,p
+                            else :
+                                dpr = math.sqrt(dpr2) 
+                                # print "prompr rate=", pr, dpr, dpr/pr, "signle point unc.", promptdict[s].GetBinContent(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1), promptdict[s].GetBinError(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
+                            # dpr =math.sqrt(dpr**2+(4*promptdict[s+e+'2deg']**2*(xp)**2+4*promptdict[s+e+'2deg']*xp*promptdict[s+e+'slope'])*(dx_f)**2+2*((xp**3)*promptdict[s+e+'slope*2deg']+(xp**2)*promptdict[s+e+'offset*2deg']))
+                            
+                            # pr = promptdict[s].GetBinContent(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
+                            # dpr = promptdict[s].GetBinError(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
+                            
 
                         if pr>1 or fr>1 :
                             print "WARNING!!!!!!, pr>1 or fr>1,", pr, fr, ", with eta, pt, sign =", e, p, s
@@ -697,10 +837,26 @@ class bkg_fakerateAnalyzer:
                     scaleNotTight = fr*pr/(pr-fr)
                     # print "scale tight", scaleTight, "scale not tight", scaleNotTight, fr, pr, p
                     # print "scale (tight, not tight)", scaleTight,scaleNotTight
-                    scaleTightErr = math.sqrt((pr**4)*(dfr**2)-2*(pr**3)*(dfr**2)+(pr**2)*(dfr**2)+(fr**2)*((fr-1)**2)*(dpr**2))/((pr-fr)**2)
-                    scaleNotTightErr = math.sqrt((pr**4)*(dfr**2)+(fr**4)*(dpr**2))/((pr-fr)**2)
+                    # scaleTightErr = math.sqrt((pr**4)*(dfr**2)-2*(pr**3)*(dfr**2)+(pr**2)*(dfr**2)+(fr**2)*((fr-1)**2)*(dpr**2))/((pr-fr)**2)
+                    
+                    scaleTightErr = math.sqrt((((fr**4)-2*(fr**3)+(fr**2))*(dpr**2)+(pr**2)*(dfr**2)*(pr-1)**2)/((pr-fr)**4))
+                    scaleNotTightErr = math.sqrt(((pr**4)*(dfr**2)+(fr**4)*(dpr**2))/((pr-fr)**4))
+                    # print "NUMBERS", "tight=",Ntight, "not tight=",NnotTight
                     NQCD=Ntight*scaleTight+NnotTight*scaleNotTight
-                    NQCDErr = math.sqrt((scaleTight**2)*(tightErr**2)+(scaleTightErr**2)*(Ntight**2)+(scaleNotTight**2)*(notTightErr**2)+(scaleNotTightErr**2)*(NnotTight**2)   )
+                    # NQCDErr = math.sqrt((scaleTight**2)*(tightErr**2)+(scaleTightErr**2)*(Ntight**2)+(scaleNotTight**2)*(notTightErr**2)+(scaleNotTightErr**2)*(NnotTight**2)   )
+                    NQCDErr= ((fr**4*dpr**2*(NnotTight+Ntight)**2-2*fr**3*dpr**2*(NnotTight+Ntight)*Ntight+fr**2*(pr**2*dfr**2*(NnotTight+Ntight)-pr*dfr**2*Ntight+dpr**2*Ntight**2)-2*fr*pr**2*(pr*(NnotTight+Ntight)-Ntight)*dfr**2+pr**3*(pr*(NnotTight+Ntight)-Ntight)*dfr**2)/((fr-pr)**4))
+                    NQCDErr = NQCDErr+(scaleTight**2)*(tightErr**2)+(scaleNotTight**2)*(notTightErr**2)
+                    NQCDErr = math.sqrt(NQCDErr)
+                    # print "SCALE:>>>>>>>>>> bin=",e,p,s, ", errore tot", NQCDErr, ", errore relativo=", NQCDErr/NQCD, ", tightErr=",tightErr/Ntight, ", notTightErr=", notTightErr/NnotTight, ", scaleTightErr=", scaleTightErr/scaleTight, ", scaleNotTightErr=",scaleNotTightErr/scaleNotTight
+                    # print "spaccato (scaletight err):", dfr/fr, fr,dpr/pr, pr 
+                    # print "bin=",e,p,s, ", errore ",scaleTightErr, dpr,fr,Ntight,scaleTight
+                    
+                    print "value of template:", NQCD, "+/-", NQCDErr, ",  errore relativo=", NQCDErr/NQCD
+                    print "value of N tight:", Ntight, "+/-", tightErr, ",  errore relativo=", tightErr/Ntight
+                    print "value of scale tight:", scaleTight, "+/-", scaleTightErr, ",  errore relativo=", scaleTightErr/scaleTight
+                    print "value of N NOT tight:", NnotTight, "+/-", notTightErr, ",  errore relativo=", notTightErr/NnotTight
+                    print "value of scale NOT tight:", scaleNotTight, "+/-", scaleNotTightErr, ",  errore relativo=", scaleNotTightErr/scaleNotTight
+                    
                     if self.kind == "prompt" or self.kind=="validation" or self.kind=='EWKbkg' :
                         # print "prompt and fake rate not applied"
                         NQCD=Ntight
@@ -965,7 +1121,7 @@ class bkg_fakerateAnalyzer:
 
         if(self.fakerate) :
             print "evaluating fakerates",self.looseCut
-            hfakesMC = self.differential_fakerate(kind = self.dataOpt, hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut, EWSF=self.EWSF, highMtCut=90,parabolaFit = self.parabolaFit)
+            hfakesMC = self.differential_fakerate(kind = self.dataOpt, hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut, EWSF=self.EWSF, highMtCut=90,parabolaFit = self.parabolaFit, asymmetry_EW=False)
             hprompt =self.differential_fakerate(kind = 'prompt', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut,parabolaFit = self.parabolaFit)
             hvalidation =self.differential_fakerate(kind = 'validation', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut,parabolaFit = self.parabolaFit)
             hvalidationSigReg =self.differential_fakerate(kind = 'validationSigReg', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut,parabolaFit = self.parabolaFit)
@@ -980,6 +1136,8 @@ class bkg_fakerateAnalyzer:
                 if 'offset' in (b or c or d or e) or 'slope' in (b or c or d or e) or '2deg' in (b or c or d or e): continue
                 # if 'offset' in (b or c or d or e) or 'slope' in (b or c or d or e) : continue
                 hprompt[b].Write()
+                # print"b histo=", hprompt[b], "__________________---- b=", b
+                # print "c histo=", hvalidation[c],"_____________-- c=", c
                 hvalidation[c].Write()
                 hvalidationSigReg[d].Write()
                 hpromptSideband[e].Write()
@@ -1013,7 +1171,7 @@ class bkg_fakerateAnalyzer:
         self.parabolaFit = parabolaFit
 
         inputFile = ROOT.TFile.Open(self.outdir+"/bkg_differential_fakerate"+self.nameSuff+".root")
-
+        
         canvasList = []
         legDict = {}
         stackDict ={}
@@ -1098,7 +1256,9 @@ class bkg_fakerateAnalyzer:
                     h_fakeMC = inputFile.Get("Fakerate/hFakes_pt_"+self.dataOpt+"_"+s+"_"+e)
                     h_prompt = inputFile.Get("Fakerate/hFakes_pt_prompt_"+s+"_"+e)
                     h_validation = inputFile.Get("Fakerate/hFakes_pt_validation_"+s+"_"+e)
-
+                    #debug
+                    print "ataopt", self.dataOpt, h_fakeMC.GetBinContent(3), inputFile.GetName(), self.outdir+"/bkg_differential_fakerate"+self.nameSuff+".root"
+                    #endo of debug
                     # h_fake = inputFile.Get("Fakerate/hFakes_pt_fake_"+s+"_"+e)
 
                     h_fakeMC.SetLineWidth(3)
@@ -1459,6 +1619,8 @@ class bkg_fakerateAnalyzer:
             for var in typeFitDict[ty] :
 
                 for ki in kind :
+                    if ki!='prompt' and var=='2deg' :
+                        continue
                     c_fitDict[ty+var+ki] = ROOT.TCanvas("c_"+ty+"_"+var+'_'+ki,"c_"+ty+"_"+var+'_'+ki,800,600)
                     c_fitDict[ty+var+ki].cd()
                     c_fitDict[ty+var+ki].SetGridx()
@@ -1835,10 +1997,12 @@ class bkg_fakerateAnalyzer:
                                     # print sName, finalHistoDict[sName+canvas+histo+s+e].GetNbinsX(), "nom", finalHistoDict['nom'+canvas+histo+s+e].GetNbinsX(), finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetNbinsX()
                                     finalHistoDict[sName+canvas+histo+s+e+'ratio'].Divide(finalHistoDict[sName+canvas+histo+s+e],finalHistoDict['nom'+canvas+histo+s+e],1,1)
                                     finalHistoDict[sName+canvas+histo+s+e+'ratio'].SetLineColor(colorNumber)
+                                    for b in range(1,finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetNbinsX()+1) :
+                                        finalHistoDict[sName+canvas+histo+s+e+'ratio'].SetBinError(b,0)
                                     c_ratioSyst.cd()
                                     if sameFlag :
                                         finalHistoDict[sName+canvas+histo+s+e+'ratio'].Draw()
-                                        finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetYaxis().SetRangeUser(0.8,1.2)
+                                        finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetYaxis().SetRangeUser(0.6,1.7)
                                         # print "quante volte entro qui?"
                                     else :
                                         finalHistoDict[sName+canvas+histo+s+e+'ratio'].Draw("SAME")
@@ -1847,6 +2011,21 @@ class bkg_fakerateAnalyzer:
                                     finalHistoDict[sName+canvas+histo+s+e+'ratio'].SetLineWidth(3)
                                     sameFlag=False
                                     finalLegDict[e+s+canvas+histo+"ratioSyst"].AddEntry(finalHistoDict[sName+canvas+histo+s+e+'ratio'], sName)
+                            
+                            #nominal    
+                            finalHistoDict['nom'+canvas+histo+s+e+'ratio'] = ROOT.TH1F(canvas+'_'+finalHistoDict['nom'+canvas+histo+s+e].GetName()+'_'+'nom'+'_ratio',canvas+'_'+finalHistoDict['nom'+canvas+histo+s+e].GetName()+'_'+'nom'+'_ratio',len(self.ptBinning)-1, array('f',self.ptBinning))
+                            finalHistoDict['nom'+canvas+histo+s+e+'ratio'].Divide(finalHistoDict['nom'+canvas+histo+s+e],finalHistoDict['nom'+canvas+histo+s+e],1,1)
+                            finalHistoDict['nom'+canvas+histo+s+e+'ratio'].SetLineColor(1)
+                            for b in range(1,finalHistoDict['nom'+canvas+histo+s+e+'ratio'].GetNbinsX()+1) :
+                                # finalHistoDict['nom'+canvas+histo+s+e+'ratio'].SetBinError(b,math.sqrt(2)*finalHistoDict['nom'+canvas+histo+s+e].GetBinError(b)/finalHistoDict['nom'+canvas+histo+s+e].GetBinContent(b))
+                                finalHistoDict['nom'+canvas+histo+s+e+'ratio'].SetBinError(b,finalHistoDict['nom'+canvas+histo+s+e].GetBinError(b)/finalHistoDict['nom'+canvas+histo+s+e].GetBinContent(b))
+                            c_ratioSyst.cd()
+                            finalHistoDict['nom'+canvas+histo+s+e+'ratio'].Draw("SAME E2")
+                            finalHistoDict['nom'+canvas+histo+s+e+'ratio'].GetYaxis().SetRangeUser(0,3)
+                            finalHistoDict['nom'+canvas+histo+s+e+'ratio'].SetLineWidth(0)
+                            finalHistoDict['nom'+canvas+histo+s+e+'ratio'].SetFillColor(1)
+                            finalHistoDict['nom'+canvas+histo+s+e+'ratio'].SetFillStyle(3002)
+                            finalLegDict[e+s+canvas+histo+"ratioSyst"].AddEntry(finalHistoDict['nom'+canvas+histo+s+e+'ratio'], 'Nominal')
 
                             finalLegDict[e+s+canvas+histo+"ratioSyst"].Draw("SAME")
 
@@ -1909,7 +2088,7 @@ class bkg_fakerateAnalyzer:
                         for e in self.etaBinningS :
                             for p in self.ptBinningS :
                                 indexUNR = self.etaBinning.index(float(e))*len(self.etaBinning)+self.ptBinning.index(float(p))
-                                # print "index", indexUNR
+                                # print "index", indexUNR, e, p, finalHistoDict[s+canvas+histo+'unrolled'].GetBinCenter(indexUNR+1)
                                 finalHistoDict[s+canvas+histo+'unrolled'].SetBinContent(indexUNR+1,finalHistoDict['nom'+canvas+histo+s+e].GetBinContent(self.ptBinning.index(float(p))+1))
                                 finalHistoDict[s+canvas+histo+'unrolled'].SetBinError(indexUNR+1,finalHistoDict['nom'+canvas+histo+s+e].GetBinError(self.ptBinning.index(float(p))+1))
 
@@ -1965,15 +2144,15 @@ class bkg_fakerateAnalyzer:
                                 for e in self.etaBinningS :
                                     for p in self.ptBinningS :
                                         indexUNR = self.etaBinning.index(float(e))*len(self.etaBinning)+self.ptBinning.index(float(p))
-                                        finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'].SetBinContent(indexUNR,finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetBinContent(self.ptBinning.index(float(p))+1))
-                                        finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'].SetBinError(indexUNR,finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetBinError(self.ptBinning.index(float(p))+1))
+                                        finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'].SetBinContent(indexUNR+1,finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetBinContent(self.ptBinning.index(float(p))+1))
+                                        finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'].SetBinError(indexUNR+1,finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetBinError(self.ptBinning.index(float(p))+1))
                                 # finalHistoDict[sName+canvas+histo+s+e+'ratio'] = ROOT.TH1F(finalHistoDict[sName+canvas+histo+s+e].GetName()+'_'+sName+'_ratio',finalHistoDict[sName+canvas+histo+s+e].GetName()+'_'+sName+'_ratio',len(self.ptBinning)-1, array('f',self.ptBinning))
                                 # finalHistoDict[sName+canvas+histo+s+e+'ratio'].Divide(finalHistoDict[sName+canvas+histo+s+e],finalHistoDict['nom'+canvas+histo+s+e],1,1)
                                 # finalHistoDict[sName+canvas+histo+s+e+'ratio'].SetLineColor(colorNumber)
                                 c_ratioSyst_unrolled.cd()
                                 if sameFlagUNR :
                                     finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'].Draw()
-                                    finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'].GetYaxis().SetRangeUser(0.8,1.2)
+                                    finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'].GetYaxis().SetRangeUser(0.6,1.7)
                                     # print "quante volte entro qui?"
                                 else :
                                     finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'].Draw("SAME")
@@ -1982,6 +2161,26 @@ class bkg_fakerateAnalyzer:
                                 finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'].SetLineWidth(3)
                                 sameFlagUNR=False
                                 finalLegDict[s+canvas+histo+"ratioSyst_unrolled"].AddEntry(finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'], sName)
+                        
+                        #nominal 
+                        finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'] = ROOT.TH1F(finalHistoDict['nom'+canvas+histo+s+'0ratio'].GetName()+'_ratio_unrolled',finalHistoDict['nom'+canvas+histo+s+'0ratio'].GetName()+'_ratio_unrolled',len(unrolledPtEta)-1, array('f',unrolledPtEta))
+                        finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'].SetLineColor(finalHistoDict['nom'+canvas+histo+s+'0ratio'].GetLineColor())
+                        finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'].SetLineWidth(finalHistoDict['nom'+canvas+histo+s+'0ratio'].GetLineWidth())
+                        finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'].GetXaxis().SetTitle(finalHistoDict['nom'+canvas+histo+s+'0ratio'].GetXaxis().GetTitle())
+                        finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'].GetYaxis().SetTitle(finalHistoDict['nom'+canvas+histo+s+'0ratio'].GetYaxis().GetTitle())
+
+                        for e in self.etaBinningS :
+                            for p in self.ptBinningS :
+                                indexUNR = self.etaBinning.index(float(e))*len(self.etaBinning)+self.ptBinning.index(float(p))
+                                finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'].SetBinContent(indexUNR+1,finalHistoDict['nom'+canvas+histo+s+e+'ratio'].GetBinContent(self.ptBinning.index(float(p))+1))
+                                finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'].SetBinError(indexUNR+1,finalHistoDict['nom'+canvas+histo+s+e+'ratio'].GetBinError(self.ptBinning.index(float(p))+1))
+                        c_ratioSyst_unrolled.cd()
+                        finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'].Draw("SAME E2")
+                        finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'].GetYaxis().SetRangeUser(0,3)
+                        finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'].SetLineWidth(0)                        
+                        finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'].SetFillColor(1)
+                        finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'].SetFillStyle(3002)
+                        finalLegDict[s+canvas+histo+"ratioSyst_unrolled"].AddEntry(finalHistoDict['nom'+s+canvas+histo+'ratio_unrolled'], 'Nominal')
 
                         finalLegDict[s+canvas+histo+"ratioSyst_unrolled"].Draw("SAME")
 
@@ -2099,5 +2298,177 @@ class bkg_fakerateAnalyzer:
         outputraSyst= ROOT.TFile(self.preOutDir+"/bkg_mT_fit/strategy_syst"+self.nameSuff+".root","recreate")
         for s in self.signList :
             straSystDict_canvas[s].Write()
+    
+    
+    def clousure_plots(self, outdir, MC=False) :
+        self.outDir = outdir
+        self.MC = MC #do not apply correction
         
+        canvasList = []
+
+        #get templates for QCD (data and MC) and bild the ratio
+        fileTemplate = ROOT.TFile.Open(self.outDir+"/bkg_nom/bkg_differential_fakerate"+self.nameSuff+".root")
+        templDict = {}
+        for s in self.signList :
+            for kind in ['fake', 'validation'] :
+                templDict[s+kind] = fileTemplate.Get('Template/h2templ_'+kind+'_'+s)
+                canvasList.append(templDict[s+kind])
+            templDict[s+'ratio']=templDict[s+'fake'].Clone(templDict[s+'fake'].GetName()+'_ratio')
+            templDict[s+'ratio'].Divide(templDict[s+'validation'])
+            # canvasList.append(templDict[s+'ratio'])
+
+        #get variables for the stacked and correct the QCD
+        histoDict = {}
+        clousureVarList = []
+        for var in bkg_variables_standalone['ClousureVariables'] : 
+            clousureVarList.append(var)
+        clousureVarName = ['Mt','PtMu']
+        clousureVarName1D = ['Muon_corrected_MET_nom_mt']
         
+        legDict = {}
+        stackDict = {}
+
+        for s in self.signList :
+            for name1D,name,v in map(None,clousureVarList,clousureVarName,clousureVarName1D) :
+                if v==None or name==None or name1D==None : continue
+                for f,rootFile in map(None,self.sampleList[:-1],self.rootFilesRaw) :
+                    for r in self.regionList :
+                            if(r!='Tot') :
+                                if f=='QCD' : 
+                                    histoDict[s+v+f+r] =  rootFile.Get('bkg_'+r+s+'/nom/bkgSel_'+v+'_VS_pt_VS_etanom')
+                                else :
+                                    histoDict['1D'+s+v+f+r] = rootFile.Get('bkg_'+r+s+'/nom/bkgSel_'+v+'_nom')
+                                if f!='Data' : 
+                                    if f=='QCD' :  
+                                        histoDict[s+v+f+r].Scale(self.norm)
+                                    else :                                        
+                                        histoDict['1D'+s+v+f+r].Scale(self.norm)
+                            else:
+                                if f=='QCD' :
+                                     histoDict[s+v+f+r] = histoDict[s+v+f+'Sideband'].Clone(f+'_'+s+'_'+name+'_Tot')            
+                                else :
+                                    histoDict['1D'+s+v+f+r] = histoDict['1D'+s+v+f+'Sideband'].Clone(f+'_'+s+'_'+v+'_Tot')
+                                for rr in self.regionList :
+                                    if (rr =="Sideband" or rr=="Tot") : continue
+                                    if f=='QCD' : 
+                                        histoDict[s+v+f+r].Add(histoDict[s+v+f+rr])
+                                    else :
+                                        histoDict['1D'+s+v+f+r].Add(histoDict['1D'+s+v+f+rr])
+                        
+                    if f=='QCD' : #copy for comparison
+                        histoDict[s+v+f+'Tot'+'MC'] = histoDict[s+v+f+'Tot'].Clone(histoDict[s+v+f+'Tot'].GetName()+'_MC')    
+                    if(f=='QCD' and  (not self.MC)) : #apply correciton to QCD
+                            for p in self.ptBinningS :
+                                for e in self.etaBinningS :
+                                    corr = templDict[s+'ratio'].GetBinContent(self.etaBinningS.index(e)+1,self.ptBinningS.index(p)+1)
+                                    for x in range(1, bkg_variables_standalone['ClousureVariables'][name1D][1]) :#number of bins in the variable
+                                        val = corr*histoDict[s+v+f+'Tot'].GetBinContent(x, self.ptBinningS.index(p)+1,self.etaBinningS.index(e)+1)
+                                        histoDict[s+v+f+'Tot'].SetBinContent(x, self.ptBinningS.index(p)+1,self.etaBinningS.index(e)+1,val)
+                    #project QCD
+                    if f=='QCD' :
+                        histoDict['1D'+s+v+f] =  histoDict[s+v+f+'Tot'].Project3D("xe")  
+                        histoDict['1D'+s+v+'MC'] =   histoDict[s+v+f+'Tot'+'MC'].Project3D("xe") 
+                        # canvasList.append(histoDict[s+v+f+'Tot'])
+                        # canvasList.append(histoDict['1D'+s+v+f])
+                        
+                        
+                #features of histograms
+                histoDict['1D'+s+v+'Data'+'Tot'].SetLineColor(1) #black
+                histoDict['1D'+s+v+'QCD'].SetLineColor(632+2) #red
+                histoDict['1D'+s+v+'EWKbkg'+'Tot'].SetLineColor(600-4)#blue
+                histoDict['1D'+s+v+'WToMuNu'+'Tot'].SetLineColor(416+2)#green
+                
+                histoDict['1D'+s+v+'Data'+'Tot'].Rebin(2)
+                histoDict['1D'+s+v+'EWKbkg'+'Tot'].Rebin(2)
+                histoDict['1D'+s+v+'WToMuNu'+'Tot'].Rebin(2)           
+                
+                histoDict['1D'+s+v+'QCD'].SetFillColor(632+2) #red
+                histoDict['1D'+s+v+'EWKbkg'+'Tot'].SetFillColor(600-4)#blue
+                histoDict['1D'+s+v+'WToMuNu'+'Tot'].SetFillColor(416+2)#green
+
+                histoDict['1D'+s+v+'Data'+'Tot'].SetMarkerStyle(20)        
+                histoDict['1D'+s+v+'Data'+'Tot'].Sumw2()
+                histoDict['1D'+s+v+'Data'+'Tot'].SetLineWidth(3)
+                histoDict['1D'+s+v+'Data'+'Tot'].GetYaxis().SetTitle("dN/d{name}/{size} [1/GeV]".format(size=histoDict['1D'+s+v+'Data'+'Tot'].GetBinWidth(1),name=name))
+                histoDict['1D'+s+v+'Data'+'Tot'].GetYaxis().SetTitleOffset(1)
+                histoDict['1D'+s+v+'Data'+'Tot'].GetXaxis().SetTitle("{name} [GeV]".format(name=name))
+                histoDict['1D'+s+v+'Data'+'Tot'].SetTitle("{name} {sign}".format(name=name,sign=s))
+
+                stackDict[s+v] = ROOT.THStack(v+'_'+s,"")
+                stackDict[s+v].Add(histoDict['1D'+s+v+'QCD'])
+                stackDict[s+v].Add(histoDict['1D'+s+v+'EWKbkg'+'Tot'])
+                stackDict[s+v].Add(histoDict['1D'+s+v+'WToMuNu'+'Tot'])
+                
+                legDict[s+v] = ROOT.TLegend(0.1,0.7,0.48,0.9)
+                legDict[s+v].AddEntry(histoDict['1D'+s+v+'Data'+'Tot'],"Data")
+                legDict[s+v].AddEntry(histoDict['1D'+s+v+'QCD'], "QCD")
+                legDict[s+v].AddEntry(histoDict['1D'+s+v+'EWKbkg'+'Tot'], "EWK bkg MC")
+                legDict[s+v].AddEntry(histoDict['1D'+s+v+'WToMuNu'+'Tot'], "Signal MC")
+                                
+                #"stack" for ratio
+                histoDict['1D'+s+v+'sum'] = histoDict['1D'+s+v+'QCD'].Clone(histoDict['1D'+s+v+'QCD'].GetName()+'sum')
+                histoDict['1D'+s+v+'sum'].Sumw2()
+                histoDict['1D'+s+v+'MC'].Sumw2()
+                print 'start sum'
+                for f in self.sampleList[:-1] :
+                    if f=='QCD' or f=='Data': continue
+                    print '1D'+s+v+f
+                    histoDict['1D'+s+v+f+'Tot'].Sumw2()
+                    histoDict['1D'+s+v+'sum'].Add(histoDict['1D'+s+v+f+'Tot'])
+                    histoDict['1D'+s+v+'MC'].Add(histoDict['1D'+s+v+f+'Tot'])
+                histoDict['1D'+s+v+'sum'].Divide(histoDict['1D'+s+v+'Data'+'Tot'])
+                histoDict['1D'+s+v+'MC'].Divide(histoDict['1D'+s+v+'Data'+'Tot'])
+                
+                histoDict['1D'+s+v+'sum'].SetLineColor(632) #red 
+                histoDict['1D'+s+v+'MC'].SetLineColor(880+1) #violet
+                histoDict['1D'+s+v+'sum'].SetLineWidth(3)
+                histoDict['1D'+s+v+'MC'].SetLineWidth(3)
+                histoDict['1D'+s+v+'sum'].SetFillColor(0)
+                legDict[s+v].AddEntry(histoDict['1D'+s+v+'sum'], "corrected/data")
+                legDict[s+v].AddEntry(histoDict['1D'+s+v+'MC'], "default/data")
+                
+                histoDict['1D'+s+v+'sum'].GetYaxis().SetTitle("MC/data")
+                histoDict['1D'+s+v+'sum'].GetYaxis().SetTitleOffset(1)
+                histoDict['1D'+s+v+'sum'].GetXaxis().SetTitle("{name} [GeV]".format(name=name))
+                
+                histoDict['1D'+s+v+'Data'+'Tot'+'ratio'] = histoDict['1D'+s+v+'Data'+'Tot'].Clone(histoDict['1D'+s+v+'Data'+'Tot'].GetName()+'_clone')
+                histoDict['1D'+s+v+'Data'+'Tot'+'ratio'].Divide(histoDict['1D'+s+v+'Data'+'Tot'+'ratio'])
+                histoDict['1D'+s+v+'Data'+'Tot'+'ratio'].SetLineWidth(0)
+                histoDict['1D'+s+v+'Data'+'Tot'+'ratio'].SetFillColor(1)
+                histoDict['1D'+s+v+'Data'+'Tot'+'ratio'].SetFillStyle(3002)
+                
+                
+                
+                
+                #stacked plot creation
+                c_clousure = ROOT.TCanvas("c_clousure_{var}_{sign}".format(sign=s,var=v),"c_clousure_{var}_{sign}".format(sign=s,var=v),800,700)
+                c_clousure.cd()
+                c_clousure.SetGridx()
+                c_clousure.SetGridy()
+                
+                p_clousure_histo = ROOT.TPad("p_clousure_histo_"+v+"_"+s, "c_clousure_"+v+"_"+s,0,0.5,1,1)
+                p_clousure_ratio = ROOT.TPad("p_clousure_ratio_"+v+"_"+s, "c_clousure_"+v+"_"+s,0,0,1,0.5)
+                p_clousure_histo.SetBottomMargin(0.02)
+                p_clousure_histo.Draw()
+                p_clousure_ratio.SetTopMargin(0)
+                p_clousure_ratio.SetBottomMargin(0.25)
+                p_clousure_ratio.Draw()
+                
+                p_clousure_histo.cd()
+                histoDict['1D'+s+v+'Data'+'Tot'].Draw()                
+                stackDict[s+v].Draw("SAME HIST")
+                histoDict['1D'+s+v+'Data'+'Tot'].DrawCopy("SAME")
+                
+                p_clousure_ratio.cd()
+                histoDict['1D'+s+v+'sum'].Draw()
+                histoDict['1D'+s+v+'MC'].Draw("SAME")
+                histoDict['1D'+s+v+'Data'+'Tot'+'ratio'].Draw("SAME E2")
+
+                p_clousure_histo.cd()
+                legDict[s+v].Draw("SAME")
+
+                canvasList.append(c_clousure)
+                
+        outputFake = ROOT.TFile(self.outDir+"/bkg_clousure.root","recreate")
+        for h in range(len(canvasList)) :
+            canvasList[h].Write()                                

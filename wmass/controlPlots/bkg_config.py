@@ -48,7 +48,9 @@ parser.add_argument('-fakeSyst', '--fakeSyst',type=int, default=False, help="inp
 parser.add_argument('-rdf', '--rdf',type=int, default=True, help="")
 parser.add_argument('-pretend', '--pretend',type=int, default=False, help="")
 parser.add_argument('-restrict', '--restrict',type=str, default="", help="")
-parser.add_argument('-wpt', '--wpt',type=int, default=False, help="W pt rewight option")
+parser.add_argument('-wpt', '--wpt',type=int, default=False, help="W pt rewight option studies")
+parser.add_argument('-wptRew', '--wptRew',type=int, default=False, help="W pt rewight option")
+parser.add_argument('-clousure', '--clousure',type=int, default=False, help="produce clousure histos (RDF)")
 
 
 args = parser.parse_args()
@@ -65,6 +67,8 @@ fakerateSyst = args.fakeSyst
 rdf = args.rdf
 pretend = args.pretend
 wpt =args.wpt 
+wptRew =args.wptRew 
+clousureFlag = args.clousure
 restrictDataset = [ x for x in args.restrict.split(',') ]
 
 print "tag =", bcolors.OKGREEN, tag, bcolors.ENDC, \
@@ -106,17 +110,18 @@ def filterVariables(variables={}, selection='Signal', verbose=False):
         new_variables.clear()
     return new_variables
             
-def RDFprocess(outDir, inputFile, selections, sample):
+def RDFprocess(outDir, inputFile, selections, sample, clousureFlag):
 
     outDir = outDir
     inputFile = inputFile
     myselections = selections
     sample = sample
-
+    clousureFlag = clousureFlag
+    
     outputFile = "%s.root" % (sample_key) 
     QCDFlag = False
     if 'QCD' in sample_key : 
-        QCDFlag = False 
+        QCDFlag = clousureFlag 
     
     p = RDFtree(outputDir=outDir, outputFile = outputFile,inputFile=inputFile,pretend = pretend)
 
@@ -141,7 +146,7 @@ def RDFprocess(outDir, inputFile, selections, sample):
             p.branch(nodeToStart='input',
                         nodeToEnd=sel_key,#+'_'+sKind+'_'+sName,
                         outputFile=outputFile,
-                        modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning, systDict=bkg_systematics,clousureFlag=QCDFlag, wpt=wpt)])    
+                        modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning, systDict=bkg_systematics,clousureFlag=QCDFlag, wpt=wpt, wptFunc=wptFunc, wptRew=wptRew)])    
     p.getOutput()
 
 
@@ -170,14 +175,18 @@ inputDir = ('/scratch/sroychow/NanoAOD%s-%s/' % (str(dataYear), tag))
 # outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_rewighted_2/' % (str(dataYear), tag)  #davvero ripesato
 # outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_rewighted_2_ratiomass_noPUcut/' % (str(dataYear), tag)  #davvero ripesato con rapporto masse
 
-# outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED/' % (str(dataYear), tag) 
+#outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED/' % (str(dataYear), tag) 
 # outDir =  'NanoAOD%s-%s/' % (str(dataYear), tag) 
+# outDir =  'NanoAOD%s-%s_ptStudy_clousureQCD/' % (str(dataYear), tag) 
+# outDir =  'NanoAOD%s-%s_ptStudy_TEST/' % (str(dataYear), tag) 
 outDir =  'NanoAOD%s-%s_ptStudy_syst/' % (str(dataYear), tag) 
 
 
 if not os.path.isdir(outDir): os.system('mkdir '+outDir) 
 
 outputFiles = []
+# restricted = ['DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8.root','DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8.root','SingleMuon_Run2016C','SingleMuon_Run2016D','SingleMuon_Run2016E','SingleMuon_Run2016F','SingleMuon_Run2016G','SingleMuon_Run2016H','SingleMuon_Run2016B_ver2']
+# parser = sampleParser(restrict = restricted, tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt', exclude = ['DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8','WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8'])
 
 parser = sampleParser(restrict = restrictDataset, tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt', exclude = ['DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8','WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8'])
 
@@ -210,7 +219,11 @@ if rdf:
         inputFile = ROOT.std.vector("std::string")()
         for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
         
-        p = Process(target=RDFprocess, args=(outDir, inputFile, myselections,sample))
+
+        wptFile = ROOT.TFile.Open(outDir+"/WptReweight.root")
+        wptFunc = wptFile.Get("splineRatio")
+             
+        p = Process(target=RDFprocess, args=(outDir, inputFile, myselections,sample, clousureFlag))
 
         p.start()
         
@@ -301,17 +314,18 @@ if fakerate :
     looseCutList = [10,20,30,35,40,45,50,60,70,80]   
     
     if fakerateAnalysis :
-        fakerate_analysis(systName='nom',systKind='nom', EWSF='Iso_pt', parabolaFit=False, looseCut=40, tightCut = 0.15, slicing = False) 
+        fakerate_analysis(systName='nom',systKind='nom', EWSF='Iso_pt', parabolaFit=True, looseCut=30, tightCut = 0.15, slicing = False,fitOnTemplate=True) 
         for sKind, sList in bkg_systematics.iteritems():
             for sName in sList :
                 print "systematatic:", sKind,sName
                 if fakerateSyst :
-                    fakerate_analysis(systKind=sKind,systName=sName,tightCutList=tightCutList,looseCutList=looseCutList )
+                    fakerate_analysis(systKind=sKind,systName=sName,tightCutList=tightCutList,looseCutList=looseCutList,EWSF='Iso_pt', parabolaFit=True, looseCut=30, tightCut = 0.15,slicing = True)
     
     if fakerateFinalPlots :
         print "final plots"
-        fakeFinal = bkg_fakerateAnalyzer(outdir=outDir+'/bkg/', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=True, systName='nom',systKind='nom')
-        fakeFinal.finalPlots(systDict=bkg_systematics, sum2Bands=True)  
+        fakeFinal = bkg_fakerateAnalyzer(outdir=outDir+'/bkg/', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False, systName='nom',systKind='nom')
+        fakeFinal.finalPlots(systDict=bkg_systematics, sum2Bands=True)
+        # fakeFinal.clousure_plots(outdir=outDir+'/bkg/', MC=False)  
     
     if fakerateStraSyst :    
         fakeFinal.strategy_syst(preOutDir=outDir)
@@ -319,7 +333,7 @@ if fakerate :
 
 if wpt :
     if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg')
-    wpt_rewighter= bkg_WptReweighter(outdir=outDir+'/bkg/', folder=outDir, norm = 35.922, ptBinning=ptBinning, etaBinning=etaBinning, systName='nom', systKind='nom')
+    wpt_rewighter= bkg_WptReweighter(outdir=outDir+'/bkg/', folder=outDir, norm = 35.922, ptBinning=ptBinning, etaBinning=etaBinning, systName='nom', systKind='nom',interpol=True)
     wpt_rewighter.ratio_fitter()
             # if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg_'+sName)
             # if not os.path.isdir(outDir+'/bkg/bkg_plot'): os.system('mkdir '+outDir+'/bkg/bkg_plot')

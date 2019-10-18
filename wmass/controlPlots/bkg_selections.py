@@ -94,6 +94,35 @@ bkg_selections = {
             'weight' : '1',
             },
         },
+        
+    # 'bkg_all' : {
+    #     'MC' : {
+    #         'cut': \
+    #             'Vtype==1 || Vtype==0 ' +\
+    #             'HLT_SingleMu24 && ' +\
+    #             ('Muon%s_pt[Idx_mu1]>25. && ' % muon) + \
+    #             ('Muon%s_MET%s_mt[Idx_mu1]>0. && ' % (muon, met)) + \
+    #             'MET_filters==1 && ' +\
+    #             'nVetoElectrons==0 && ' +\
+    #             '1',
+    #         'weight' : 'Generator_weight*' +\
+    #             'puWeight*' + \
+    #             ('Muon_Trigger_%sSF[Idx_mu1]*'% version) + \
+    #             ('Muon_ID_%sSF[Idx_mu1]*'% version) + \
+    #             ('Muon_ISO_%sSF[Idx_mu1]'% version),
+    #         },
+    #     'DATA' : {
+    #         'cut': \
+    #             'Vtype==1 || Vtype==0' +\
+    #             'HLT_SingleMu24 && '+ \
+    #             ('Muon%s_pt[Idx_mu1]>25. && ' % muon) + \
+    #             ('Muon%s_MET%s_mt[Idx_mu1]>0. && ' % (muon, met)) + \
+    #             'MET_filters==1 && ' +\
+    #             'nVetoElectrons==0 && ' + \
+    #             '1',
+    #         'weight' : '',
+    #         },
+    #     },    
 
 }
 

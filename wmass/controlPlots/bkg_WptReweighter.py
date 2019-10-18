@@ -11,7 +11,7 @@ from bkg_selections import *
 from bkg_systematics import *
 
 class bkg_WptReweighter:
-    def __init__(self, ptBinning, etaBinning, outdir='./bkg', folder='./', norm = 1, varPt = 'RecoZ_Muon_corrected_pt',systKind='nom',systName='nom')  :
+    def __init__(self, ptBinning, etaBinning, outdir='./bkg', folder='./', norm = 1, varPt = 'RecoZ_Muon_corrected_pt',systKind='nom',systName='nom',interpol=True)  :
         
         self.outdir = outdir
         self.folder = folder
@@ -21,6 +21,7 @@ class bkg_WptReweighter:
         self.varPt = varPt
         self.systKind = systKind
         self.systName = systName
+        self.interpol = interpol
 
         self.fileDict = {}
         self.sampleList = ['DY','Data']
@@ -30,7 +31,7 @@ class bkg_WptReweighter:
 
         for f in range(len(self.sampleList)) :
             self.fileDict[self.sampleList[f]] = (ROOT.TFile.Open(self.folder+'/'+self.sampleList[f]+'.root'))
-    
+        
     def ratio_fitter(self, differential=False, mLow=70,mUp=110,integrated=False) :        
         self.differential = differential
         self.mLow=mLow
@@ -80,12 +81,42 @@ class bkg_WptReweighter:
         histoDict['WptRatio'].GetYaxis().SetTitleOffset(1.2)            
         histoDict['WptRatio'].SetLineWidth(3)
         
-        fitZpt = ROOT.TF1("fitZpt", 'pol4',0,100,5)
-        fitZpt.SetParameters(1.08,-0.01,0.005,0.0004,0.0000084)
-        # fitZpt.SetParLimits(1,-100,0)
-        # fitZpt.SetParameters(1.,1.,1.)
-        # fitZpt.SetParNames("offset","slope")
-        histoDict['WptRatio'].Fit(fitZpt,"","",0,50)
+        
+        if self.interpol :
+            # pt_arr = ROOT.Double(0)
+            # ptVal_arr = ROOT.Double(0)
+            graph_spline = ROOT.TGraph()
+            # pt_arr = []
+            # ptVal_arr = []
+            graph_spline.SetPoint(0,0,histoDict['WptRatio'].GetBinContent(1))
+            for b in range(1,histoDict['WptRatio'].GetNbinsX()) :
+                # pt_arr.append(histoDict['WptRatio'].GetBinCenter(b))
+                # ptVal_arr.append(histoDict['WptRatio'].GetBinContent(b))
+                # print b-1,histoDict['WptRatio'].GetBinCenter(b),histoDict['WptRatio'].GetBinContent(b)
+                if histoDict['WptRatio'].GetBinCenter(b)<80  :
+                    graph_spline.SetPoint(b,histoDict['WptRatio'].GetBinCenter(b),histoDict['WptRatio'].GetBinContent(b))
+                else :
+                    graph_spline.SetPoint(b,histoDict['WptRatio'].GetBinCenter(b),1) #weight =1 above Wpt=80
+            graph_spline.SetPoint(b+1,histoDict['WptRatio'].GetBinCenter(b)*10,1)
+            
+            # pt_arr = histoDict['WptRatio'].GetXaxis().GetXbins()
+            # ptVal_arr = histoDict['WptRatio'].GetArray()
+            # for i in range(0,pt_arr.Size()) :
+            #     print pt_arr[i]
+            # for i in range(0,ptVal_arr.Size()) :
+            #     print ptVal_arr[i]
+            
+            # splineRatio = ROOT.TSpline3("splineRatio",pt_arr, ptVal_arr,histoDict['WptRatio'].GetNbinsX())
+            splineRatio = ROOT.TSpline3("splineRatio",graph_spline,"",0,0)
+            splineRatio.SetName("splineRatio")
+            splineRatio.SetTitle("splineRatio")
+
+        else :    
+            fitZpt = ROOT.TF1("fitZpt", 'pol5',0,200,6)
+            fitZpt.SetParameters(1.08,-0.01,0.005,0.0004,0.0000084,0)
+            histoDict['WptRatio'].Fit(fitZpt,"","",0,200)
+        
+        
         
         #plotting integrated version of the ratio-fit
         c_integrated = ROOT.TCanvas("c_integrated","c_integrated",800,700)
@@ -110,7 +141,7 @@ class bkg_WptReweighter:
         leg_integrated.Draw("SAME")        
         p_integrated_ratio.cd()
         histoDict['WptRatio'].Draw()
-        
+        splineRatio.Draw("SAME")
         
         if self.differential :
             for e in self.etaBinningS :
@@ -145,6 +176,7 @@ class bkg_WptReweighter:
         output= ROOT.TFile(self.outdir+"WptReweight.root","recreate")
         output.cd()
         c_integrated.Write()
+        splineRatio.Write()
         
         if self.differential :
             for e in self.etaBinningS :

@@ -21,16 +21,16 @@ bkg_variables_standalone = {
         # 'Muon_pfRelIso04_all_corrected_pt_MET_pt':   ('MET p_{T} VS muon pfIso04',  60, 0, 120,40, 0., 40,"MET_pt", "Muon_pfRelIso04_all_corrected_pt","Muon_eta"),
     },
     'ClousureVariables' : {
-        'Muon_corrected_MET_nom_mt_VS_pt_VS_eta' :  ("M_{T} (Rochester corr./smear MET)", 60, 0, 120, "Muon_corrected_MET_nom_mt","Muon_corrected_pt","Muon_eta"),
-        'MET_pt_VS_pt_VS_eta' :     ('MET P_{T}', 120, 0, 120, "MET_pt","Muon_corrected_pt","Muon_eta"),
-        'Muon_eta_VS_pt_VS_eta':    ('muon eta', 100, -2.5, 2.5, "Muon_eta","Muon_corrected_pt","Muon_eta"),
+        'Muon_corrected_MET_nom_mt_VS_pt_VS_eta' :  ("M_{T} (Rochester corr./smear MET)", 120, 0, 120, "Muon_corrected_MET_nom_mt","Muon_corrected_pt","Muon_eta"),
+        # 'MET_pt_VS_pt_VS_eta' :     ('MET P_{T}', 120, 0, 120, "MET_pt","Muon_corrected_pt","Muon_eta"),
+        # 'Muon_eta_VS_pt_VS_eta':    ('muon eta', 100, -2.5, 2.5, "Muon_eta","Muon_corrected_pt","Muon_eta"),
         'Muon_corrected_pt_VS_pt_VS_eta':   ('muon p_{T} (Rochester corr.)',100, 25, 65, "Muon_corrected_pt","Muon_corrected_pt","Muon_eta"),
         },
     'WptVariables' : {
             'Muon_eta':            ('muon eta', 100, -2.5, 2.5, 'Muon_eta[Idx_mu1]',False),
             'Muon_corrected_pt':   ('muon p_{T} (Rochester corr.)',  100, 25, 65, 'Muon_corrected_pt[Idx_mu1]',False),
-            'RecoZ_Muon_mass' :  ("Reco Z mass [GeV]", 16, 50, 130,  "RecoZ_Muon_mass",50, 0, 50,'RecoZ_Muon_corrected_pt'),
-            'RecoZ_Muon_corrected_pt' :  ("Reco Z p_{T} [GeV]", 50, 0, 50, "RecoZ_Muon_corrected_pt","Muon_corrected_pt","Muon_eta"),
+            'RecoZ_Muon_mass' :  ("Reco Z mass [GeV]", 16, 50, 130,  "RecoZ_Muon_mass",100, 0, 200,'RecoZ_Muon_corrected_pt'),
+            'RecoZ_Muon_corrected_pt' :  ("Reco Z p_{T} [GeV]", 100, 0, 200, "RecoZ_Muon_corrected_pt","Muon_corrected_pt","Muon_eta"),
             }
 }
 
