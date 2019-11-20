@@ -135,7 +135,8 @@ class bkg_histos(module):
                     if dic.has_key('D2variables'):
                         for D2var, definition in dic['D2variables'].iteritems():
                             self.d = self.d.Define(collectionName+'_'+D2var+'_Y', definition[7]) 
-                            self.d = self.d.Define(collectionName+'_'+D2var+'_X', definition[8])                     
+                            self.d = self.d.Define(collectionName+'_'+D2var+'_X', definition[8])    
+                            self.d = self.d.Define(collectionName+'_'+D2var+'_Z', definition[9])                 
                     
                     for var,tools in dic['variables'].iteritems():
 
@@ -159,7 +160,7 @@ class bkg_histos(module):
                             for nom, variations in self.syst.iteritems():
                                 for v in variations:
                                     
-                                    h3 = self.d.Filter(selection).Histo3D((Collection+'_'+var+'_'+v, " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_eta','totweight_{}'.format(v))                                        
+                                    h3 = self.d.Filter(selection).Histo3D((Collection+'_'+var+'_'+v, " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_'+var+'_Z','totweight_{}'.format(v))                                        
                                     self.myTH3.append(h3)  
                                     
                                     for ipt in range(1, h_fake.GetNbinsY()+1): #for each pt bin
@@ -168,7 +169,7 @@ class bkg_histos(module):
 
                                         dfilter = ROOT.sel(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, "bkgSelMuon1_corrected_pt")                                                
 
-                                        h3_ptbin = dfilter.Histo3D((Collection+'_'+var+'_{eta:.2g}_'+v.format(eta=lowEdgePt), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_eta','totweight_{}'.format(v))
+                                        h3_ptbin = dfilter.Histo3D((Collection+'_'+var+'_{eta:.2g}_'+v.format(eta=lowEdgePt), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_'+var+'_Z','totweight_{}'.format(v))
                                                                                       
                                         self.myTH3.append(h3_ptbin)    
 
@@ -178,7 +179,6 @@ class bkg_histos(module):
                 # loop over variables
                 for Collection,dic in self.variables.iteritems():
                     collectionName = dic['inputCollection']
-                    print "collectionName1 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", collectionName
 
                     # first of all define new variables in the input collection
                     if dic.has_key('newvariables'):
@@ -200,22 +200,16 @@ class bkg_histos(module):
                                 self.d = self.defineSubcollectionFromIndex(dic['inputCollection'], dic['newCollection'], dic['index'], self.d)
 
                             collectionName = dic['newCollection']
-                            print "collectionName >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", collectionName
 
                     if dic.has_key('D2variables'):
                         for D2var, definition in dic['D2variables'].iteritems():
                             self.d = self.d.Define(collectionName+'_'+D2var+'_Y', definition[7]) 
-                            self.d = self.d.Define(collectionName+'_'+D2var+'_X', definition[8])                     
+                            self.d = self.d.Define(collectionName+'_'+D2var+'_X', definition[8])
+                            self.d = self.d.Define(collectionName+'_'+D2var+'_Z', definition[9])                     
                     
                     #h_mt_eta = ROOT.TH1F("h_mt_eta", "h_mt_eta", len(self.etaBins)-1, array('f',self.etaBins)) #fake hiso for binning only in eta (for mt)
                     h_fake = ROOT.TH2F("h_fake", "h_fake", len(self.etaBins)-1, array('f',self.etaBins), len(self.ptBins)-1, array('f',self.ptBins)) #fake hiso for binning only
-                    print "VARIABILI",  dic['variables']
-                    for var,tools in dic['variables'].iteritems():
-                        
-                        print "-------------------------------------<<<<"
-                        print "Collection:", Collection+'_'+var
-                        print "collectionName:", collectionName+'_'+var
-                        print "-------------------------------------<<<<"                        
+                    for var,tools in dic['variables'].iteritems():                 
                     
                         if not self.dataType == 'MC': 
                             h = self.d.Filter(selection).Histo1D((Collection+'_'+var, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var, 'totweight')
@@ -246,10 +240,6 @@ class bkg_histos(module):
                                         if not nom in var: continue
                                         h = self.d.Filter(selection.replace(nom,v)).Histo1D((Collection+'_'+var.replace(nom,v), " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collectionName+'_'+var.replace(nom,v), 'totweight')
                                         self.myTH1.append(h)
-                                        print "------------------------------------->>>"
-                                        print "Collection:", Collection+'_'+var
-                                        print "collectionName:", collectionName+'_'+var
-                                        print "------------------------------------->>>"
                                         
                                         print var
                                         if(var=='corrected_MET_'+v+'_mt') :    
@@ -263,7 +253,7 @@ class bkg_histos(module):
                                
                             if not self.dataType == 'MC': 
                                  
-                                        h3 = self.d.Filter(selection).Histo3D((Collection+'_'+var, " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_eta','totweight')                                        
+                                        h3 = self.d.Filter(selection).Histo3D((Collection+'_'+var, " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_'+var+'_Z','totweight')                                        
                                         self.myTH3.append(h3)  
                                         
                                         for ipt in range(1, h_fake.GetNbinsY()+1): #for each pt bin
@@ -272,15 +262,15 @@ class bkg_histos(module):
 
                                             dfilter = ROOT.sel(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, "bkgSelMuon1_corrected_pt")                                                
 
-                                            h3_ptbin = dfilter.Histo3D((Collection+'_'+var+'_{eta:.2g}'.format(eta=lowEdgePt), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_eta','totweight')
+                                            h3_ptbin = dfilter.Histo3D((Collection+'_'+var+'_{eta:.2g}'.format(eta=lowEdgePt), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_'+var+'_Z','totweight')
                                                                                                    
                                             self.myTH3.append(h3_ptbin)                                            
                                         
                             else:
                                 for nom, variations in self.syst.iteritems():
                         
-                                    if len(variations)==0:
-                                        h3 = self.d.Filter(selection).Histo3D((Collection+'_'+var, " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_eta','totweight')                                        
+                                    if len(variations)==0 :
+                                        h3 = self.d.Filter(selection).Histo3D((Collection+'_'+var, " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_'+var+'_Z','totweight')                                        
                                         self.myTH3.append(h3)  
                                         
                                         for ipt in range(1, h_fake.GetNbinsY()+1): #for each pt bin
@@ -290,7 +280,7 @@ class bkg_histos(module):
                                             varPt = "bkgSelMuon1_corrected_pt"
                                             dfilter = ROOT.sel(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, varPt)                                                
 
-                                            h3_ptbin = dfilter.Histo3D((Collection+'_'+var+'_{eta:.2g}'.format(eta=lowEdgePt), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_eta','totweight')
+                                            h3_ptbin = dfilter.Histo3D((Collection+'_'+var+'_{eta:.2g}'.format(eta=lowEdgePt), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_'+var+'_Z','totweight')
                                                 
                                             #WORKING Th3 inside C++
                                             # h3 = ROOT.sel(CastToRNode(self.d), lowEdgePt, upEdgePt)                                                    
@@ -301,29 +291,8 @@ class bkg_histos(module):
 
                                         for v in variations:
                                             if not nom in var: continue
-                                                        
-                                            # h3 = self.d.Filter(selection.replace(nom,v)).Histo3D((Collection+'_'+var.replace(nom,v), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X',collectionName+'_'+var+'_Y',collectionName+'_eta'.replace(nom,v),'totweight')  
-                                            print "-----------------------------------------------------"
-                                            print "variaz=",v
-                                            print "selection=", selection
-                                            print "var=", var
-                                            print "collection=", Collection
-                                            print "collectionName", collectionName
-                                            if collectionName+'_'+var+'_X'.replace(nom,v) in self.d.GetDefinedColumnNames() : print "found X"
-                                            if collectionName+'_'+var+'_Y'.replace(nom,v) in self.d.GetDefinedColumnNames() : print "found la Y"
-                                            if collectionName+'_eta'.replace(nom,v) in self.d.GetDefinedColumnNames() : 
-                                                print "found la Z"
-                                            else : print  "cerco", collectionName+'_eta'.replace(nom,v)
-                                            # print "DEFINED", self.d.GetDefinedColumnNames()
-
-                                            print "-----------------------------------------------------"
-                                            print "-----------------------------------------------------"
-                                            print "-----------------------------------------------------"
-                                            print "-----------------------------------------------------"
-                                            print "-----------------------------------------------------"                                        
-                                            # print "NOT DEFINED", self.d.GetColumnNames()
-
-                                            h3 = self.d.Filter(selection.replace(nom,v)).Histo3D((Collection+'_'+var.replace(nom,v), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X'.replace(nom,v),collectionName+'_'+var+'_Y'.replace(nom,v),collectionName+'_eta'.replace(nom,v),'totweight')                                        
+                                                    
+                                            h3 = self.d.Filter(selection.replace(nom,v)).Histo3D((Collection+'_'+var.replace(nom,v), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X'.replace(nom,v),collectionName+'_'+var+'_Y'.replace(nom,v),collectionName+'_'+var+'_Z'.replace(nom,v),'totweight')                                        
                                                                                   
                                             self.myTH3.append(h3)  
                                             
@@ -333,7 +302,7 @@ class bkg_histos(module):
 
                                                 dfilter = ROOT.sel(CastToRNode(self.d), lowEdgePt, upEdgePt, selection.replace(nom,v),"bkgSelMuon1_corrected_pt".replace(nom,v))                                                
 
-                                                h3_ptbin = dfilter.Histo3D((Collection+'_'+var+'_{eta:.2g}'.format(eta=lowEdgePt).replace(nom,v), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X.replace(nom,v)',collectionName+'_'+var+'_Y.replace(nom,v)',collectionName+'_eta'.replace(nom,v),'totweight')
+                                                h3_ptbin = dfilter.Histo3D((Collection+'_'+var+'_{eta:.2g}'.format(eta=lowEdgePt).replace(nom,v), " ; {}; ".format(tools[0]),  tools[4],tools[5],tools[6],tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collectionName+'_'+var+'_X.replace(nom,v)',collectionName+'_'+var+'_Y.replace(nom,v)',collectionName+'_'+var+'_Z'.replace(nom,v),'totweight')
                                                                                                       
                                                 self.myTH3.append(h3_ptbin)                                             
 

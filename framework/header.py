@@ -51,3 +51,14 @@ float debug (float smth)
 '''
 
 ROOT.gInterpreter.Declare(debug_code)
+
+fillhisto3D ='''
+ROOT::RDF::RResultPtr<::TH3D> fillHisto3D(ROOT::RDF::RNode df, char* hname, char* htitle, int nbinsx, double xlow, double xup, 
+                                          int nbinsy, double ylow, double yup, int nbinsz, double zlow, double zup,
+                                          std::string_view colNameX, std::string_view colNameY, std::string_view colNameZ, std::string_view weight) 
+{
+  
+  return df.Histo3D<float, float, float, double>({hname, htitle, nbinsx, xlow, xup, nbinsy, ylow, yup, nbinsz, zlow, zup}, colNameX, colNameY,colNameZ, weight);
+}
+'''                                                                            
+ROOT.gInterpreter.Declare(fillhisto3D)
