@@ -48,7 +48,7 @@ parser.add_argument('-fakeSyst', '--fakeSyst',type=int, default=False, help="inp
 parser.add_argument('-rdf', '--rdf',type=int, default=True, help="")
 parser.add_argument('-pretend', '--pretend',type=int, default=False, help="")
 parser.add_argument('-restrict', '--restrict',type=str, default="", help="")
-parser.add_argument('-wpt', '--wpt',type=int, default=False, help="W pt rewight option studies")
+parser.add_argument('-wpt', '--wpt',type=int, default=False, help="W pt rewight option studies (to evaluate weight)")
 parser.add_argument('-wptRew', '--wptRew',type=int, default=False, help="W pt rewight option")
 parser.add_argument('-clousure', '--clousure',type=int, default=False, help="produce clousure histos (RDF)")
 
@@ -66,8 +66,8 @@ fakerateStraSyst = args.fakeSS
 fakerateSyst = args.fakeSyst
 rdf = args.rdf
 pretend = args.pretend
-wpt =args.wpt 
-wptRew =args.wptRew 
+wpt =args.wpt
+wptRew =args.wptRew
 clousureFlag = args.clousure
 restrictDataset = [ x for x in args.restrict.split(',') ]
 
@@ -84,17 +84,17 @@ print "tag =", bcolors.OKGREEN, tag, bcolors.ENDC, \
 #         appliesTo = var['appliesTo']
 #         for applyTo in appliesTo:
 #             if applyTo[-1]=="*":
-#                 if applyTo[0:-1] in selection: 
+#                 if applyTo[0:-1] in selection:
 #                     match = True
 #             else:
-#                 if applyTo==selection:  match = True                
-#         if not match: 
+#                 if applyTo==selection:  match = True
+#         if not match:
 #             delete_vars.append(ivar)
-#     for ivar in delete_vars: 
-#         del new_variables[ivar]  
+#     for ivar in delete_vars:
+#         del new_variables[ivar]
 #     if verbose: print '<<', new_variables
 #     return new_variables
-    
+
 def filterVariables(variables={}, selection='Signal', verbose=False):
     if verbose: print '>>', variables
     new_variables = copy.deepcopy(variables)
@@ -102,14 +102,14 @@ def filterVariables(variables={}, selection='Signal', verbose=False):
     appliesTo = new_variables['appliesTo']
     for applyTo in appliesTo:
         if applyTo[-1]=="*":
-            if applyTo[0:-1] in selection: 
+            if applyTo[0:-1] in selection:
                 match = True
         else:
-            if applyTo==selection:  match = True 
-    if not match: 
+            if applyTo==selection:  match = True
+    if not match:
         new_variables.clear()
     return new_variables
-            
+
 def RDFprocess(outDir, inputFile, selections, sample, clousureFlag):
 
     outDir = outDir
@@ -117,16 +117,20 @@ def RDFprocess(outDir, inputFile, selections, sample, clousureFlag):
     myselections = selections
     sample = sample
     clousureFlag = clousureFlag
-    
-    outputFile = "%s.root" % (sample_key) 
+
+    outputFile = "%s.root" % (sample_key)
     QCDFlag = False
-    if 'QCD' in sample_key : 
-        QCDFlag = clousureFlag 
-    
+    WFlag = False
+    if 'QCD' in sample_key :
+        QCDFlag = clousureFlag
+    if 'WJets' in sample_key or 'WToMuNu' in sample_key :
+        WFlag = wptRew
+
+
     p = RDFtree(outputDir=outDir, outputFile = outputFile,inputFile=inputFile,pretend = pretend)
 
       # create branches
-    # for subsel_key, subsel in sample['subsel'].iteritems(): 
+    # for subsel_key, subsel in sample['subsel'].iteritems():
     outputFiles.append("%s" % (sample_key))
     for sel_key, sel in myselections.iteritems():
             # if len(sample['subsel'])>1 and subsel_key=='none': continue
@@ -139,14 +143,14 @@ def RDFprocess(outDir, inputFile, selections, sample, clousureFlag):
             myselection = copy.deepcopy(sel)
             # myselection[dataType]['cut'] += subsel if subsel_key!='none' else ''
             # subsel_str= subsel if subsel_key!='none' else ''
-            
+
             # for sKind, sList in bkg_systematics.iteritems():
             #     for sName in sList :
                     # print "systematic kind", bcolors.OKBLUE, sKind, bcolors.ENDC, "name=",bcolors.OKBLUE, sName, bcolors.ENDC
             p.branch(nodeToStart='input',
                         nodeToEnd=sel_key,#+'_'+sKind+'_'+sName,
                         outputFile=outputFile,
-                        modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning, systDict=bkg_systematics,clousureFlag=QCDFlag, wpt=wpt, wptFunc=wptFunc, wptRew=wptRew)])    
+                        modules = [bkg_histos_standalone(selections=myselection, variables=myvariables, dataType=dataType, xsec=sample['xsec'], inputFile=inputFile,ptBins=ptBinning, etaBins=etaBinning, systDict=bkg_systematics,clousureFlag=QCDFlag, wpt=wpt, wptFunc=ROOT.wptFunc, wptRew=WFlag)])
     p.getOutput()
 
 
@@ -167,47 +171,60 @@ else :
 inputDir = ('/scratch/sroychow/NanoAOD%s-%s/' % (str(dataYear), tag))
 
 
-# outDir =  'NanoAOD%s-%s_RAW_multivar/' % (str(dataYear), tag) 
-# outDir =  'NanoAOD%s-%s_RAW_clousure/' % (str(dataYear), tag) 
-# outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_highPU/' % (str(dataYear), tag) 
-# outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_lowPU/' % (str(dataYear), tag) 
+# outDir =  'NanoAOD%s-%s_RAW_multivar/' % (str(dataYear), tag)
+# outDir =  'NanoAOD%s-%s_RAW_clousure/' % (str(dataYear), tag)
+# outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_highPU/' % (str(dataYear), tag)
+# outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_lowPU/' % (str(dataYear), tag)
 # outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_rewighted/' % (str(dataYear), tag)  #buona per fare i plot di Zpt
 # outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_rewighted_2/' % (str(dataYear), tag)  #davvero ripesato
 # outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED_rewighted_2_ratiomass_noPUcut/' % (str(dataYear), tag)  #davvero ripesato con rapporto masse
 
-#outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED/' % (str(dataYear), tag) 
-# outDir =  'NanoAOD%s-%s/' % (str(dataYear), tag) 
-# outDir =  'NanoAOD%s-%s_ptStudy_clousureQCD/' % (str(dataYear), tag) 
-# outDir =  'NanoAOD%s-%s_ptStudy_TEST/' % (str(dataYear), tag) 
-outDir =  'NanoAOD%s-%s_ptStudy_syst/' % (str(dataYear), tag) 
+#outDir =  'NanoAOD%s-%sRAW_ptStudy_fine_FIXED/' % (str(dataYear), tag)
+# outDir =  'NanoAOD%s-%s/' % (str(dataYear), tag)
+# outDir =  'NanoAOD%s-%s_ptStudy_clousureQCD/' % (str(dataYear), tag)
+
+# outDir =  'NanoAOD%s-%s_ptStudy_TEST/' % (str(dataYear), tag)
+# outDir =  'NanoAOD%s-%s_ptStudy_reWApplied/' % (str(dataYear), tag)
+# outDir =  'NanoAOD%s-%s_ptStudy_reWApplied_check/' % (str(dataYear), tag)
+
+outDir =  'NanoAOD%s-%s_ptStudy_syst/' % (str(dataYear), tag)
 
 
-if not os.path.isdir(outDir): os.system('mkdir '+outDir) 
+if not os.path.isdir(outDir): os.system('mkdir '+outDir)
 
 outputFiles = []
+# restricted = ['SingleMuon', 'TTJets', 'DY', 'WJets']
 # restricted = ['DYJetsToLL_M-10to50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8.root','DYJetsToLL_M-50_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8.root','SingleMuon_Run2016C','SingleMuon_Run2016D','SingleMuon_Run2016E','SingleMuon_Run2016F','SingleMuon_Run2016G','SingleMuon_Run2016H','SingleMuon_Run2016B_ver2']
-# parser = sampleParser(restrict = restricted, tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt', exclude = ['DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8','WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8'])
 
 parser = sampleParser(restrict = restrictDataset, tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt', exclude = ['DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8','WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8'])
+# parser = sampleParser(restrict = restricted, tag=tag, inputDir=inputDir, production_file ='/scratch/sroychow/mcsamples_'+str(dataYear)+'-'+str(tag)+'.txt', exclude = ['DYJetsToLL_M-50_TuneCUETP8M1_13TeV-madgraphMLM-pythia8','WJetsToLNu_TuneCUETP8M1_13TeV-madgraphMLM-pythia8'])
+
 
 samples_dict = parser.getSampleDict()
 
 for sample_key, sample in samples_dict.iteritems():
-    # for subsel_key, subsel in sample['subsel'].iteritems(): 
+    # for subsel_key, subsel in sample['subsel'].iteritems():
         outputFiles.append("%s" % (sample_key))
 
 if rdf:
-
+    print "CAMBIA PARAMETRI SELF DEL MONDULO!!!!!!!!!!!!!!!!!!!!!!!!!!"
     from multiprocessing import Process
 
     procs = []
+
+
+    ROOT.gInterpreter.Declare('''TSpline3 *wptFunc; ''')
+    wptFile = ROOT.TFile.Open(outDir+"/WptReweight.root")
+    wptFuncpy = wptFile.Get("splineRatio")
+    ROOT.wptFunc = wptFuncpy
+
 
     for sample_key, sample in samples_dict.iteritems():
 
         print 'doing multiprocessing'
 
         if not sample['multiprocessing']: continue
-    
+
         dataType = 'MC' if 'Run' not in sample_key else 'DATA'
 
         print 'Analysing sample', bcolors.OKBLUE, sample_key, bcolors.ENDC
@@ -218,21 +235,20 @@ if rdf:
 
         inputFile = ROOT.std.vector("std::string")()
         for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
-        
 
-        wptFile = ROOT.TFile.Open(outDir+"/WptReweight.root")
-        wptFunc = wptFile.Get("splineRatio")
-             
+
+
+
         p = Process(target=RDFprocess, args=(outDir, inputFile, myselections,sample, clousureFlag))
 
         p.start()
-        
+
         procs.append(p)
 
-    for p in procs:  
+    for p in procs:
         p.join()
-    
-    
+
+
     ROOT.ROOT.EnableImplicitMT(32)#48
 
     for sample_key, sample in samples_dict.iteritems():
@@ -251,9 +267,9 @@ if rdf:
 
         inputFile = ROOT.std.vector("std::string")()
         for x in sample['dir']: inputFile.push_back(inputDir+x+"/tree*.root")
-            
-        RDFprocess(outDir, inputFile, myselections, sample)
-        
+
+        RDFprocess(outDir, inputFile, myselections, sample,clousureFlag)
+
 
 
 samples_merging = {
@@ -283,24 +299,25 @@ for sample_merging_key, sample_merging_value in samples_merging.iteritems():
 print 'Final samples:'
 print bcolors.OKBLUE, outputMergedFiles, bcolors.ENDC
 
-def fakerate_analysis(systName='nom',systKind='nom', outdir=outDir+'/bkg',folder=outDir,norm = 35.922, tightCut = 0.15, looseCut=40, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=True,fakerate=True,variations=fakerateVar, tightCutList=[0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5],looseCutList=[10,20,30,35,40,45,50,60,70,80], parabolaFit = False, EWSF='Fit') :
-    # possible EWSF option: Fit, Fit_pt, Iso_pt, Mt, Mt_pt, 1, 0   
+def fakerate_analysis(systName='nom',systKind='nom', outdir=outDir+'/bkg',folder=outDir,norm = 35.922, tightCut = 0.15, looseCut=40, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=True,fakerate=True,variations=fakerateVar, tightCutList=[0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5],looseCutList=[10,20,30,35,40,45,50,60,70,80], parabolaFit = False, EWSF='Fit',correlatedFit=False) :
+    # possible EWSF option: Fit, Fit_pt, Iso_pt, Mt, Mt_pt, 1, 0
     outdirBkg = outdir+'/bkg_'+systName
     if not os.path.isdir(outdirBkg): os.system('mkdir '+outdirBkg)
     if not os.path.isdir(outdirBkg+'_plot'): os.system('mkdir '+outdirBkg+'_plot')
-    
+
     fake = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=onData, slicing=slicing,systName=systName,systKind=systKind, parabolaFit=parabolaFit, EWSF=EWSF,tightCut = tightCut, looseCut=looseCut)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
     fake.integrated_preliminary()
-    fake.differential_preliminary(fakerate=fakerate)
+    fake.differential_preliminary(fakerate=fakerate, correlatedFit=correlatedFit, produce_ext_output=True)
 
-    if fakerateVar  : 
-        print "starting variation"
+    if fakerateVar  :
+        print "->starting variations..."
         for lcut in looseCutList :
                 for tcut in tightCutList :
-                    print "---variation (l, t)",lcut, tcut
+                    print "variation (l, t)",lcut, tcut
                     fake_i = bkg_fakerateAnalyzer(outdir=outdirBkg, folder=folder,norm = norm, fitOnTemplate=fitOnTemplate, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, tightCut = tcut, looseCut=lcut, nameSuff="_"+str(lcut)+"_"+str(tcut),systName=systName, systKind=systKind, parabolaFit=parabolaFit,EWSF=EWSF)
-                    fake_i.differential_preliminary(fakerate=True)
-                    
+                    fake_i.differential_preliminary(fakerate=True, produce_ext_output=True)
+
+    # if not correlatedFit : #usa parametro "Final plots per tutto"
     fake.fakerate_plots(variations=variations,tightCutList=tightCutList,looseCutList=looseCutList, parabolaFit = parabolaFit)
 
 
@@ -310,47 +327,56 @@ if fakerate :
     if not rdf : #if rdf=false --->expected already created the rootfiles with proper histos (done previously by rdf)
         skipHisto = True
     if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg')
-    tightCutList = [0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5]
-    looseCutList = [10,20,30,35,40,45,50,60,70,80]   
-    
+    # tightCutList = [0.02, 0.05, 0.10, 0.15, 0.2, 0.3, 0.5]
+    tightCutList = [0.15]
+    looseCutList = [10,20,30,35,40,45,50,60,70,80]
+
+    #generalPars:
+    TCUT = 0.15
+    LCUT = 30 
+    PARFIT = True
+    NORM = 35.922
+
+
     if fakerateAnalysis :
-        fakerate_analysis(systName='nom',systKind='nom', EWSF='Iso_pt', parabolaFit=True, looseCut=30, tightCut = 0.15, slicing = False,fitOnTemplate=True) 
+        print "->Full Analysis Path..."
+        fakerate_analysis(systName='nom',systKind='nom', EWSF='Iso_pt', tightCutList=tightCutList,looseCutList=looseCutList, parabolaFit=PARFIT, looseCut=LCUT, tightCut = TCUT, slicing = True,fitOnTemplate=True, correlatedFit=False)
         for sKind, sList in bkg_systematics.iteritems():
             for sName in sList :
-                print "systematatic:", sKind,sName
+                print "->systematatic:", sKind,sName
                 if fakerateSyst :
-                    fakerate_analysis(systKind=sKind,systName=sName,tightCutList=tightCutList,looseCutList=looseCutList,EWSF='Iso_pt', parabolaFit=True, looseCut=30, tightCut = 0.15,slicing = True)
-    
+                    fakerate_analysis(systKind=sKind,systName=sName,tightCutList=tightCutList,looseCutList=looseCutList,EWSF='Iso_pt', parabolaFit=PARFIT, looseCut=LCUT, tightCut = TCUT,slicing = True)
+
     if fakerateFinalPlots :
-        print "final plots"
-        fakeFinal = bkg_fakerateAnalyzer(outdir=outDir+'/bkg/', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False, systName='nom',systKind='nom')
-        fakeFinal.finalPlots(systDict=bkg_systematics, sum2Bands=True)
-        # fakeFinal.clousure_plots(outdir=outDir+'/bkg/', MC=False)  
-    
-    if fakerateStraSyst :    
+        print "-> Final plots..."
+        fakeFinal = bkg_fakerateAnalyzer(outdir=outDir+'/bkg/bkg_nom', folder=outDir,norm = NORM, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False, systName='nom',systKind='nom', parabolaFit=PARFIT,EWSF='Iso_pt', tightCut=TCUT, looseCut=LCUT)
+        fakeFinal.differential_preliminary(fakerate=fakerate, correlatedFit=True, produce_ext_output=True)
+        fakeFinal.fakerate_plots(variations=fakerateVar,tightCutList=tightCutList,looseCutList=looseCutList, parabolaFit = PARFIT)
+        fakeFinal.finalPlots(systDict=bkg_systematics, sum2Bands=True, outDir=outDir+'/bkg/',correlatedFit=True, noratio=False)
+        
+        # fakeFinal.clousure_plots(outdir=outDir+'/bkg/', MC=False)
+
+    if fakerateStraSyst :
+        print "-> Strategy syst plots..."
         fakeFinal.strategy_syst(preOutDir=outDir)
-    
+
 
 if wpt :
     if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg')
-    wpt_rewighter= bkg_WptReweighter(outdir=outDir+'/bkg/', folder=outDir, norm = 35.922, ptBinning=ptBinning, etaBinning=etaBinning, systName='nom', systKind='nom',interpol=True)
+    wpt_rewighter= bkg_WptReweighter(outdir=outDir+'/bkg/', folder=outDir, norm = NORM, ptBinning=ptBinning, etaBinning=etaBinning, systName='nom', systKind='nom',interpol=True)
     wpt_rewighter.ratio_fitter()
             # if not os.path.isdir(outDir+'/bkg'): os.system('mkdir '+outDir+'/bkg_'+sName)
             # if not os.path.isdir(outDir+'/bkg/bkg_plot'): os.system('mkdir '+outDir+'/bkg/bkg_plot')
             # fake = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False)#, tightCut = 5, varFake='pfRelIso04_all_corrected_pt_corrected_MET_nom_mt')
             # fake.integrated_preliminary()
             # fake.differential_preliminary(fakerate=True)
-            # 
+            #
             # print "starting variation"
-            # if(fakerateVar) : 
+            # if(fakerateVar) :
             #     for lcut in looseCutList :
             #             for tcut in tightCutList :
             #                 print "---variation (l, t)",lcut, tcut
             #                 fake_i = bkg_fakerateAnalyzer(outdir=outDir+'/bkg', folder=outDir,norm = 35.922, fitOnTemplate=False, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, tightCut = tcut, looseCut=lcut, nameSuff="_"+str(lcut)+"_"+str(tcut))
             #                 fake_i.differential_preliminary(fakerate=True)
-            # print "plotting"    
+            # print "plotting"
             # fake.fakerate_plots(variations=fakerateVar,tightCutList=tightCutList,looseCutList=looseCutList )
-
-
-
-

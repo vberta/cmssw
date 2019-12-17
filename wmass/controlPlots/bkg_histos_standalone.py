@@ -33,16 +33,16 @@ ROOT.gInterpreter.Declare(sel_code)
 # '''
 # ROOT.gInterpreter.Declare(reweight_code2)
 
-reweight_code = '''
-    double weiPt(Double_t GenV_preFSR_qt){
-        TFile * file = TFile::Open("/home/users/bertacch/RDF_scratch/wmass/controlPlots/NanoAOD2016-V1MCFinal_ptStudy_TEST/WptReweight.root");
-        TSpline3* spline = (TSpline3*)file->Get("splineRatio");
-        double mw_over_mz = 0.881;
-        double value = spline->Eval(GenV_preFSR_qt*mw_over_mz);
-        return value;
-    };
-'''
-ROOT.gInterpreter.Declare(reweight_code)
+# reweight_code = '''
+#     double weiPt(Double_t GenV_preFSR_qt){
+#         TFile * file = TFile::Open("/home/users/bertacch/RDF_scratch/wmass/controlPlots/NanoAOD2016-V1MCFinal_ptStudy_TEST/WptReweight.root");
+#         TSpline3* spline = (TSpline3*)file->Get("splineRatio");
+#         double mw_over_mz = 0.881;
+#         double value = spline->Eval(GenV_preFSR_qt*mw_over_mz);
+#         return value;
+#     };
+# '''
+# ROOT.gInterpreter.Declare(reweight_code)
 # ROOT.gInterpreter.Declare('''TSpline3 *cppspline; ''')
 
 
@@ -153,23 +153,33 @@ class bkg_histos_standalone(module):
             
             if "SF" in self.systKind or "Weight" in self.systKind:
                 newWeight = weight.replace(self.systKind,self.systName)
-                colWeightName = 'totweight_{}'.format(self.systName)
-                self.d = self.d.Define(colWeightName, 'lumiweight*{}'.format(newWeight))
+                self.colWeightName = 'totweight_{}'.format(self.systName)
+                self.d = self.d.Define(self.colWeightName, 'lumiweight*{}'.format(newWeight))
                 if self.wptRew :
-                    self.d = self.d.Define(colWeightName+'_wptRew', colWeightName+'*wptRew')
-                    colWeightName = colWeightName+'_wptRew'
+                    self.d = self.d.Define(self.colWeightName+'_wptRew', self.colWeightName+'*wptRew')
+                    
 
             elif "nom" in self.systKind or "corrected" in self.systKind :
                 self.dictReplacerVar(self.systKind,self.systName)
-                selection = selection.replace(self.systKind,self.systName)            
+                self.selection = self.selection.replace(self.systKind,self.systName)            
                 varMT = varMT.replace(self.systKind,self.systName)
                 varMET = varMET.replace(self.systKind,self.systName)
                 varPt = varPt.replace(self.systKind,self.systName)                          
             
-
+            if self.wptRew :
+                 self.colWeightName = self.colWeightName+'_wptRew'
         # define variables 
         
         collName =  self.variables['prefix']
+
+        #debug lines ----
+        # uno = 'uno'
+        # self.d = self.d.Define(uno, '1')  
+        # hx = self.d.Filter(self.selection).Histo1D((collName+'_'+self.colWeightName+'_'+self.systName, " ; {}; ", 100,0,10), self.colWeightName, uno)
+        # self.myTH1.append(hx)
+        # print  self.colWeightName
+        #-----
+
         if not self.wpt: 
 
             for var,tools in self.variables['variables'].iteritems():
@@ -188,29 +198,29 @@ class bkg_histos_standalone(module):
             for var,tools in self.variables['variables'].iteritems():
                 if(not tools[5]): continue #variable for 3D histo axis only
 
-                h = self.d.Filter(selection).Histo1D((collName+'_'+var+'_'+self.systName, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collName+'_'+var, colWeightName)
+                h = self.d.Filter(self.selection).Histo1D((collName+'_'+var+'_'+self.systName, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collName+'_'+var, self.colWeightName)
                 self.myTH1.append(h)
                 
                 if(var==varMT or var==varMET) :
-                    h2 = self.d.Filter(selection).Histo2D((collName+'_'+var+'_VS_eta_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+var,collName+'_Muon_eta', colWeightName)
+                    h2 = self.d.Filter(self.selection).Histo2D((collName+'_'+var+'_VS_eta_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2], tools[3],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+var,collName+'_Muon_eta', self.colWeightName)
                     self.myTH2.append(h2)
 
             for D2var, tools in self.variables['D2variables'].iteritems():
-                    h3 = self.d.Filter(selection).Histo3D((collName+'_'+D2var+'_VS_eta_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
+                    h3 = self.d.Filter(self.selection).Histo3D((collName+'_'+D2var+'_VS_eta_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],self.colWeightName)
                     self.myTH3.append(h3)
                              
                     for ipt in range(1, h_fake.GetNbinsY()+1): #for each pt bin
                         lowEdgePt = h_fake.GetYaxis().GetBinLowEdge(ipt)
                         upEdgePt = h_fake.GetYaxis().GetBinUpEdge(ipt)
                         
-                        dfilter = ROOT.sels(CastToRNode(self.d), lowEdgePt, upEdgePt, selection, varPt)
+                        dfilter = ROOT.sels(CastToRNode(self.d), lowEdgePt, upEdgePt, self.selection, varPt)
                     
-                        h3_ptbin = dfilter.Filter(selection).Histo3D((collName+'_'+D2var+'_VS_eta_{eta:.2g}_'.format(eta=lowEdgePt)+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],colWeightName)
+                        h3_ptbin = dfilter.Filter(self.selection).Histo3D((collName+'_'+D2var+'_VS_eta_{eta:.2g}_'.format(eta=lowEdgePt)+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[4],tools[5], tools[6],h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[7],collName+'_'+tools[8],collName+'_'+tools[9],self.colWeightName)
                     
                         self.myTH3.append(h3_ptbin)
             if self.clousureFlag :
                 for Cvar, tools in self.variables['ClousureVariables'].iteritems():
-                        h3 = self.d.Filter(selection).Histo3D((collName+'_'+Cvar+'_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],h_fake.GetNbinsY(), self.ptBins[0],self.ptBins[len(self.ptBins)-1], h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[4],collName+'_'+tools[5],collName+'_'+tools[6],colWeightName)
+                        h3 = self.d.Filter(self.selection).Histo3D((collName+'_'+Cvar+'_'+self.systName, " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],h_fake.GetNbinsY(), self.ptBins[0],self.ptBins[len(self.ptBins)-1], h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[4],collName+'_'+tools[5],collName+'_'+tools[6],self.colWeightName)
                         self.myTH3.append(h3)    
         
         else : #wpt=True
@@ -222,14 +232,14 @@ class bkg_histos_standalone(module):
             
             wptvar='RecoZ_Muon_corrected_pt' #z-pt and z-pt VS eta-mu VS pt-mu
             tools = self.variables['WptVariables'][wptvar]
-            h = self.d.Filter(selection).Histo1D((collName+'_'+wptvar+'_'+self.systName, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collName+'_'+wptvar, colWeightName)
-            h3 = self.d.Filter(selection).Histo3D((collName+'_'+wptvar+'_'+self.systName+'_VS_eta_VS_pt', " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],h_fake.GetNbinsY(), self.ptBins[0],self.ptBins[len(self.ptBins)-1], h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[4],collName+'_'+tools[5],collName+'_'+tools[6],colWeightName)
+            h = self.d.Filter(self.selection).Histo1D((collName+'_'+wptvar+'_'+self.systName, " ; {}; ".format(tools[0]), tools[1],tools[2], tools[3]), collName+'_'+wptvar, self.colWeightName)
+            h3 = self.d.Filter(self.selection).Histo3D((collName+'_'+wptvar+'_'+self.systName+'_VS_eta_VS_pt', " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],h_fake.GetNbinsY(), self.ptBins[0],self.ptBins[len(self.ptBins)-1], h_fake.GetNbinsX(), self.etaBins[0],self.etaBins[len(self.etaBins)-1]),collName+'_'+tools[4],collName+'_'+tools[5],collName+'_'+tools[6],self.colWeightName)
             self.myTH1.append(h) 
             self.myTH3.append(h3)
             
             wptvar='RecoZ_Muon_mass' #z-pt VS z-mass
             tools = self.variables['WptVariables'][wptvar]
-            h2 = self.d.Filter(selection).Histo2D((collName+'_'+wptvar+'_'+self.systName+'_VS_Wpt', " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[5],tools[6],tools[7]),collName+'_'+tools[4],collName+'_'+tools[8],colWeightName)
+            h2 = self.d.Filter(self.selection).Histo2D((collName+'_'+wptvar+'_'+self.systName+'_VS_Wpt', " ; {}; ".format(tools[0]),  tools[1],tools[2],tools[3],tools[5],tools[6],tools[7]),collName+'_'+tools[4],collName+'_'+tools[8],self.colWeightName)
             self.myTH2.append(h2) 
             
                 
@@ -253,10 +263,13 @@ class bkg_histos_standalone(module):
             colWeightName = 'totweight'
             self.d = self.d.Define(colWeightName, 'lumiweight*{}'.format(weight))
             if self.wptRew :
-                self.d = self.d.Define('wptRew', 'weiPt(GenV_preFSR_qt)')
+                # ROOT.cppspline = self.wptFunc
+                # func = self.wptFunc
+                self.d = self.d.Define('wptRew', 'wptFunc->Eval(GenV_preFSR_qt)')
                 self.d = self.d.Define(colWeightName+'_wptRew','wptRew*'+colWeightName)
 
                 # self.d = self.d.Define(colWeightName+'_wptRew','mult(wptRew,wptRew)')
+
             
         else:
             colWeightName = 'totweight'
@@ -291,7 +304,7 @@ class bkg_histos_standalone(module):
         
         for sKind, sList in self.systDict.iteritems():
             for sName in sList :
-                self.bkg_histos(sKind,sName,selection,weight,colWeightName, self.wpt, self.wptFunc,self.wptRew, )
+                self.bkg_histos(sKind,sName,selection,weight,colWeightName, self.wpt, self.wptFunc,self.wptRew)
                 
         # print "number of defined columns=", len(self.d.GetDefinedColumnNames())
         return self.d

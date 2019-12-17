@@ -167,31 +167,32 @@ class bkg_fakerateAnalyzer:
 
     def ratio_2Dto1D(self,histo,isocut =0.15,name = "histoRate") : #histo = 2D isto iso:Mt, isocut=tight def., name=output histo name
         #this func. produce an histogram of fake or prompt rate in fuction of Mt (to verify ABCD assumption)
-        self.histo = histo
-        self.isocut = isocut
-        self.name = name
 
-        isoMin= self.histo.GetYaxis().GetBinCenter(1)-self.histo.GetYaxis().GetBinWidth(1)/2
-        binsize = self.histo.GetYaxis().GetBinWidth(1)
-        Ncut=(self.isocut-isoMin)/binsize
+        # self.histo = histo
+        # self.isocut = isocut
+        # self.name = name
+
+        isoMin= histo.GetYaxis().GetBinCenter(1)-histo.GetYaxis().GetBinWidth(1)/2
+        binsize = histo.GetYaxis().GetBinWidth(1)
+        Ncut=(isocut-isoMin)/binsize
         # print "DEBUG RATIO", isoMin, binsize, Ncut
         Ncut = int(Ncut)
         # print isocut, Ncut, isoMin
-        # histoDen = self.histo.ProjectionX("histoDen",Ncut,-1)
+        # histoDen = histo.ProjectionX("histoDen",Ncut,-1)
 
-        histoDen = self.histo.ProjectionX("histoDen")
-        histoNum = self.histo.ProjectionX("histoNum",0,Ncut-1)
-        histoRate = histoNum.Clone(self.name)
+        histoDen = histo.ProjectionX("histoDen")
+        histoNum = histo.ProjectionX("histoNum",0,Ncut-1)
+        histoRate = histoNum.Clone(name)
         histoRate.Divide(histoNum,histoDen,1,1)
         # print "preliminary, NUM, DEN", histoNum.GetEntries(),histoDen.GetEntries()
         return histoRate
 
     def Fit4ScaleFactorEW(self,mtDict, sign, eta,datakind,pt='') :
-        self.mtDict = mtDict
-        self.sign = sign
-        self.datakind = datakind
-        self.eta = eta
-        self.pt = pt
+        # self.mtDict = mtDict
+        # self.sign = sign
+        # self.datakind = datakind
+        # self.eta = eta
+        # self.pt = pt
 
         outlist =[] #sig,bkg, chi2,chi2err
 
@@ -207,23 +208,23 @@ class bkg_fakerateAnalyzer:
                 # print "value y",y
                 return y
 
-        hsig = mtDict[self.pt+self.eta+self.sign+'WToMuNuTot'].Clone()
-        hsig.Add(mtDict[self.pt+self.eta+self.sign+'EWKbkgTot'])
-        hbkg = mtDict[self.pt+self.eta+self.sign+'QCDTot'].Clone()
+        hsig = mtDict[pt+eta+sign+'WToMuNuTot'].Clone()
+        hsig.Add(mtDict[pt+eta+sign+'EWKbkgTot'])
+        hbkg = mtDict[pt+eta+sign+'QCDTot'].Clone()
         hsig.Rebin(4)
         hbkg.Rebin(4)
         fitFunc = ROOT.TF1("fitFunc", linearHistoFit(),0,120,2)
         # fitFunc = ROOT.TF1("fitFunc", linearHistoFit,0,120,2)
         fitFunc.SetParameters(1,1,0)
         fitFunc.SetParNames("sig","bkg","const")
-        hdata = mtDict[self.pt+self.eta+self.sign+self.datakind+'Tot'].Clone()
+        hdata = mtDict[pt+eta+sign+datakind+'Tot'].Clone()
         hdata.Rebin(4)
         hdata.Fit(fitFunc,"Q","",0,120)
 
         sumDiffPre = 0
         sumDiffPost = 0
         for x in range(0,120) :
-            btot = mtDict[self.pt+self.eta+self.sign+self.datakind+'Tot'].GetBinContent(hsig.GetXaxis().FindFixBin(x))
+            btot = mtDict[pt+eta+sign+datakind+'Tot'].GetBinContent(hsig.GetXaxis().FindFixBin(x))
             bsig = hsig.GetBinContent(hsig.GetXaxis().FindFixBin(x));
             bbkg = hbkg.GetBinContent(hbkg.GetXaxis().FindFixBin(x));
             ss = fitFunc.GetParameter(0)
@@ -232,7 +233,7 @@ class bkg_fakerateAnalyzer:
             sumDiffPost = sumDiffPost+ (ss*bsig+bb*bbkg-btot)**2
 
         # print "FIT RESULTS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Post fit, values:", fitFunc.GetParameter(0), fitFunc.GetParameter(1), fitFunc.GetChisquare()/fitFunc.GetNDF(), "residual prefit/postfit =",sumDiffPre/sumDiffPost #PRINT THIS ONE
-        # print "Pre fit values: (tot,w,QCD)   ", mtDict[self.sign+self.datakind+'Tot'].GetBinContent(10), mtDict[self.sign+'WToMuNuTot'].GetBinContent(10)+mtDict[self.sign+'QCDTot'].GetBinContent(10)+mtDict[self.sign+'EWKbkgTot'].GetBinContent(10)
+        # print "Pre fit values: (tot,w,QCD)   ", mtDict[sign+datakind+'Tot'].GetBinContent(10), mtDict[sign+'WToMuNuTot'].GetBinContent(10)+mtDict[sign+'QCDTot'].GetBinContent(10)+mtDict[sign+'EWKbkgTot'].GetBinContent(10)
 
         outlist = [fitFunc.GetParameter(0), fitFunc.GetParError(0),fitFunc.GetParameter(1), fitFunc.GetParError(1),fitFunc.GetChisquare()/fitFunc.GetNDF(),math.sqrt(2*fitFunc.GetNDF())/fitFunc.GetNDF() ]
         # return fitFunc.GetParameter(1)
@@ -240,12 +241,12 @@ class bkg_fakerateAnalyzer:
 
 
     def isolationAna(self, hdict,  loosecut=40, varname = 'Muon_pfRelIso04_all_corrected_MET_nom_mt', kind = 'fake') :
-        self.loosecut = loosecut
-        self.varname = varname
-        self.kind = kind # fake = calculate the fakerate (measurement ABCD), prompt = the promptrate (from MC), validation = the fakerate on MC QCD, fakeMC = fakerate from dataLike (MC) SEE DICT BELOW
-        self.hdict = hdict
+        # self.loosecut = loosecut
+        # self.varname = varname
+        # self.kind = kind # fake = calculate the fakerate (measurement ABCD), prompt = the promptrate (from MC), validation = the fakerate on MC QCD, fakeMC = fakerate from dataLike (MC) SEE DICT BELOW
+        # self.hdict = hdict
 
-        # print "loosecut iso ana", self.loosecut
+        # print "loosecut iso ana", loosecut
         kindDict = {
             'fake' : 'Data',
             'validation' : 'QCD',
@@ -253,31 +254,31 @@ class bkg_fakerateAnalyzer:
             'prompt' : 'WToMuNu',
             'EWKbkg' : 'EWKbkg',
         }
-        datakind = kindDict[self.kind]
+        datakind = kindDict[kind]
 
         hIsos = {}
 
         for s in self.signList :
             for e in self.etaBinningS :
                 for p in self.ptBinningS :
-                    # hIso = ROOT.TH1F("hIso_{kind}_{sign}_{eta}_{pt}".format(kind=self.kind,sign=s,eta=e, pt=p),"hIso_{kind}_{sign}_{eta}_{pt}".format(kind=self.kind,sign=s,eta=e, pt=p),400,0,0.5)
-                    mtMin= self.hdict[p+e+s+varname+datakind+'Tot'].GetXaxis().GetBinCenter(1)-self.hdict[p+e+s+varname+datakind+'Tot'].GetXaxis().GetBinWidth(1)/2
-                    binsizeLoose = self.hdict[p+e+s+varname+datakind+'Tot'].GetXaxis().GetBinWidth(1)
-                    NcutLoose=(self.loosecut-mtMin)/binsizeLoose
+                    # hIso = ROOT.TH1F("hIso_{kind}_{sign}_{eta}_{pt}".format(kind=kind,sign=s,eta=e, pt=p),"hIso_{kind}_{sign}_{eta}_{pt}".format(kind=kind,sign=s,eta=e, pt=p),400,0,0.5)
+                    mtMin= hdict[p+e+s+varname+datakind+'Tot'].GetXaxis().GetBinCenter(1)-hdict[p+e+s+varname+datakind+'Tot'].GetXaxis().GetBinWidth(1)/2
+                    binsizeLoose = hdict[p+e+s+varname+datakind+'Tot'].GetXaxis().GetBinWidth(1)
+                    NcutLoose=(loosecut-mtMin)/binsizeLoose
                     NcutLoose = int(NcutLoose)
 
-                    hIso = self.hdict[p+e+s+varname+datakind+'Tot'].ProjectionY("Iso_{kind}_{sign}_{eta}_{pt}".format(kind=self.kind,sign=s,eta=e, pt=p),0,NcutLoose-1)
+                    hIso = hdict[p+e+s+varname+datakind+'Tot'].ProjectionY("Iso_{kind}_{sign}_{eta}_{pt}".format(kind=kind,sign=s,eta=e, pt=p),0,NcutLoose-1)
 
                     hIsos[p+e+s] = (hIso)
         return hIsos
 
     def asymmetryEW(self, p,e,hdict, NcutLoose, varname, NcutTight,ratio_differential=True,EWsubtraction=False) :
-        self.p = p
-        self.e = e
-        self.hdict = hdict
-        self.ratio_differential = ratio_differential
-        self.EWsubtraction = EWsubtraction
-        self.varname = varname
+        # self.p = p
+        # self.e = e
+        # self.hdict = hdict
+        # self.ratio_differential = ratio_differential
+        # self.EWsubtraction = EWsubtraction
+        # self.varname = varname
 
         hAsym = {}
         nAsym = {}
@@ -285,13 +286,13 @@ class bkg_fakerateAnalyzer:
         ewkAsym = {}
         for s in self.signList :
             for kind in ['Data','WToMuNu', 'EWKbkg'] :
-                hAsym[kind+s] =  self.hdict[self.p+self.e+s+self.varname+kind+'Tot'].Clone(self.p+'_'+self.e+'_'+kind+s+'_'+self.varname)
+                hAsym[kind+s] =  hdict[p+e+s+varname+kind+'Tot'].Clone(p+'_'+e+'_'+kind+s+'_'+varname)
                 if kind=='EWKbkg' : #merge W and EWKbkg
                     hAsym['EWKbkg'+s].Add(hAsym['WToMuNu'+s])
                 nAsym[kind+s+'denErr'] = ROOT.Double(0)
                 nAsym[kind+s+'numErr'] = ROOT.Double(0)
-                nAsym[kind+s+'den'] = hAsym[kind+s].ProjectionX("den_"+self.p+'_'+self.e+'_'+kind+s+'_'+self.varname,NcutTight,-1,"e").IntegralAndError(0,NcutLoose-1,nAsym[kind+s+'denErr'])
-                nAsym[kind+s+'num'] = hAsym[kind+s].ProjectionX("num_"+self.p+'_'+self.e+'_'+kind+s+'_'+self.varname,0,NcutTight-1, "e").IntegralAndError(0,NcutLoose-1,nAsym[kind+s+'numErr'])
+                nAsym[kind+s+'den'] = hAsym[kind+s].ProjectionX("den_"+p+'_'+e+'_'+kind+s+'_'+varname,NcutTight,-1,"e").IntegralAndError(0,NcutLoose-1,nAsym[kind+s+'denErr'])
+                nAsym[kind+s+'num'] = hAsym[kind+s].ProjectionX("num_"+p+'_'+e+'_'+kind+s+'_'+varname,0,NcutTight-1, "e").IntegralAndError(0,NcutLoose-1,nAsym[kind+s+'numErr'])
             for reg in ['num', 'den'] : #EWsubtraction
                 if EWsubtraction :
                     nAsym['QCD'+s+reg] = nAsym['Data'+s+reg]-nAsym['EWKbkg'+s+reg]
@@ -315,28 +316,28 @@ class bkg_fakerateAnalyzer:
         return ewkAsym
 
     def MinuitLinearFit(self, yy, xx, invCov, p0, q0,p0Err,q0Err,s,e) :
-        self.yy = yy
-        self.xx = xx
-        self.invCov = invCov
-        self.p0 = p0
-        self.q0 = q0
-        self.p0Err = p0Err
-        self.q0Err = q0Err
-        self.s = s
-        self.e = e
+        # self.yy = yy
+        # self.xx = xx
+        # self.invCov = invCov
+        # self.p0 = p0
+        # self.q0 = q0
+        # self.p0Err = p0Err
+        # self.q0Err = q0Err
+        # self.s = s
+        # self.e = e
         print "INITIAL VALUE=", q0,p0
 
         def linearChi2(npar, gin, f, par, istatus ):
-            vec = self.yy-(par[0]+par[1]*self.xx)
-            chi2 = np.linalg.multi_dot( [vec.T, self.invCov, vec] )
+            vec = yy-(par[0]+par[1]*xx)
+            chi2 = np.linalg.multi_dot( [vec.T, invCov, vec] )
             f[0] = chi2
             return
 
         # minuit = ROOT.TVirtualFitter.Fitter(0, 2)
         # minuit.Clear()
         # minuit.SetFCN(linearChi2)
-        # minuit.SetParameter(0, 'offset',self.q0,0.001,-2,2)
-        # minuit.SetParameter(1, 'slope',self.p0,0.001,-0.1,0.1)
+        # minuit.SetParameter(0, 'offset',q0,0.001,-2,2)
+        # minuit.SetParameter(1, 'slope',p0,0.001,-0.1,0.1)
         # arglist = array.array('d',2*[0])
         # arglist[0] = 50000 #call limit
         # arglist[1] = 0.01 #tolerance
@@ -353,13 +354,13 @@ class bkg_fakerateAnalyzer:
         arglist[0] =1.0
         ierflg = ROOT.Long(0)
         # ierflag=0
-        # self.q0 = 0.5
-        # self.p0=0
+        # q0 = 0.5
+        # p0=0
         minuit.mnexcm("SET ERR",arglist,1,ierflg)
-        minuit.mnparm(0, 'offset',self.q0,self.p0Err,-1,1,ierflg)
-        minuit.mnparm(1, 'slope',self.p0,self.q0Err,-0.3,0.3,ierflg)
-        # minuit.mnparm(0, 'offset',self.q0,0.001,-40,40,ierflg)
-        # minuit.mnparm(1, 'slope',self.p0,0.001,-10,10,ierflg)
+        minuit.mnparm(0, 'offset',q0,p0Err,-1,1,ierflg)
+        minuit.mnparm(1, 'slope',p0,q0Err,-0.3,0.3,ierflg)
+        # minuit.mnparm(0, 'offset',q0,0.001,-40,40,ierflg)
+        # minuit.mnparm(1, 'slope',p0,0.001,-10,10,ierflg)
         arglist[0] = 500000 #call limit
         # arglist[1] = 0.01 #tolerance
         minuit.mnexcm("MIGRAD", arglist, 2,ierflg)
@@ -381,8 +382,8 @@ class bkg_fakerateAnalyzer:
         outdict = {}
         outdict[s+e+'offset'+'Minuit'] = val0
         outdict[s+e+'slope'+'Minuit'] = val1
-        outdict[s+e+'offsetErr'+'Minuit'] = err0
-        outdict[s+e+'slopeErr'+'Minuit'] = err1
+        outdict[s+e+'offset'+'Minuit'+'Err'] = err0
+        outdict[s+e+'slope'+'Minuit'+'Err'] = err1
 
         outdict[s+e+'offset*slope'+'Minuit'] = ROOT.TMatrixDRow(out_cov,0)(1)
         print "DEBUGGG>>>>", outdict
@@ -392,8 +393,7 @@ class bkg_fakerateAnalyzer:
 
 
     def correlatedFitter(self, fakedict) :
-
-        self.fakedict = fakedict
+        # self.fakedict = fakedict
 
         #load the histos
         file_dict = {}
@@ -411,7 +411,7 @@ class bkg_fakerateAnalyzer:
                 systList.append(sName)
                 systdir = self.outdir.replace("bkg_nom","bkg_"+sName+'/')
                 file_dict[sName]=ROOT.TFile.Open(systdir+'bkg_plots'+self.nameSuff+".root")
-                
+
                 for s in self.signList :
                     for e in self.etaBinningS :
                         histo_fake_dict[sName+s+e] = file_dict[sName].Get('c_comparison_'+s+'_'+e).GetPrimitive('hFakes_pt_fake_'+s+'_'+e)
@@ -436,7 +436,7 @@ class bkg_fakerateAnalyzer:
         for s in self.signList :
             for e in self.etaBinningS :
                 np.set_printoptions(threshold=np.inf)
-                
+
                 err_multiplier=1
                 dimFit = len(bin4corFitS)
                 print "fit dimension=",dimFit
@@ -454,40 +454,40 @@ class bkg_fakerateAnalyzer:
                 #     covdict[syst] = np.zeros((dimFit,dimFit))
                 # covdict['nom'] = np.zeros((dimFit,dimFit))
 
-                # histo_fake_dict['nom'+s+e+'reb'] = self.fakedict[s+e].Rebin(len(bin4corFit)-1,self.fakedict[s+e].GetName()+'_reb', array('d',bin4corFit))
-                # histo_fake_dict['nom'+s+e+'reb'] =self.fakedict[s+e].GetName()+'_reb'
+                # histo_fake_dict['nom'+s+e+'reb'] = fakedict[s+e].Rebin(len(bin4corFit)-1,fakedict[s+e].GetName()+'_reb', array('d',bin4corFit))
+                # histo_fake_dict['nom'+s+e+'reb'] =fakedict[s+e].GetName()+'_reb'
 
-                histo_fake_dict['nom'+s+e+'reb'] = ROOT.TH1F(self.fakedict[s+e].GetName()+'_reb',self.fakedict[s+e].GetName()+'_reb',len(bin4corFit)-1,array('d',bin4corFit))
+                histo_fake_dict['nom'+s+e+'reb'] = ROOT.TH1F(fakedict[s+e].GetName()+'_reb',fakedict[s+e].GetName()+'_reb',len(bin4corFit)-1,array('d',bin4corFit))
                 for r in range(1,len(bin4corFit)) :
                     if r<binChange :
-                        valueBinRebinned = (self.fakedict[s+e].GetBinContent(2*r)+self.fakedict[s+e].GetBinContent(2*r-1))/2
-                        valueBinRebinnedErr = (self.fakedict[s+e].GetBinError(2*r)+self.fakedict[s+e].GetBinError(2*r-1))/2
+                        valueBinRebinned = (fakedict[s+e].GetBinContent(2*r)+fakedict[s+e].GetBinContent(2*r-1))/2
+                        valueBinRebinnedErr = (fakedict[s+e].GetBinError(2*r)+fakedict[s+e].GetBinError(2*r-1))/2
                     else :
-                        valueBinRebinned = (self.fakedict[s+e].GetBinContent(3*r-binChange)+self.fakedict[s+e].GetBinContent(3*r-binChange-1)+self.fakedict[s+e].GetBinContent(3*r-binChange-2))/3 #the not-simplified value of the bin number is: 2*N+3*(r-N), -1, -2.
-                        valueBinRebinnedErr = (self.fakedict[s+e].GetBinError(3*r-binChange)+self.fakedict[s+e].GetBinError(3*r-binChange-1)+self.fakedict[s+e].GetBinError(3*r-binChange-2))/3 #the not-simplified value of the bin number is: 2*N+3*(r-N), -1, -2.
+                        valueBinRebinned = (fakedict[s+e].GetBinContent(3*r-binChange)+fakedict[s+e].GetBinContent(3*r-binChange-1)+fakedict[s+e].GetBinContent(3*r-binChange-2))/3 #the not-simplified value of the bin number is: 2*N+3*(r-N), -1, -2.
+                        valueBinRebinnedErr = (fakedict[s+e].GetBinError(3*r-binChange)+fakedict[s+e].GetBinError(3*r-binChange-1)+fakedict[s+e].GetBinError(3*r-binChange-2))/3 #the not-simplified value of the bin number is: 2*N+3*(r-N), -1, -2.
 
                     histo_fake_dict['nom'+s+e+'reb'].SetBinContent(r,valueBinRebinned)
                     histo_fake_dict['nom'+s+e+'reb'].SetBinError(r,valueBinRebinnedErr)
                     # print r, valueBinRebinned
 
                 #debuglineREB
-                # histo_fake_dict['nom'+s+e+'reb'] =  self.fakedict[s+e]
+                # histo_fake_dict['nom'+s+e+'reb'] =  fakedict[s+e]
 
 
                 for pp in range(xx_.size) :
-                    # if self.fakedict[s+e].GetBinCenter(pp+1)>35 and self.fakedict[s+e].GetBinCenter(pp+1)<45 :
-                    #     print "centro skipped", self.fakedict[s+e].GetBinCenter(pp+1)
+                    # if fakedict[s+e].GetBinCenter(pp+1)>35 and fakedict[s+e].GetBinCenter(pp+1)<45 :
+                    #     print "centro skipped", fakedict[s+e].GetBinCenter(pp+1)
                     #     continue
                     jump = 0
                     # if pp==16 :jump = 16
 
                     xx_[pp] = histo_fake_dict['nom'+s+e+'reb'].GetBinCenter(pp+1+jump)
                     # print "bin center=",pp, xx_[pp]
-                    # yy_[pp] = self.fakedict[s+e+'offset']+xx_[pp]*self.fakedict[s+e+'slope']
+                    # yy_[pp] = fakedict[s+e+'offset']+xx_[pp]*fakedict[s+e+'slope']
                     yy_[pp] = histo_fake_dict['nom'+s+e+'reb'].GetBinContent(pp+1+jump)
 
                     #debug
-                    # print "FIT,",s,e,pp,", centro=", self.fakedict[s+e].GetBinCenter(pp+1), ",  fake=", yy_[pp], "variation=", histo_fake_dict["puWeightUp"+s+e].GetBinContent(pp+1) #, histo_fake_dict['nom'+s+e].GetBinContent(pp+1)
+                    # print "FIT,",s,e,pp,", centro=", fakedict[s+e].GetBinCenter(pp+1), ",  fake=", yy_[pp], "variation=", histo_fake_dict["puWeightUp"+s+e].GetBinContent(pp+1) #, histo_fake_dict['nom'+s+e].GetBinContent(pp+1)
 
                 for pp in range(xx_.size) : #separate loop because needed xx,yy fully filled
                     # print "()()()()()()()() entro in pp", pp
@@ -502,7 +502,7 @@ class bkg_fakerateAnalyzer:
                             if pp==p2 and syst==len(systList):
 
                                 dx_f = (histo_fake_dict['nom'+s+e+'reb'].GetBinWidth(pp+1+jump1))/2
-                                # erv = self.fakedict[s+e+'offsetErr']**2+(dx_f**2)*(self.fakedict[s+e+'slope']**2)+(xx_[pp]**2)*(self.fakedict[s+e+'slopeErr']**2)+2*xx_[pp]*self.fakedict[s+e+'offset*slope']
+                                # erv = fakedict[s+e+'offsetErr']**2+(dx_f**2)*(fakedict[s+e+'slope']**2)+(xx_[pp]**2)*(fakedict[s+e+'slopeErr']**2)+2*xx_[pp]*fakedict[s+e+'offset*slope']
                                 erv = err_multiplier*histo_fake_dict['nom'+s+e+'reb'].GetBinError(pp+1+jump1)**2
                                 cov_[syst][pp][p2] = erv
                                 # covdict['nom'][pp][p2] = erv
@@ -528,14 +528,14 @@ class bkg_fakerateAnalyzer:
                                         if pp==p2:
                                             # print "sign=",s," fake=", yy_[pp], " varied=", systUp, histo_fake_dict[systUp+s+e].GetBinContent(pp+1)
                                             debug_notsym = (yy_[pp]-histo_fake_dict[systUp+s+e+'reb'].GetBinContent(pp+1+jump1))**2
-                                            # debug_erv = self.fakedict[s+e+'offsetErr']**2+(((self.fakedict[s+e].GetBinWidth(pp+1))/2)**2)*(self.fakedict[s+e+'slope']**2)+(xx_[pp]**2)*(self.fakedict[s+e+'slopeErr']**2)+2*xx_[pp]*self.fakedict[s+e+'offset*slope']
+                                            # debug_erv = fakedict[s+e+'offsetErr']**2+(((fakedict[s+e].GetBinWidth(pp+1))/2)**2)*(fakedict[s+e+'slope']**2)+(xx_[pp]**2)*(fakedict[s+e+'slopeErr']**2)+2*xx_[pp]*fakedict[s+e+'offset*slope']
                                             debug_erv=histo_fake_dict['nom'+s+e+'reb'].GetBinError(pp+1+jump1)**2
                                             # print "FIT:",p2+35,pp+35,"sig=",s,", err(syst)=", erv, ", err(stat)=", debug_erv,  " ratio(sym) syst/stat=",erv/debug_erv, systList[syst]# " not_sym_erv= ",debug_notsym," ratio(nsy)=", debug_notsym/debug_erv
 
-                q0_ = self.fakedict[s+e+'offset']
-                p0_ = self.fakedict[s+e+'slope']
-                q0Err_ = self.fakedict[s+e+'offsetErr']
-                p0Err_ = self.fakedict[s+e+'slopeErr']
+                q0_ = fakedict[s+e+'offset']
+                p0_ = fakedict[s+e+'slope']
+                q0Err_ = fakedict[s+e+'offsetErr']
+                p0Err_ = fakedict[s+e+'slopeErr']
                 # print "PREPROJJJ---------------------------", cov_.shape
                 # print cov_
                 cov_proj = cov_.sum(axis=0) #square sum of syst
@@ -543,7 +543,7 @@ class bkg_fakerateAnalyzer:
                 # print cov_proj
                 # for pp in range(xx_.size) :
 
-                #     xx_[pp] = xx_[pp]-(self.fakedict[s+e].GetBinCenter(1)-self.fakedict[s+e].GetBinWidth(1)/2)
+                #     xx_[pp] = xx_[pp]-(fakedict[s+e].GetBinCenter(1)-fakedict[s+e].GetBinWidth(1)/2)
                     # xx_[pp] = xx_[pp]-30
                     # print "post", xx_[pp]
 
@@ -572,21 +572,21 @@ class bkg_fakerateAnalyzer:
 
 
     def differential_fakerate(self, hdict, mtDict, tightcut = 0.15, loosecut=40, varname = 'pfRelIso04_all_corrected_MET_nom_mt', kind = 'fake', EWSF='Fit', highMtCut=90,parabolaFit=False, asymmetry_EW=False, correlatedFit=False) :
-        self.loosecut = loosecut
-        self.tightcut = tightcut
-        self.varname = varname
-        self.kind = kind # fake = calculate the fakerate (measurement ABCD), prompt = the promptrate (from MC), validation = the fakerate on MC QCD, fakeMC = fakerate from dataLike (MC) SEE DICT BELOW
-        self.hdct = hdict
-        self.mtDict =mtDict
-        self.EWSF = EWSF
-        self.highMtCut = highMtCut
-        self.parabolaFit = parabolaFit
-        self.asymmetry_EW = asymmetry_EW
-        self.correlatedFit = correlatedFit
+        # self.loosecut = loosecut
+        # self.tightcut = tightcut
+        # self.varname = varname
+        # self.kind = kind # fake = calculate the fakerate (measurement ABCD), prompt = the promptrate (from MC), validation = the fakerate on MC QCD, fakeMC = fakerate from dataLike (MC) SEE DICT BELOW
+        # self.hdct = hdict
+        # self.mtDict =mtDict
+        # self.EWSF = EWSF
+        # self.highMtCut = highMtCut
+        # self.parabolaFit = parabolaFit
+        # self.asymmetry_EW = asymmetry_EW
+        # self.correlatedFit = correlatedFit
 
 
 
-        # print "loosecut diff fakerate",self.loosecut
+        # print "loosecut diff fakerate",loosecut
 
         kindDict = {
             'fake' : 'Data',
@@ -596,7 +596,7 @@ class bkg_fakerateAnalyzer:
             'validationSigReg' : 'QCD',
             'promptSideband' : 'WToMuNu',
         }
-        datakind = kindDict[self.kind]
+        datakind = kindDict[kind]
 
         hFakes = {}
         h2Fakes = {}
@@ -606,26 +606,26 @@ class bkg_fakerateAnalyzer:
         # h2Fakes[0] = TH2F("h2Fakes_plus","h2Fakes_plus",len(self.etaBinning)-1, array('f',self.etaBinning), len(self.ptBinning)-1, array('f',self.ptBinning) )
         # h2Fakes[1] = TH2F("h2Fakes_minus","h2Fakes_minus",len(self.etaBinning)-1, array('f',self.etaBinning), len(self.ptBinning)-1, array('f',self.ptBinning) )
         for s in self.signList :
-            h2Fakes_sign = ROOT.TH2F("h2Fakes_{kind}_{sign}".format(kind=self.kind,sign=s),"h2Fakes_{kind}_{sign}".format(kind=self.kind,sign=s),len(self.etaBinning)-1, array('f',self.etaBinning), len(self.ptBinning)-1, array('f',self.ptBinning) )
-            if self.kind == 'fake' or self.kind == 'fakeMC' :
-                hEWSF_chi2 = ROOT.TH1F("hEWSF_chi2_{kind}_{sign}".format(kind=self.kind,sign=s),"hEWSF_chi2_{kind}_{sign}".format(kind=self.kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
-                hEWSF_bkg = ROOT.TH1F("hEWSF_bkg_{kind}_{sign}".format(kind=self.kind,sign=s),"hEWSF_bkg_{kind}_{sign}".format(kind=self.kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
-                hEWSF_sig = ROOT.TH1F("hEWSF_sig_{kind}_{sign}".format(kind=self.kind,sign=s),"hEWSF_sig_{kind}_{sign}".format(kind=self.kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
-            hTempl_chi2 = ROOT.TH1F("hTempl_chi2_{kind}_{sign}".format(kind=self.kind,sign=s),"hTempl_chi2_{kind}_{sign}".format(kind=self.kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
-            hTempl_slope = ROOT.TH1F("hTempl_slope_{kind}_{sign}".format(kind=self.kind,sign=s),"hTempl_slope_{kind}_{sign}".format(kind=self.kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
-            hTempl_offset = ROOT.TH1F("hTempl_offset_{kind}_{sign}".format(kind=self.kind,sign=s),"hTempl_offset_{kind}_{sign}".format(kind=self.kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
-            hTempl_2deg = ROOT.TH1F("hTempl_2deg_{kind}_{sign}".format(kind=self.kind,sign=s),"hTempl_2deg_{kind}_{sign}".format(kind=self.kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
+            h2Fakes_sign = ROOT.TH2F("h2Fakes_{kind}_{sign}".format(kind=kind,sign=s),"h2Fakes_{kind}_{sign}".format(kind=kind,sign=s),len(self.etaBinning)-1, array('f',self.etaBinning), len(self.ptBinning)-1, array('f',self.ptBinning) )
+            if kind == 'fake' or kind == 'fakeMC' :
+                hEWSF_chi2 = ROOT.TH1F("hEWSF_chi2_{kind}_{sign}".format(kind=kind,sign=s),"hEWSF_chi2_{kind}_{sign}".format(kind=kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
+                hEWSF_bkg = ROOT.TH1F("hEWSF_bkg_{kind}_{sign}".format(kind=kind,sign=s),"hEWSF_bkg_{kind}_{sign}".format(kind=kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
+                hEWSF_sig = ROOT.TH1F("hEWSF_sig_{kind}_{sign}".format(kind=kind,sign=s),"hEWSF_sig_{kind}_{sign}".format(kind=kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
+            hTempl_chi2 = ROOT.TH1F("hTempl_chi2_{kind}_{sign}".format(kind=kind,sign=s),"hTempl_chi2_{kind}_{sign}".format(kind=kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
+            hTempl_slope = ROOT.TH1F("hTempl_slope_{kind}_{sign}".format(kind=kind,sign=s),"hTempl_slope_{kind}_{sign}".format(kind=kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
+            hTempl_offset = ROOT.TH1F("hTempl_offset_{kind}_{sign}".format(kind=kind,sign=s),"hTempl_offset_{kind}_{sign}".format(kind=kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
+            hTempl_2deg = ROOT.TH1F("hTempl_2deg_{kind}_{sign}".format(kind=kind,sign=s),"hTempl_2deg_{kind}_{sign}".format(kind=kind,sign=s), len(self.etaBinning)-1, array('f',self.etaBinning), )
 
 
             for e in self.etaBinningS :
-                hFakes_pt = ROOT.TH1F("hFakes_pt_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hFakes_pt_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
+                hFakes_pt = ROOT.TH1F("hFakes_pt_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"hFakes_pt_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
 
                 #debug histo
-                hFakes_pt_Cdata = ROOT.TH1F("hFakes_pt_Cdata_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hFakes_pt_Cdata_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
-                hFakes_pt_Adata = ROOT.TH1F("hFakes_pt_Adata_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hFakes_pt_Adata_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
-                hFakes_pt_Cweak = ROOT.TH1F("hFakes_pt_Cweak_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hFakes_pt_Cweak_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
-                hFakes_pt_Aweak = ROOT.TH1F("hFakes_pt_Aweak_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hFakes_pt_Aweak_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
-                hFakes_pt_ratioCA = ROOT.TH1F("hFakes_pt_ratioCA_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hFakes_pt_ratioCA_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
+                hFakes_pt_Cdata = ROOT.TH1F("hFakes_pt_Cdata_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"hFakes_pt_Cdata_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
+                hFakes_pt_Adata = ROOT.TH1F("hFakes_pt_Adata_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"hFakes_pt_Adata_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
+                hFakes_pt_Cweak = ROOT.TH1F("hFakes_pt_Cweak_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"hFakes_pt_Cweak_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
+                hFakes_pt_Aweak = ROOT.TH1F("hFakes_pt_Aweak_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"hFakes_pt_Aweak_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
+                hFakes_pt_ratioCA = ROOT.TH1F("hFakes_pt_ratioCA_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"hFakes_pt_ratioCA_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
 
 
                 scaleFactorEW = {}
@@ -635,10 +635,10 @@ class bkg_fakerateAnalyzer:
                 scaleFactorEW['0'] = 0
                 scaleFactorEWErr['0'] = 0
 
-                if self.kind == 'fake' or self.kind == 'fakeMC' :
+                if kind == 'fake' or kind == 'fakeMC' :
                     # print "PRE FIT (sign, eta, kind))", s, e, datakind
                     # scaleFactorEW=self.Fit4ScaleFactorEW(mtDict=mtDict,sign=s,eta=e,datakind=datakind)
-                    scaleFactorEWPars = self.Fit4ScaleFactorEW(mtDict=self.mtDict,sign=s,eta=e,datakind=datakind)
+                    scaleFactorEWPars = self.Fit4ScaleFactorEW(mtDict=mtDict,sign=s,eta=e,datakind=datakind)
 
                     #Fit EWSF
                     scaleFactorEW['Fit']=scaleFactorEWPars[0]
@@ -650,7 +650,7 @@ class bkg_fakerateAnalyzer:
                     EWKbIntErr = ROOT.Double(0)
                     dataIntErr = ROOT.Double(0)
                     QCDIntErr = ROOT.Double(0)
-                    minBin = mtDict[e+s+'WToMuNuTot'].GetXaxis().FindBin(self.highMtCut)
+                    minBin = mtDict[e+s+'WToMuNuTot'].GetXaxis().FindBin(highMtCut)
                     maxBin = mtDict[e+s+'WToMuNuTot'].GetSize()-1 #number of bins (overflow included, -1 is to the underflow)
                     EWKInt = mtDict[e+s+'WToMuNuTot'].IntegralAndError(minBin,maxBin,EWKIntErr)
                     EWKInt = EWKInt + mtDict[e+s+'EWKbkgTot'].IntegralAndError(minBin,maxBin,EWKbIntErr)
@@ -669,15 +669,15 @@ class bkg_fakerateAnalyzer:
                     hEWSF_chi2.SetBinError(self.etaBinningS.index(e)+1,scaleFactorEWPars[5])
 
 
-                    hEWSF_chi2_pt = ROOT.TH1F("hEWSF_chi2_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hEWSF_chi2_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning), )
-                    hEWSF_bkg_pt = ROOT.TH1F("hEWSF_bkg_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hEWSF_bkg_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning), )
-                    hEWSF_sig_pt = ROOT.TH1F("hEWSF_sig_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hEWSF_sig_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning), )
-                    hEWSF_iso_pt = ROOT.TH1F("hEWSF_iso_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hEWSF_iso_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning), )
-                    hEWSF_Mt_pt = ROOT.TH1F("hEWSF_Mt_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"hEWSF_Mt_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning), )
+                    hEWSF_chi2_pt = ROOT.TH1F("hEWSF_chi2_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"hEWSF_chi2_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning), )
+                    hEWSF_bkg_pt = ROOT.TH1F("hEWSF_bkg_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"hEWSF_bkg_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning), )
+                    hEWSF_sig_pt = ROOT.TH1F("hEWSF_sig_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"hEWSF_sig_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning), )
+                    hEWSF_iso_pt = ROOT.TH1F("hEWSF_iso_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"hEWSF_iso_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning), )
+                    hEWSF_Mt_pt = ROOT.TH1F("hEWSF_Mt_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"hEWSF_Mt_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning), )
 
                 for p in self.ptBinningS :
-                    if self.kind == 'fake' or self.kind == 'fakeMC' :
-                        scaleFactorEWPars_p = self.Fit4ScaleFactorEW(mtDict=self.mtDict,sign=s,eta=e,datakind=datakind,pt=p)
+                    if kind == 'fake' or kind == 'fakeMC' :
+                        scaleFactorEWPars_p = self.Fit4ScaleFactorEW(mtDict=mtDict,sign=s,eta=e,datakind=datakind,pt=p)
 
                         #Fit_pt EWSF
                         scaleFactorEW['Fit_pt']=scaleFactorEWPars_p[0]
@@ -688,7 +688,7 @@ class bkg_fakerateAnalyzer:
                         EWKbIntErr = ROOT.Double(0)
                         dataIntErr = ROOT.Double(0)
                         QCDIntErr = ROOT.Double(0)
-                        minBin = mtDict[p+e+s+'WToMuNuTot'].GetXaxis().FindBin(self.highMtCut)
+                        minBin = mtDict[p+e+s+'WToMuNuTot'].GetXaxis().FindBin(highMtCut)
                         maxBin = mtDict[p+e+s+'WToMuNuTot'].GetSize()-1 #number of bins (overflow included, -1 is to the underflow)
                         EWKInt = mtDict[p+e+s+'WToMuNuTot'].IntegralAndError(minBin,maxBin,EWKIntErr)
                         EWKInt = EWKInt + mtDict[p+e+s+'EWKbkgTot'].IntegralAndError(minBin,maxBin,EWKbIntErr)
@@ -699,7 +699,7 @@ class bkg_fakerateAnalyzer:
                         scaleFactorEWErr['Mt_pt'] = 1/((EWKInt-QCDInt)**2)*math.sqrt(sfdenErr*(dataInt**2)+(dataIntErr**2)*((EWKInt-QCDInt)**2))
 
 
-                    if self.kind == 'fake' or self.kind == 'fakeMC' :
+                    if kind == 'fake' or kind == 'fakeMC' :
                         hEWSF_bkg_pt.SetBinContent(self.ptBinningS.index(p)+1,scaleFactorEWPars_p[0])
                         hEWSF_bkg_pt.SetBinError(self.ptBinningS.index(p)+1,scaleFactorEWPars_p[1])
                         hEWSF_sig_pt.SetBinContent(self.ptBinningS.index(p)+1,scaleFactorEWPars_p[2])
@@ -711,20 +711,20 @@ class bkg_fakerateAnalyzer:
                         hEWSF_Mt_pt.SetBinError(self.ptBinningS.index(p)+1,scaleFactorEWErr['Mt_pt'])
 
 
-                    hsubtract= self.hdict[p+e+s+varname+datakind+'Tot'].Clone(p+'_'+e+'_'+'datakind'+s+'_'+varname)
-                    # if self.kind == 'fake' or self.kind == 'fakeMC' :
+                    hsubtract= hdict[p+e+s+varname+datakind+'Tot'].Clone(p+'_'+e+'_'+'datakind'+s+'_'+varname)
+                    # if kind == 'fake' or kind == 'fakeMC' :
                     #     hsubtract.Add(hdict[p+e+s+varname+'EWKbkg'+'Tot'],-1)
                     #     hsubtract.Add(hdict[p+e+s+varname+'WToMuNu'+'Tot'],-1)
 
                     isoMin= hsubtract.GetYaxis().GetBinCenter(1)-hsubtract.GetYaxis().GetBinWidth(1)/2
                     binsizeTight = hsubtract.GetYaxis().GetBinWidth(1)
-                    NcutTight=(self.tightcut-isoMin)/binsizeTight
+                    NcutTight=(tightcut-isoMin)/binsizeTight
                     NcutTight = int(NcutTight)
 
 
                     mtMin= hsubtract.GetXaxis().GetBinCenter(1)-hsubtract.GetXaxis().GetBinWidth(1)/2
                     binsizeLoose = hsubtract.GetXaxis().GetBinWidth(1)
-                    NcutLoose=(self.loosecut-mtMin)/binsizeLoose
+                    NcutLoose=(loosecut-mtMin)/binsizeLoose
                     NcutLoose = int(NcutLoose)
                     # print "cuts=, ", NcutTight, NcutLoose
 
@@ -732,7 +732,7 @@ class bkg_fakerateAnalyzer:
                     denErr = ROOT.Double(0)
                     antiNumErr = ROOT.Double(0) #antinum = b region (not tight)
                     fake_err =0
-                    if (self.kind=='fake' or self.kind=='validation' or self.kind=='fakeMC' or self.kind=='promptSideband') :
+                    if (kind=='fake' or kind=='validation' or kind=='fakeMC' or kind=='promptSideband') :
                         # print "here: cuts (t,l)", NcutTight, NcutLoose
                         den = hsubtract.ProjectionX("histoDen",0,-1,"e").IntegralAndError(0,NcutLoose-1,denErr)
                         num = hsubtract.ProjectionX("histoNum",0,NcutTight-1, "e").IntegralAndError(0,NcutLoose-1,numErr)
@@ -747,15 +747,15 @@ class bkg_fakerateAnalyzer:
                         # print "SCALE FACTOR LUMI:", scaleFactorLumi
 
 
-                        if self.kind == 'fake' or self.kind == 'fakeMC' : #not QCD
+                        if kind == 'fake' or kind == 'fakeMC' : #not QCD
                             numErr_EWKbkg = ROOT.Double(0)
                             denErr_EWKbkg = ROOT.Double(0)
                             numErr_WToMuNu = ROOT.Double(0)
                             denErr_WToMuNu = ROOT.Double(0)
-                            den_EWKbkg = self.hdict[p+e+s+varname+'EWKbkg'+'Tot'].ProjectionX("histoDen",0,-1,"e").IntegralAndError(0,NcutLoose-1,denErr_EWKbkg)
-                            num_EWKbkg = self.hdict[p+e+s+varname+'EWKbkg'+'Tot'].ProjectionX("histoNum",0,NcutTight-1, "e").IntegralAndError(0,NcutLoose-1,numErr_EWKbkg)
-                            den_WToMuNu = self.hdict[p+e+s+varname+'WToMuNu'+'Tot'].ProjectionX("histoDen",0,-1,"e").IntegralAndError(0,NcutLoose-1,denErr_WToMuNu)
-                            num_WToMuNu = self.hdict[p+e+s+varname+'WToMuNu'+'Tot'].ProjectionX("histoNum",0,NcutTight-1, "e").IntegralAndError(0,NcutLoose-1,numErr_WToMuNu)
+                            den_EWKbkg = hdict[p+e+s+varname+'EWKbkg'+'Tot'].ProjectionX("histoDen",0,-1,"e").IntegralAndError(0,NcutLoose-1,denErr_EWKbkg)
+                            num_EWKbkg = hdict[p+e+s+varname+'EWKbkg'+'Tot'].ProjectionX("histoNum",0,NcutTight-1, "e").IntegralAndError(0,NcutLoose-1,numErr_EWKbkg)
+                            den_WToMuNu = hdict[p+e+s+varname+'WToMuNu'+'Tot'].ProjectionX("histoDen",0,-1,"e").IntegralAndError(0,NcutLoose-1,denErr_WToMuNu)
+                            num_WToMuNu = hdict[p+e+s+varname+'WToMuNu'+'Tot'].ProjectionX("histoNum",0,NcutTight-1, "e").IntegralAndError(0,NcutLoose-1,numErr_WToMuNu)
 
                             #Iso_pt EWSF
                             w_only_region_data_Err_w = ROOT.Double(0)
@@ -764,9 +764,9 @@ class bkg_fakerateAnalyzer:
                             w_only_region_MC_Err_ewk = ROOT.Double(0)
                             QCD_multiplier = 1.0#1.1 #systemtatic variation
                             w_only_region_data= hsubtract.ProjectionX("histoNum",0,1, "e").IntegralAndError(NcutLoose-1,-1,w_only_region_data_Err_w)-QCD_multiplier*hdict[p+e+s+varname+'QCD'+'Tot'].ProjectionX("histoNum",0,1, "e").IntegralAndError(NcutLoose-1,-1,w_only_region_data_Err_qcd)
-                            w_only_region_MC = self.hdict[p+e+s+varname+'WToMuNu'+'Tot'].ProjectionX("histoNum",0,1, "e").IntegralAndError(NcutLoose-1,-1,w_only_region_MC_Err_w)+hdict[p+e+s+varname+'EWKbkg'+'Tot'].ProjectionX("histoNum",0,1, "e").IntegralAndError(NcutLoose-1,-1,w_only_region_MC_Err_ewk)
+                            w_only_region_MC = hdict[p+e+s+varname+'WToMuNu'+'Tot'].ProjectionX("histoNum",0,1, "e").IntegralAndError(NcutLoose-1,-1,w_only_region_MC_Err_w)+hdict[p+e+s+varname+'EWKbkg'+'Tot'].ProjectionX("histoNum",0,1, "e").IntegralAndError(NcutLoose-1,-1,w_only_region_MC_Err_ewk)
                             # w_only_region_data= hsubtract.ProjectionX("histoNum",0,1, "e").IntegralAndError(0,-1,w_only_region_data_Err_w)-QCD_multiplier*hdict[p+e+s+varname+'QCD'+'Tot'].ProjectionX("histoNum",0,1, "e").IntegralAndError(0,-1,w_only_region_data_Err_qcd)
-                            # w_only_region_MC = self.hdict[p+e+s+varname+'WToMuNu'+'Tot'].ProjectionX("histoNum",0,1, "e").IntegralAndError(0,-1,w_only_region_MC_Err_w)+hdict[p+e+s+varname+'EWKbkg'+'Tot'].ProjectionX("histoNum",0,1, "e").IntegralAndError(0,-1,w_only_region_MC_Err_ewk)
+                            # w_only_region_MC = hdict[p+e+s+varname+'WToMuNu'+'Tot'].ProjectionX("histoNum",0,1, "e").IntegralAndError(0,-1,w_only_region_MC_Err_w)+hdict[p+e+s+varname+'EWKbkg'+'Tot'].ProjectionX("histoNum",0,1, "e").IntegralAndError(0,-1,w_only_region_MC_Err_ewk)
 
                             EWSF_iso_pt = w_only_region_data/w_only_region_MC
                             EWSF_iso_pt_err_num=math.sqrt(w_only_region_data_Err_w**2+(QCD_multiplier*w_only_region_data_Err_qcd)**2)
@@ -793,28 +793,28 @@ class bkg_fakerateAnalyzer:
                             # print "EWK=", math.sqrt(w_only_region_MC)
 
 
-                            if(self.asymmetry_EW) :
+                            if(asymmetry_EW) :
 
-                                asymmetry_EW = self.asymmetryEW(p=p,e=e,ratio_differential=False,EWsubtraction=True,hdict = self.hdict,varname = varname,NcutLoose=NcutLoose, NcutTight=NcutTight)
+                                asymmetry_EW = self.asymmetryEW(p=p,e=e,ratio_differential=False,EWsubtraction=True,hdict = hdict,varname = varname,NcutLoose=NcutLoose, NcutTight=NcutTight)
                                     # print asymmetry_EW
                                 # print "rapporto=", s, num/asymmetry_EW['num'+s], asymmetry_EW['num'+s]
                                 den = den - asymmetry_EW['den'+s] -asymmetry_EW['num'+s] #num=C, den=A, in the asymmetryEW only!
                                 num = num -  asymmetry_EW['num'+s]
                             else :
-                                # print ((den_EWKbkg + den_WToMuNu)*scaleFactorEW[self.EWSF])/num
-                                den = den - (den_EWKbkg + den_WToMuNu)*scaleFactorEW[self.EWSF]
-                                num = num - (num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF]
-                            # print s, "DEN=",(den_EWKbkg + den_WToMuNu)*scaleFactorEW[self.EWSF], "NUM=", (num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF]
+                                # print ((den_EWKbkg + den_WToMuNu)*scaleFactorEW[EWSF])/num
+                                den = den - (den_EWKbkg + den_WToMuNu)*scaleFactorEW[EWSF]
+                                num = num - (num_EWKbkg + num_WToMuNu)*scaleFactorEW[EWSF]
+                            # print s, "DEN=",(den_EWKbkg + den_WToMuNu)*scaleFactorEW[EWSF], "NUM=", (num_EWKbkg + num_WToMuNu)*scaleFactorEW[EWSF]
                             # den = den - (den_EWKbkg + den_WToMuNu)*EWKSF_pt
                             # num = num - (num_EWKbkg + num_WToMuNu)*EWKSF_pt
 
 
-                            denErr = math.sqrt(denErr**2 + (denErr_EWKbkg**2 + denErr_WToMuNu**2)*(scaleFactorEW[self.EWSF])**2+(scaleFactorEWErr[self.EWSF]**2)*((den_EWKbkg + den_WToMuNu)**2))
-                            numErr = math.sqrt(numErr**2 + (numErr_EWKbkg**2 + numErr_WToMuNu**2)*(scaleFactorEW[self.EWSF])**2+(scaleFactorEWErr[self.EWSF]**2)*((num_EWKbkg + num_WToMuNu)**2))
+                            denErr = math.sqrt(denErr**2 + (denErr_EWKbkg**2 + denErr_WToMuNu**2)*(scaleFactorEW[EWSF])**2+(scaleFactorEWErr[EWSF]**2)*((den_EWKbkg + den_WToMuNu)**2))
+                            numErr = math.sqrt(numErr**2 + (numErr_EWKbkg**2 + numErr_WToMuNu**2)*(scaleFactorEW[EWSF])**2+(scaleFactorEWErr[EWSF]**2)*((num_EWKbkg + num_WToMuNu)**2))
 
-                            # print "numerr", denErr, ", EWSKERR=", scaleFactorEWErr[self.EWSF]*(den_EWKbkg + den_WToMuNu), "relative=", math.sqrt(scaleFactorEWErr[self.EWSF]**2*(den_EWKbkg + den_WToMuNu)**2)/denErr
-                            # print den_EWKbkg, den_WToMuNu, scaleFactorEWErr[self.EWSF], scaleFactorEW[self.EWSF]
-                            # print ((den_EWKbkg + den_WToMuNu)*scaleFactorEW[self.EWSF])/den
+                            # print "numerr", denErr, ", EWSKERR=", scaleFactorEWErr[EWSF]*(den_EWKbkg + den_WToMuNu), "relative=", math.sqrt(scaleFactorEWErr[EWSF]**2*(den_EWKbkg + den_WToMuNu)**2)/denErr
+                            # print den_EWKbkg, den_WToMuNu, scaleFactorEWErr[EWSF], scaleFactorEW[EWSF]
+                            # print ((den_EWKbkg + den_WToMuNu)*scaleFactorEW[EWSF])/den
 
                             #ERROR ON SUM EVALUATION
                             antiNumErr_EWKbkg = ROOT.Double(0)
@@ -823,18 +823,18 @@ class bkg_fakerateAnalyzer:
                             antiNum_WToMuNu = hdict[p+e+s+varname+'WToMuNu'+'Tot'].ProjectionX("histoNum",NcutTight,-1, "e").IntegralAndError(0,NcutLoose-1,antiNumErr_WToMuNu)
 
 
-                            antiNum = antiNum - (antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[self.EWSF]
-                            # antiNumErr = math.sqrt((antiNumErr**2 + antiNumErr_EWKbkg**2 + antiNumErr_WToMuNu**2)*(scaleFactorEW[self.EWSF]**2)+0*(scaleFactorEWErr[self.EWSF]**2)*(antiNum**2))
-                            antiNumErr = math.sqrt(antiNumErr**2 + (antiNumErr_EWKbkg**2 + antiNumErr_WToMuNu**2)*(scaleFactorEW[self.EWSF])**2+(scaleFactorEWErr[self.EWSF]**2)*((antiNum_EWKbkg + antiNum_WToMuNu)**2))
+                            antiNum = antiNum - (antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[EWSF]
+                            # antiNumErr = math.sqrt((antiNumErr**2 + antiNumErr_EWKbkg**2 + antiNumErr_WToMuNu**2)*(scaleFactorEW[EWSF]**2)+0*(scaleFactorEWErr[EWSF]**2)*(antiNum**2))
+                            antiNumErr = math.sqrt(antiNumErr**2 + (antiNumErr_EWKbkg**2 + antiNumErr_WToMuNu**2)*(scaleFactorEW[EWSF])**2+(scaleFactorEWErr[EWSF]**2)*((antiNum_EWKbkg + antiNum_WToMuNu)**2))
 
                             #Debug histograms
-                            hFakes_pt_Cdata.SetBinContent(self.ptBinningS.index(p)+1, num+(num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF])
-                            hFakes_pt_Adata.SetBinContent(self.ptBinningS.index(p)+1, antiNum+(antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[self.EWSF])
+                            hFakes_pt_Cdata.SetBinContent(self.ptBinningS.index(p)+1, num+(num_EWKbkg + num_WToMuNu)*scaleFactorEW[EWSF])
+                            hFakes_pt_Adata.SetBinContent(self.ptBinningS.index(p)+1, antiNum+(antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[EWSF])
                             hFakes_pt_Cweak.SetBinContent(self.ptBinningS.index(p)+1, num_EWKbkg + num_WToMuNu)
                             hFakes_pt_Aweak.SetBinContent(self.ptBinningS.index(p)+1, antiNum_EWKbkg + antiNum_WToMuNu)
                             hFakes_pt_ratioCA.SetBinContent(self.ptBinningS.index(p)+1, num/antiNum)
-                            # if self.kind == 'fake' :
-                                # print "INSIDE; e,p", e,p, "num=", num+(num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF], ", ew num=", (num_EWKbkg + num_WToMuNu)*scaleFactorEW[self.EWSF], ",   antinum=", antiNum+(antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[self.EWSF], ",   antinum ew=", (antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[self.EWSF]
+                            # if kind == 'fake' :
+                                # print "INSIDE; e,p", e,p, "num=", num+(num_EWKbkg + num_WToMuNu)*scaleFactorEW[EWSF], ", ew num=", (num_EWKbkg + num_WToMuNu)*scaleFactorEW[EWSF], ",   antinum=", antiNum+(antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[EWSF], ",   antinum ew=", (antiNum_EWKbkg + antiNum_WToMuNu)*scaleFactorEW[EWSF]
 
 
                             # if(num!=0 and den!=0 and antiNum!=0) :
@@ -870,16 +870,16 @@ class bkg_fakerateAnalyzer:
                         #     fake_err = 1/den*math.sqrt(num*(1-num/den))*scaleFactorLumi #standard eff error rewighted on scal factor
                         # print "SCALE FACTOR LUMI :", scaleFactorLumi
 
-                    # print("kind", self.kind, "eta,pt", e, p, "num,den", num, den, "s",s)
+                    # print("kind", kind, "eta,pt", e, p, "num,den", num, den, "s",s)
                     if(den == 0) :
                         fake = 0
-                        print "WARNING: fake rate den = 0 --> num=", num, "data kind=",self.kind, "(pt,eta,sign)=",p,e,s
+                        print "WARNING: fake rate den = 0 --> num=", num, "data kind=",kind, "(pt,eta,sign)=",p,e,s
                     if(num==0) :
                         fake = 0
-                        print "WARNING: fake rate num = 0 --> den=", den, "data kind=",self.kind, "(pt,eta,sign)=",p,e,s
+                        print "WARNING: fake rate num = 0 --> den=", den, "data kind=",kind, "(pt,eta,sign)=",p,e,s
                     else:
-                        # print "Ok: fake rate --> num/den=", num, den, num/den, "data kind=",self.kind, "(pt,eta,sign)=",p,e,s
-                        # if(self.kind == 'fake') :
+                        # print "Ok: fake rate --> num/den=", num, den, num/den, "data kind=",kind, "(pt,eta,sign)=",p,e,s
+                        # if(kind == 'fake') :
                             #  print "e,p", e,p, ",    C=", num, numErr, ", A+C=", den,denErr, ", A=", antiNum, antiNumErr, ", fake rate=", scaleFactorEW['Mt_pt']
                         fake = num/den
                         # print num, numErr, math.sqrt(num),den, denErr, math.sqrt(den)
@@ -893,7 +893,7 @@ class bkg_fakerateAnalyzer:
                     h2Fakes_sign.SetBinError(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1,fake_err)
 
                     #debug lines ----
-                    # if(self.kind == 'fake') :
+                    # if(kind == 'fake') :
                     #     filee=ROOT.TFile.Open(self.outdir+'/bkg_plots_MOD'+self.nameSuff+".root")
                     #     histoo = filee.Get('c_comparison_'+s+'_'+e).GetPrimitive('hFakes_pt_fake_'+s+'_'+e)
                     #     # for p in self.ptBinningS :
@@ -902,7 +902,7 @@ class bkg_fakerateAnalyzer:
                     #     filee.Close()
                      #end of debug ----
 
-                if self.kind == 'fake' or self.kind == 'fakeMC' :
+                if kind == 'fake' or kind == 'fakeMC' :
                     hEWSF_Fit["EWSF_chi2"+s+e] = hEWSF_chi2_pt
                     hEWSF_Fit["EWSF_sig"+s+e] = hEWSF_sig_pt
                     hEWSF_Fit["EWSF_bkg"+s+e] = hEWSF_bkg_pt
@@ -922,7 +922,7 @@ class bkg_fakerateAnalyzer:
 
                 hFakes[s+e] = hFakes_pt
 
-                if self.parabolaFit and self.kind=='prompt':
+                if parabolaFit and kind=='prompt':
                     # fitFake = ROOT.TF1("fitFake", 'pol2',0,100,3)
                     # fitFake.SetParameters(0.5,0.1,-0.1)
                     # fitFake.SetParNames("offset","slope",'2deg')
@@ -965,7 +965,7 @@ class bkg_fakerateAnalyzer:
                         sigmavec = np.std(yvec,axis=1)
 
                         return sigmavec
-                    
+
 
                 else :
                     fitFake = ROOT.TF1("fitFake", 'pol1',0,100,2)
@@ -988,7 +988,7 @@ class bkg_fakerateAnalyzer:
                 hFakes[s+e+'offset*slope'] = ROOT.TMatrixDRow(cov,0)(1) #covarinace
                 hFakes[s+e+'chi2red'] =fitFake.GetChisquare()/fitFake.GetNDF()
 
-                if self.parabolaFit and self.kind=='prompt':
+                if parabolaFit and kind=='prompt':
                     hFakes[s+e+'2deg']=fitFake.GetParameter(2)
                     hFakes[s+e+'2degErr']=fitFake.GetParError(2)
                     hFakes[s+e+'offset*2deg'] = ROOT.TMatrixDRow(cov,0)(2)
@@ -1010,7 +1010,7 @@ class bkg_fakerateAnalyzer:
                     hTempl_slope.SetBinError(self.etaBinningS.index(e)+1,fitFake.GetParError(1))
                     hTempl_offset.SetBinContent(self.etaBinningS.index(e)+1,fitFake.GetParameter(0))
                     hTempl_offset.SetBinError(self.etaBinningS.index(e)+1,fitFake.GetParError(0))
-                    if self.parabolaFit  and self.kind=='prompt':
+                    if parabolaFit  and kind=='prompt':
                         hTempl_2deg.SetBinContent(self.etaBinningS.index(e)+1,fitFake.GetParameter(2))
                         hTempl_2deg.SetBinError(self.etaBinningS.index(e)+1,fitFake.GetParError(2))
                     else : #only to have a coherent filling
@@ -1018,7 +1018,7 @@ class bkg_fakerateAnalyzer:
                         hTempl_2deg.SetBinError(self.etaBinningS.index(e)+1,0)
 
             h2Fakes[s] = h2Fakes_sign
-            if self.kind == 'fake' or self.kind == 'fakeMC' :
+            if kind == 'fake' or kind == 'fakeMC' :
 
                 hEWSF_Fit["EWSF_chi2"+s] = hEWSF_chi2
                 hEWSF_Fit["EWSF_sig"+s] = hEWSF_sig
@@ -1026,31 +1026,31 @@ class bkg_fakerateAnalyzer:
             hTempl_Fit["Templ_chi2"+s] = hTempl_chi2
             hTempl_Fit["Templ_slop"+s] = hTempl_slope # the index of the dict is not a typo, it is to avoid error in continue during writing.
             hTempl_Fit["Templ_offse"+s] = hTempl_offset # the index of the dict is not a typo, it is to avoid error in continue during writing.
-            if self.parabolaFit : #and self.kind=='prompt':
+            if parabolaFit : #and kind=='prompt':
                 hTempl_Fit["Templ_2de"+s] = hTempl_2deg # the index of the dict is not a typo, it is to avoid error in continue during writing.
         hFakes.update(h2Fakes)
         hFakes.update(hTempl_Fit)
         hFakes.update(hEWSF_Fit)
 
-        if self.correlatedFit :
+        if correlatedFit :
             parCorFit = self.correlatedFitter(hFakes)
             hFakes.update(parCorFit)
 
         return hFakes
 
     def bkg_template(self, kind, fakedict, promptdict, hdict, fit = False, tightcut = 0.15, loosecut=40, varname = 'pfRelIso04_all_corrected_MET_nom_mt', parabolaFit=False,correlatedFit = False) :
-        self.kind = kind
-        self.fakedict = fakedict
-        self.promptdict = promptdict
-        self.hdict = hdict
-        self.fit = fit
-        self.varname = varname
-        self.loosecut = loosecut
-        self.tightcut = tightcut
-        self.parabolaFit = parabolaFit
-        self.correlatedFit = correlatedFit
+        # self.kind = kind
+        # self.fakedict = fakedict
+        # self.promptdict = promptdict
+        # self.hdict = hdict
+        # self.fit = fit
+        # self.varname = varname
+        # self.loosecut = loosecut
+        # self.tightcut = tightcut
+        # self.parabolaFit = parabolaFit
+        # self.correlatedFit = correlatedFit
 
-        # print "loosecut template", self.loosecut
+        # print "loosecut template", loosecut
 
         kindDict = {
             'fake' : 'Data',
@@ -1060,7 +1060,7 @@ class bkg_fakerateAnalyzer:
             'EWKbkg' : 'EWKbkg',
         }
 
-        datakind = kindDict[self.kind]
+        datakind = kindDict[kind]
 
         htempl = {}
         h2templ = {}
@@ -1068,7 +1068,7 @@ class bkg_fakerateAnalyzer:
 
 
         #LINES MOVED IN separate fuction (correlatedFitter) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        # if self.correlatedFit :
+        # if correlatedFit :
         #    file_dict = {}
         #    histo_fake_dict = {}
         #    systList = []
@@ -1085,7 +1085,7 @@ class bkg_fakerateAnalyzer:
         #             systList.append(sName)
         #             systdir = self.outdir.replace("bkg_nom","bkg_"+sName+'/')
         #             file_dict[sName]=ROOT.TFile.Open(systdir+'bkg_plots'+self.nameSuff+".root")
-                    
+
         #             for s in self.signList :
         #                 for e in self.etaBinningS :
         #                     # print systdir+"bkg_plots"+self.nameSuff+".root"
@@ -1126,7 +1126,7 @@ class bkg_fakerateAnalyzer:
         #    #                  for p in self.ptBinningS :
         #    #                      # print  self.ptBinningS
         #    #                      print "debug saved file=",s,e,p, histo_fake_dict['nom'+s+e].GetBinContent(self.ptBinningS.index(p)+1), "from dict=", fakedict[s+e].GetBinContent(self.ptBinningS.index(p)+1)
-        #    #                      # print 'hFakes_pt_fake_'+s+'_'+e, "...........VS.......", self.fakedict[s+e].GetName(), self.fakedict[s+e].GetTitle()
+        #    #                      # print 'hFakes_pt_fake_'+s+'_'+e, "...........VS.......", fakedict[s+e].GetName(), fakedict[s+e].GetTitle()
         #    # file_dict['nom'].Close()
 
             #END OF MOVED IN separate fuction (correlatedFitter) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1134,7 +1134,7 @@ class bkg_fakerateAnalyzer:
 
 
         for s in self.signList :
-            h2templ_sign = ROOT.TH2F("h2templ_{kind}_{sign}".format(kind=self.kind, sign=s),"h2templ_{kind}_{sign}".format(kind=self.kind, sign=s),len(self.etaBinning)-1, array('f',self.etaBinning), len(self.ptBinning)-1, array('f',self.ptBinning) )
+            h2templ_sign = ROOT.TH2F("h2templ_{kind}_{sign}".format(kind=kind, sign=s),"h2templ_{kind}_{sign}".format(kind=kind, sign=s),len(self.etaBinning)-1, array('f',self.etaBinning), len(self.ptBinning)-1, array('f',self.ptBinning) )
             for e in self.etaBinningS :
 
                 #MOVED THESE LINES IN differential_fakerate()-------------------------
@@ -1167,15 +1167,15 @@ class bkg_fakerateAnalyzer:
 
                 #     return sigmavec
 
-                # if self.fit and self.parabolaFit:
+                # if fit and parabolaFit:
                 #     sigma_erf_vec = evaluate_erf_error(promptdict[s+e+'fitRes'])
                 #END OF MOVED LINES---------------------
 
-                htempl_pt = ROOT.TH1F("htempl_pt_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e),"htempl_pt_{kind}_{sign}_{eta}".format(kind=self.kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
+                htempl_pt = ROOT.TH1F("htempl_pt_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e),"htempl_pt_{kind}_{sign}_{eta}".format(kind=kind,sign=s,eta=e), len(self.ptBinning)-1, array('f',self.ptBinning) )
 
 
                 #LINES MOVED IN separate fuction (correlatedFitter) >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-                # if self.correlatedFit: #fit to the fake rate using bin-bin correlation and systemtatics uncertainities
+                # if correlatedFit: #fit to the fake rate using bin-bin correlation and systemtatics uncertainities
                 #     np.set_printoptions(threshold=np.inf)
 
                 #     # err_multiplier = 1/100000#0.0001
@@ -1197,40 +1197,40 @@ class bkg_fakerateAnalyzer:
                 #     #     covdict[syst] = np.zeros((dimFit,dimFit))
                 #     # covdict['nom'] = np.zeros((dimFit,dimFit))
 
-                #     # histo_fake_dict['nom'+s+e+'reb'] = self.fakedict[s+e].Rebin(len(bin4corFit)-1,self.fakedict[s+e].GetName()+'_reb', array('d',bin4corFit))
-                #     # histo_fake_dict['nom'+s+e+'reb'] =self.fakedict[s+e].GetName()+'_reb'
+                #     # histo_fake_dict['nom'+s+e+'reb'] = fakedict[s+e].Rebin(len(bin4corFit)-1,fakedict[s+e].GetName()+'_reb', array('d',bin4corFit))
+                #     # histo_fake_dict['nom'+s+e+'reb'] =fakedict[s+e].GetName()+'_reb'
 
-                #     histo_fake_dict['nom'+s+e+'reb'] = ROOT.TH1F(self.fakedict[s+e].GetName()+'_reb',self.fakedict[s+e].GetName()+'_reb',len(bin4corFit)-1,array('d',bin4corFit))
+                #     histo_fake_dict['nom'+s+e+'reb'] = ROOT.TH1F(fakedict[s+e].GetName()+'_reb',fakedict[s+e].GetName()+'_reb',len(bin4corFit)-1,array('d',bin4corFit))
                 #     for r in range(1,len(bin4corFit)) :
                 #         if r<binChange :
-                #             valueBinRebinned = (self.fakedict[s+e].GetBinContent(2*r)+self.fakedict[s+e].GetBinContent(2*r-1))/2
-                #             valueBinRebinnedErr = (self.fakedict[s+e].GetBinError(2*r)+self.fakedict[s+e].GetBinError(2*r-1))/2
+                #             valueBinRebinned = (fakedict[s+e].GetBinContent(2*r)+fakedict[s+e].GetBinContent(2*r-1))/2
+                #             valueBinRebinnedErr = (fakedict[s+e].GetBinError(2*r)+fakedict[s+e].GetBinError(2*r-1))/2
                 #         else :
-                #             valueBinRebinned = (self.fakedict[s+e].GetBinContent(3*r-binChange)+self.fakedict[s+e].GetBinContent(3*r-binChange-1)+self.fakedict[s+e].GetBinContent(3*r-binChange-2))/3 #the not-simplified value of the bin number is: 2*N+3*(r-N), -1, -2.
-                #             valueBinRebinnedErr = (self.fakedict[s+e].GetBinError(3*r-binChange)+self.fakedict[s+e].GetBinError(3*r-binChange-1)+self.fakedict[s+e].GetBinError(3*r-binChange-2))/3 #the not-simplified value of the bin number is: 2*N+3*(r-N), -1, -2.
+                #             valueBinRebinned = (fakedict[s+e].GetBinContent(3*r-binChange)+fakedict[s+e].GetBinContent(3*r-binChange-1)+fakedict[s+e].GetBinContent(3*r-binChange-2))/3 #the not-simplified value of the bin number is: 2*N+3*(r-N), -1, -2.
+                #             valueBinRebinnedErr = (fakedict[s+e].GetBinError(3*r-binChange)+fakedict[s+e].GetBinError(3*r-binChange-1)+fakedict[s+e].GetBinError(3*r-binChange-2))/3 #the not-simplified value of the bin number is: 2*N+3*(r-N), -1, -2.
 
                 #         histo_fake_dict['nom'+s+e+'reb'].SetBinContent(r,valueBinRebinned)
                 #         histo_fake_dict['nom'+s+e+'reb'].SetBinError(r,valueBinRebinnedErr)
                 #         print r, valueBinRebinned
 
                 #     #debuglineREB
-                #     # histo_fake_dict['nom'+s+e+'reb'] =  self.fakedict[s+e]
+                #     # histo_fake_dict['nom'+s+e+'reb'] =  fakedict[s+e]
 
 
                 #     for pp in range(xx_.size) :
-                #         # if self.fakedict[s+e].GetBinCenter(pp+1)>35 and self.fakedict[s+e].GetBinCenter(pp+1)<45 :
-                #         #     print "centro skipped", self.fakedict[s+e].GetBinCenter(pp+1)
+                #         # if fakedict[s+e].GetBinCenter(pp+1)>35 and fakedict[s+e].GetBinCenter(pp+1)<45 :
+                #         #     print "centro skipped", fakedict[s+e].GetBinCenter(pp+1)
                 #         #     continue
                 #         jump = 0
                 #         # if pp==16 :jump = 16
 
                 #         xx_[pp] = histo_fake_dict['nom'+s+e+'reb'].GetBinCenter(pp+1+jump)
                 #         print "bin center=",pp, xx_[pp]
-                #         # yy_[pp] = self.fakedict[s+e+'offset']+xx_[pp]*self.fakedict[s+e+'slope']
+                #         # yy_[pp] = fakedict[s+e+'offset']+xx_[pp]*fakedict[s+e+'slope']
                 #         yy_[pp] = histo_fake_dict['nom'+s+e+'reb'].GetBinContent(pp+1+jump)
 
                 #         #debug
-                #         # print "FIT,",s,e,pp,", centro=", self.fakedict[s+e].GetBinCenter(pp+1), ",  fake=", yy_[pp], "variation=", histo_fake_dict["puWeightUp"+s+e].GetBinContent(pp+1) #, histo_fake_dict['nom'+s+e].GetBinContent(pp+1)
+                #         # print "FIT,",s,e,pp,", centro=", fakedict[s+e].GetBinCenter(pp+1), ",  fake=", yy_[pp], "variation=", histo_fake_dict["puWeightUp"+s+e].GetBinContent(pp+1) #, histo_fake_dict['nom'+s+e].GetBinContent(pp+1)
 
                 #     for pp in range(xx_.size) : #separate loop because needed xx,yy fully filled
                 #         # print "()()()()()()()() entro in pp", pp
@@ -1245,7 +1245,7 @@ class bkg_fakerateAnalyzer:
                 #                 if pp==p2 and syst==len(systList):
 
                 #                     dx_f = (histo_fake_dict['nom'+s+e+'reb'].GetBinWidth(pp+1+jump1))/2
-                #                     # erv = self.fakedict[s+e+'offsetErr']**2+(dx_f**2)*(self.fakedict[s+e+'slope']**2)+(xx_[pp]**2)*(self.fakedict[s+e+'slopeErr']**2)+2*xx_[pp]*self.fakedict[s+e+'offset*slope']
+                #                     # erv = fakedict[s+e+'offsetErr']**2+(dx_f**2)*(fakedict[s+e+'slope']**2)+(xx_[pp]**2)*(fakedict[s+e+'slopeErr']**2)+2*xx_[pp]*fakedict[s+e+'offset*slope']
                 #                     erv = err_multiplier*histo_fake_dict['nom'+s+e+'reb'].GetBinError(pp+1+jump1)**2
                 #                     cov_[syst][pp][p2] = erv
                 #                     # covdict['nom'][pp][p2] = erv
@@ -1271,14 +1271,14 @@ class bkg_fakerateAnalyzer:
                 #                             if pp==p2:
                 #                                 # print "sign=",s," fake=", yy_[pp], " varied=", systUp, histo_fake_dict[systUp+s+e].GetBinContent(pp+1)
                 #                                 debug_notsym = (yy_[pp]-histo_fake_dict[systUp+s+e+'reb'].GetBinContent(pp+1+jump1))**2
-                #                                 # debug_erv = self.fakedict[s+e+'offsetErr']**2+(((self.fakedict[s+e].GetBinWidth(pp+1))/2)**2)*(self.fakedict[s+e+'slope']**2)+(xx_[pp]**2)*(self.fakedict[s+e+'slopeErr']**2)+2*xx_[pp]*self.fakedict[s+e+'offset*slope']
+                #                                 # debug_erv = fakedict[s+e+'offsetErr']**2+(((fakedict[s+e].GetBinWidth(pp+1))/2)**2)*(fakedict[s+e+'slope']**2)+(xx_[pp]**2)*(fakedict[s+e+'slopeErr']**2)+2*xx_[pp]*fakedict[s+e+'offset*slope']
                 #                                 debug_erv=histo_fake_dict['nom'+s+e+'reb'].GetBinError(pp+1+jump1)**2
                 #                                 # print "FIT:",p2+35,pp+35,"sig=",s,", err(syst)=", erv, ", err(stat)=", debug_erv,  " ratio(sym) syst/stat=",erv/debug_erv, systList[syst]# " not_sym_erv= ",debug_notsym," ratio(nsy)=", debug_notsym/debug_erv
 
-                #     q0_ = self.fakedict[s+e+'offset']
-                #     p0_ = self.fakedict[s+e+'slope']
-                #     q0Err_ = self.fakedict[s+e+'offsetErr']
-                #     p0Err_ = self.fakedict[s+e+'slopeErr']
+                #     q0_ = fakedict[s+e+'offset']
+                #     p0_ = fakedict[s+e+'slope']
+                #     q0Err_ = fakedict[s+e+'offsetErr']
+                #     p0Err_ = fakedict[s+e+'slopeErr']
                 #     # print "PREPROJJJ---------------------------", cov_.shape
                 #     # print cov_
                 #     cov_proj = cov_.sum(axis=0) #square sum of syst
@@ -1286,7 +1286,7 @@ class bkg_fakerateAnalyzer:
                 #     # print cov_proj
                 #     # for pp in range(xx_.size) :
 
-                #     #     xx_[pp] = xx_[pp]-(self.fakedict[s+e].GetBinCenter(1)-self.fakedict[s+e].GetBinWidth(1)/2)
+                #     #     xx_[pp] = xx_[pp]-(fakedict[s+e].GetBinCenter(1)-fakedict[s+e].GetBinWidth(1)/2)
                 #         # xx_[pp] = xx_[pp]-30
                 #         # print "post", xx_[pp]
 
@@ -1310,17 +1310,18 @@ class bkg_fakerateAnalyzer:
 
 
                 for p in self.ptBinningS :
-
-                    htemp = self.hdict[p+e+s+varname+datakind+'Tot'].Clone('templ'+p+'_'+e+'_'+datakind+s+'_'+varname)
+                    # print "NAME:   ", 'templ'+p+'_'+e+'_'+datakind+s+'_'+varname
+                    # print "KEY:   ", p+e+s+varname+datakind+'Tot'
+                    htemp = hdict[p+e+s+varname+datakind+'Tot'].Clone('templ'+p+'_'+e+'_'+datakind+s+'_'+varname)
 
                     isoMin= htemp.GetYaxis().GetBinCenter(1)-htemp.GetYaxis().GetBinWidth(1)/2
                     binsizeTight = htemp.GetYaxis().GetBinWidth(1)
-                    NcutTight=(self.tightcut-isoMin)/binsizeTight
+                    NcutTight=(tightcut-isoMin)/binsizeTight
                     NcutTight = int(NcutTight)
 
                     mtMin= htemp.GetXaxis().GetBinCenter(1)-htemp.GetXaxis().GetBinWidth(1)/2
                     binsizeLoose = htemp.GetXaxis().GetBinWidth(1)
-                    # NcutLoose=(self.loosecut-mtMin)/binsizeLoose
+                    # NcutLoose=(loosecut-mtMin)/binsizeLoose
                     NcutLoose=(self.hardcodeLooseCut-mtMin)/binsizeLoose #hardcode loosecut=40
                     NcutLoose = int(NcutLoose)
 
@@ -1330,7 +1331,7 @@ class bkg_fakerateAnalyzer:
                     Ntight = htemp.ProjectionX("htight",0,NcutTight, "e").IntegralAndError(NcutLoose-1,-1,tightErr)
                     NnotTight = htemp.ProjectionX("hNotTigth",NcutTight-1,-1, "e").IntegralAndError(NcutLoose-1,-1,notTightErr)
 
-                    if self.kind=='fake' or self.kind=='fakeMC'  : #Data or DataLike
+                    if kind=='fake' or kind=='fakeMC'  : #Data or DataLike
                         pr = 1
                         fr = 0
                         dpr =0
@@ -1338,21 +1339,28 @@ class bkg_fakerateAnalyzer:
 
                         # print "Ntight,NnotTight",  Ntight, NnotTight
 
-                        if(self.fit) :
-                            xf = self.fakedict[s+e].GetBinCenter(self.ptBinningS.index(p)+1)
+
+                        if(fit) :
+                            xf = fakedict[s+e].GetBinCenter(self.ptBinningS.index(p)+1)
                             xp = promptdict[s+e].GetBinCenter(self.ptBinningS.index(p)+1)
-                            fr = self.fakedict[s+e+'offset']+xf*self.fakedict[s+e+'slope']
-                            # print "standard",s,e,p,", centro=", self.fakedict[s+e].GetBinCenter(self.ptBinningS.index(p)+1), ", offset=", self.fakedict[s+e+'offset'], ", slope=", self.fakedict[s+e+'slope'],", fake=", fr
-                            # print "standard",s,e,p, self.fakedict[s+e].GetBinContent(self.ptBinningS.index(p)+1)
+                            fr = fakedict[s+e+'offset']+xf*fakedict[s+e+'slope']
+                            # print "standard",s,e,p,", centro=", fakedict[s+e].GetBinCenter(self.ptBinningS.index(p)+1), ", offset=", fakedict[s+e+'offset'], ", slope=", fakedict[s+e+'slope'],", fake=", fr
+                            # print "standard",s,e,p, fakedict[s+e].GetBinContent(self.ptBinningS.index(p)+1)
                             pr = promptdict[s+e+'offset']+xp*promptdict[s+e+'slope']
                             dx_p =(promptdict[s+e].GetBinWidth(self.ptBinningS.index(p)+1))/2
-                            dx_f = (self.fakedict[s+e].GetBinWidth(self.ptBinningS.index(p)+1))/2
-                            dfr = math.sqrt(self.fakedict[s+e+'offsetErr']**2+(dx_f**2)*(self.fakedict[s+e+'slope']**2)+(xf**2)*(self.fakedict[s+e+'slopeErr']**2)+2*xf*self.fakedict[s+e+'offset*slope'])
+                            dx_f = (fakedict[s+e].GetBinWidth(self.ptBinningS.index(p)+1))/2
+                            # print "value dfr square= ", fakedict[s+e+'offsetErr']**2+(dx_f**2)*(fakedict[s+e+'slope']**2)+(xf**2)*(fakedict[s+e+'slopeErr']**2)+2*xf*fakedict[s+e+'offset*slope'],
+                            # print fakedict[s+e+'slope'],fakedict[s+e+'offset'], fakedict[s+e+'slopeErr'], fakedict[s+e+'offsetErr'],fakedict[s+e+'offset*slope'], xf
+                            dfr = math.sqrt(fakedict[s+e+'offsetErr']**2+(dx_f**2)*(fakedict[s+e+'slope']**2)+(xf**2)*(fakedict[s+e+'slopeErr']**2)+2*xf*fakedict[s+e+'offset*slope'])
                             dpr = math.sqrt(promptdict[s+e+'offsetErr']**2+(dx_p**2)*(promptdict[s+e+'slope']**2)+(xp**2)*(promptdict[s+e+'slopeErr']**2)+2*xp*promptdict[s+e+'offset*slope'])
+                            
+                            # if (p=='30' and correlatedFit==False) :
+                                    # print "DEBUG final:",  s,e, fakedict[s+e+'offset'], fakedict[s+e+'slope'], fakedict[s+e+'offsetErr'], fakedict[s+e+'slopeErr'], fakedict[s+e+'offset*slope']
 
-                            if self.parabolaFit:
-                                # fr = fr+(xf)**2*self.fakedict[s+e+'2deg']
-                                # dfr =math.sqrt(dfr**2+(4*self.fakedict[s+e+'2deg']**2*(xf)**2+4*self.fakedict[s+e+'2deg']*xf*self.fakedict[s+e+'slope'])*(dx_f)**2+2*((xf**3)*self.fakedict[s+e+'slope*2deg']+(xf**2)*self.fakedict[s+e+'offset*2deg']))
+
+                            if parabolaFit:
+                                # fr = fr+(xf)**2*fakedict[s+e+'2deg']
+                                # dfr =math.sqrt(dfr**2+(4*fakedict[s+e+'2deg']**2*(xf)**2+4*fakedict[s+e+'2deg']*xf*fakedict[s+e+'slope'])*(dx_f)**2+2*((xf**3)*fakedict[s+e+'slope*2deg']+(xf**2)*fakedict[s+e+'offset*2deg']))
 
 
                                 #GOOD BLOCK
@@ -1395,7 +1403,7 @@ class bkg_fakerateAnalyzer:
                                 # dpr2 = ((4*mpmath.exp(-2*c**2-4*c*b*xp-2*b**2*xp**2)*(mpmath.exp(2*c**2+4*c*b*xp+2*b**2*xp**2)*(math.sqrt(math.pi)/2*erf(xp*b+c))**2*da**2+2*mpmath.exp(c**2+2*c*b*xp+b**2*xp**2)*(math.sqrt(math.pi)/2*erf(xp*b+c))*a*(dab*xp+dac)+a**2*(b**2*dx_p**2+db**2*xp**2+2*dbc*xp+dc**2)))/(math.pi))
 
 
-                                # if(self.kind=='fake') :
+                                # if(kind=='fake') :
                                 #     print "----------------------------------------------------------"
                                 #     print "bin:", e, p, s
                                 #     print xp,dx_p, a,b,c,da,db,dc,dab,dac,dbc
@@ -1407,7 +1415,7 @@ class bkg_fakerateAnalyzer:
                                 # print "3 pezzi",e,p,s, (promptdict[s+e+'offsetErr']**2+(dx_p**2)*(promptdict[s+e+'slope']**2)+(xp**2)*(promptdict[s+e+'slopeErr']**2)+2*xp*promptdict[s+e+'offset*slope']),
                                 # print 4*(promptdict[s+e+'2degErr']**2)*(xp**4)+(4*promptdict[s+e+'2deg']**2*(xf)**2+4*promptdict[s+e+'2deg']*xp*promptdict[s+e+'slope'])*(dx_f)**2,
                                 # print 2*((xp**3)*promptdict[s+e+'slope*2deg']+(xp**2)*promptdict[s+e+'offset*2deg'])
-                                # print "splitted:", self.fakedict[s+e+'offsetErr']**2+(dx_f**2)*(self.fakedict[s+e+'slope']**2)+(xf**2)*(self.fakedict[s+e+'slopeErr']**2),
+                                # print "splitted:", fakedict[s+e+'offsetErr']**2+(dx_f**2)*(fakedict[s+e+'slope']**2)+(xf**2)*(fakedict[s+e+'slopeErr']**2),
                                 # print 2*xp*promptdict[s+e+'offset*slope']
                                 # print 4*(promptdict[s+e+'2degErr']**2)*(xp**4)+(4*promptdict[s+e+'2deg']**2*(xf)**2+4*promptdict[s+e+'2deg']*xp*promptdict[s+e+'slope'])*(dx_f)**2,
                                 # print 2*((xp**3)*promptdict[s+e+'slope*2deg']+(xp**2)*promptdict[s+e+'offset*2deg'])
@@ -1426,42 +1434,89 @@ class bkg_fakerateAnalyzer:
                                 # pr = promptdict[s].GetBinContent(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
                                 # dpr = promptdict[s].GetBinError(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
 
-                            if(self.correlatedFit) : #fit to the fake rate using bin-bin correlation and systemtatics uncertainities
-                                fr = self.fakedict['offset'+'Minuit']+xf*self.fakedict['slope'+'Minuit']
-                                dfr = math.sqrt(self.fakedict['offset'+'Minuit'+'Err']**2+(dx_f**2)*(self.fakedict['slope'+'Minuit']**2)+(xf**2)*(self.fakedict['slope'+'Minuit'+'Err']**2)+2*xf*self.fakedict['offset*slope'+'Minuit'])
+                            if(correlatedFit) : #fit to the fake rate using bin-bin correlation and systemtatics uncertainities
+                                fr = fakedict[s+e+'offset'+'Minuit']+xf*fakedict[s+e+'slope'+'Minuit']
+                                dfr = math.sqrt(fakedict[s+e+'offset'+'Minuit'+'Err']**2+(dx_f**2)*(fakedict[s+e+'slope'+'Minuit']**2)+(xf**2)*(fakedict[s+e+'slope'+'Minuit'+'Err']**2)+2*xf*fakedict[s+e+'offset*slope'+'Minuit'])
                                 # print "fr, dfr", fr, dfr
+                                # if (p=='30') :
+                                    # print "DEBUG final:",  s,e, fakedict[s+e+'offset'+'Minuit'], fakedict[s+e+'slope'+'Minuit'], fakedict[s+e+'offsetMinuitErr'], fakedict[s+e+'slopeMinuitErr'], fakedict[s+e+'offset*slope'+'Minuit']
+
 
                             if pr>1 or fr>1 :
                                 print "WARNING!!!!!!, pr>1 or fr>1,", pr, fr, ", with eta, pt, sign =", e, p, s
                                 fr = 0
                                 pr = 1
+
+                            # print "debug template", s, e, "fr=", fr, "pr=", pr
                         else :
-                            fr = self.fakedict[s].GetBinContent(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
+                            fr = fakedict[s].GetBinContent(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
                             pr = promptdict[s].GetBinContent(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
-                            dfr = self.fakedict[s].GetBinError(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
+                            dfr = fakedict[s].GetBinError(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
                             dpr = promptdict[s].GetBinError(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1)
                             if pr==0 and fr==0 :
                                 print "WARNING!!!!!!, pr=fr=0, with eta, pt, sign =", e, p, s
                                 fr = 0
                                 pr = 1
-
-                        # print "fake rate=", fr, "prompt rate=",pr, "(eta,pt)=",e,p, "sign=", s
-                        # pr = 1
-                        # print "WARNING!!!!!! pr=1"
+                        
+                        # fr=0.5
+                        # dfr=0
+                        # notTightErr=0
+                        # tightErr=0
+                        # dfr=0
+                        # dpr=0
                         scaleTight = -fr*(1-pr)/(pr-fr)
                         scaleNotTight = fr*pr/(pr-fr)
-                        # print "scale tight", scaleTight, "scale not tight", scaleNotTight, fr, pr, p
-                        # print "scale (tight, not tight)", scaleTight,scaleNotTight
                         # scaleTightErr = math.sqrt((pr**4)*(dfr**2)-2*(pr**3)*(dfr**2)+(pr**2)*(dfr**2)+(fr**2)*((fr-1)**2)*(dpr**2))/((pr-fr)**2)
 
-                        scaleTightErr = math.sqrt((((fr**4)-2*(fr**3)+(fr**2))*(dpr**2)+(pr**2)*(dfr**2)*(pr-1)**2)/((pr-fr)**4))
-                        scaleNotTightErr = math.sqrt(((pr**4)*(dfr**2)+(fr**4)*(dpr**2))/((pr-fr)**4))
-                        # print "NUMBERS", "tight=",Ntight, "not tight=",NnotTight
+                        # scaleTightErr = math.sqrt((((fr**4)-2*(fr**3)+(fr**2))*(dpr**2)+(pr**2)*(dfr**2)*(pr-1)**2)/((pr-fr)**4))
+                        # scaleNotTightErr = math.sqrt(((pr**4)*(dfr**2)+(fr**4)*(dpr**2))/((pr-fr)**4))
                         NQCD=Ntight*scaleTight+NnotTight*scaleNotTight
                         # NQCDErr = math.sqrt((scaleTight**2)*(tightErr**2)+(scaleTightErr**2)*(Ntight**2)+(scaleNotTight**2)*(notTightErr**2)+(scaleNotTightErr**2)*(NnotTight**2)   ) #no va bene perche propago separatamente l'errore sulle due scale quando sono invece correlate (sono le stesse quantita)
-                        NQCDErr= ((fr**4*dpr**2*(NnotTight+Ntight)**2-2*fr**3*dpr**2*(NnotTight+Ntight)*Ntight+fr**2*(pr**2*dfr**2*(NnotTight+Ntight)-pr*dfr**2*Ntight+dpr**2*Ntight**2)-2*fr*pr**2*(pr*(NnotTight+Ntight)-Ntight)*dfr**2+pr**3*(pr*(NnotTight+Ntight)-Ntight)*dfr**2)/((fr-pr)**4))
-                        NQCDErr = NQCDErr+(scaleTight**2)*(tightErr**2)+(scaleNotTight**2)*(notTightErr**2)
+                        # NQCDErr= ((fr**4*dpr**2*(NnotTight+Ntight)**2-2*fr**3*dpr**2*(NnotTight+Ntight)*Ntight+fr**2*(pr**2*dfr**2*(NnotTight+Ntight)-pr*dfr**2*Ntight+dpr**2*Ntight**2)-2*fr*pr**2*(pr*(NnotTight+Ntight)-Ntight)*dfr**2+pr**3*(pr*(NnotTight+Ntight)-Ntight)*dfr**2)/((fr-pr)**4))
+                        # NQCDErr = NQCDErr+(scaleTight**2)*(tightErr**2)+(scaleNotTight**2)*(notTightErr**2)
+                        NQCDErr = (fr**4*(dpr**2*Ntight**2+2*NnotTight*dpr**2*Ntight+NnotTight**2*dpr**2+notTightErr**2*pr**2+tightErr**2*(pr-1)**2)-2*fr**(3)*(dpr**2*Ntight**2+NnotTight*dpr**2*Ntight+(notTightErr**2*pr**2+tightErr**2*(pr-1)**2)*pr)+fr**2*(dpr**2*Ntight**2+(notTightErr**2*pr**2+tightErr**2*(pr-1)**2)*pr**2)+dfr**2*pr**2*((pr-1)*Ntight+NnotTight*pr)**2)/((fr-pr)**4)
                         NQCDErr = math.sqrt(NQCDErr)
+                        # if correlatedFit:
+                            # # print "def ERR=", NQCDErr, "def val=", NQCD
+                            # print "DEBUG FR", "bin=",e,s,p,NQCD, "errors=", NQCDErr/NQCD, dpr/pr, dfr/fr, tightErr/Ntight, notTightErr/NnotTight
+                        
+                        NQCDErr_COVMAT=True #completely equivalent to the explicit probagation (cross-check done!)
+                        if NQCDErr_COVMAT and correlatedFit :
+                            def evaluate_NQCD_error(fr,pr,nt,nnt, dfr, dpr,dnt,dnnt) :
+                                ntoys = 1000
+                                covtoy ={}
+                                yvec = nyvec = np.zeros((ntoys))
+                                parvec=np.zeros(4)
+                                parvec[0] = fr
+                                parvec[1] = pr
+                                parvec[2] = nt
+                                parvec[3] = nnt
+                                
+                                covvec =np.zeros((4,4))
+
+                                covvec[0][0] = dfr**2
+                                covvec[1][1] = dpr**2
+                                covvec[2][2] = dnt**2
+                                covvec[3][3] = dnnt**2
+                                # print "NQCD inside=", nt*(-fr*(1-pr)/(pr-fr))+nnt*fr*pr/(pr-fr)
+                               
+                                def my_NQCD(par) :
+                                    val = par[2]*(-par[0]*(1-par[1])/(par[1]-par[0]))+par[3]*par[0]*par[1]/(par[1]-par[0])
+                                    return val
+
+                                for itoy in range(ntoys) :
+                                    covtoy[itoy] = np.random.multivariate_normal(parvec, covvec)
+                                    yvec[itoy] = my_NQCD(covtoy[itoy])
+                                sigmavec = np.std(yvec)
+                                return sigmavec
+                                
+                            # print "debug for ext=",        fr,pr,Ntight,NnotTight, dfr, dpr,tightErr,notTightErr
+                            NQCDErr_covmat = evaluate_NQCD_error(fr=fr,pr=pr,nt=Ntight,nnt=NnotTight, dfr=dfr, dpr=dpr,dnt=tightErr,dnnt=notTightErr)
+                            
+                            # print "debug NQCDerr=", s, p, NQCDErr, NQCDErr_covmat, ", cov/def_ratio=",NQCDErr_covmat/NQCDErr
+                            # NQCDErr_COVMAT=False
+
+                        
                         # print "SCALE:>>>>>>>>>> bin=",e,p,s, ", errore tot", NQCDErr, ", errore relativo=", NQCDErr/NQCD, ", tightErr=",tightErr/Ntight, ", notTightErr=", notTightErr/NnotTight, ", scaleTightErr=", scaleTightErr/scaleTight, ", scaleNotTightErr=",scaleNotTightErr/scaleNotTight
                         # print "spaccato (scaletight err):", dfr/fr, fr,dpr/pr, pr
                         # print "bin=",e,p,s, ", errore ",scaleTightErr, dpr,fr,Ntight,scaleTight
@@ -1472,13 +1527,13 @@ class bkg_fakerateAnalyzer:
                         # print "value of N NOT tight:", NnotTight, "+/-", notTightErr, ",  errore relativo=", notTightErr/NnotTight
                         # print "value of scale NOT tight:", scaleNotTight, "+/-", scaleNotTightErr, ",  errore relativo=", scaleNotTightErr/scaleNotTight
 
-                    else :#if self.kind == "prompt" or self.kind=="validation" or self.kind=='EWKbkg' :
+                    else :#if kind == "prompt" or kind=="validation" or kind=='EWKbkg' :
                         # print "prompt and fake rate not applied"
                         NQCD=Ntight
                         NQCDErr = tightErr
-
+                    # if(p=='30' and s=='Plus' and e=='0') : print "NQCD", NQCD, p,s,e, datakind
                     htempl_pt.SetBinContent(self.ptBinningS.index(p)+1,NQCD)
-                    # print "NQCD", NQCD, "kind=", self.kind,"---not tight=", NnotTight, "tight=", Ntight
+                    # print "NQCD", NQCD, "kind=", kind,"---not tight=", NnotTight, "tight=", Ntight
                     h2templ_sign.SetBinContent(self.etaBinningS.index(e)+1, self.ptBinningS.index(p)+1,NQCD)
                     htempl_pt.SetBinError(self.ptBinningS.index(p)+1,NQCDErr)
                     # print "PROBLEMA: ERRORE NON ASSEGNATO", NQCDErr
@@ -1496,29 +1551,34 @@ class bkg_fakerateAnalyzer:
 
 
     def dict2histConverter(self,fakedict,promptdict,hdict, minimal=False, parabolaFit=True,correlatedFit=True) :
-        self.fakedict = fakedict
-        self.promptdict = promptdict
-        self.hdict = hdict
-        self.minimal = minimal
-        self.parabolaFit = parabolaFit
-        self.correlatedFit = correlatedFit
+        # self.fakedict = fakedict
+        # self.promptdict = promptdict
+        # self.hdict = hdict
+        # self.minimal = minimal
+        # self.parabolaFit = parabolaFit
+        # self.correlatedFit = correlatedFit
 
         outdict = {}
 
-        if not self.minimal : 
-            for p in self.ptBinningS :
-                for e in self.etaBinningS :
-                    for s in self.signList :
+        if not minimal :
+            for e in self.etaBinningS :
+                for s in self.signList :
+                    outdict[s+e+'fake'] = fakedict[s+e]
+                    outdict[s+e+'prompt'] = promptdict[s+e]
+                    if self.etaBinningS.index(e)==0 :
+                            outdict[s+'fake'] = fakedict[s]
+                            outdict[s+'prompt'] = promptdict[s]
+                    for p in self.ptBinningS :
                         for v,name in map(None,self.varList,self.varName) :
-                            outdict[p+e+s+'Data'] = self.hdict[p+e+s+v+'Data'+'Tot']#add also histograms of data binned in pt and eta to produce template
-            if self.parabolaFit : #error of the prompt already evaluated using covariance matrix
+                            outdict[p+e+s+v+'Data'] = hdict[p+e+s+v+'Data'+'Tot']#add also histograms of data binned in pt and eta to produce template
+            if parabolaFit : #error of the prompt already evaluated using covariance matrix
                 outdict['prompt'+'sigmaERFvec'] = ROOT.TH3D('prompt_sigmaERFvec','prompt_sigmaERFvec',len(self.signList),array('f',[0,1,2]),len(self.etaBinning)-1,array('f',self.etaBinning),len(self.ptBinning)-1,array('f',self.ptBinning))
                 for s in self.signList :
                         for e in self.etaBinningS :
                             for p in self.ptBinningS :
-                                outdict['prompt'+'sigmaERFvec'].SetBinContent(self.signList.index(s)+1,self.etaBinningS.index(e)+1,self.ptBinningS.index(p)+1, self.promptdict[s+e+'sigmaERFvec'][self.ptBinningS.index(p)])
+                                outdict['prompt'+'sigmaERFvec'].SetBinContent(self.signList.index(s)+1,self.etaBinningS.index(e)+1,self.ptBinningS.index(p)+1, promptdict[s+e+'sigmaERFvec'][self.ptBinningS.index(p)])
 
-        if self.parabolaFit :
+        if parabolaFit :
             nameDict = {
                 'prompt' : ['offset','slope','2deg', 'offset*slope', 'offset*2deg','slope*2deg', 'chi2red'],
                 'fake'   : ['offset','slope','offset*slope']
@@ -1528,44 +1588,39 @@ class bkg_fakerateAnalyzer:
                 'prompt' : ['offset','slope','offset*slope'],
                 'fake'   : ['offset','slope','offset*slope']
                 }
-        
+
         dictDict = {
-            'prompt' :  self.promptdict,
-            'fake' : self.fakedict
-            }   
+            'prompt' :  promptdict,
+            'fake' : fakedict
+            }
 
         #book and fill the histos
         for kind, par in nameDict.iteritems() :
             for pp in par :
-                print "correlated>>>>>>>>>>", self.correlatedFit
-                if self.correlatedFit and kind=='fake' :
+                if correlatedFit and kind=='fake' :
                     pint = pp+'Minuit'
-                    print "INSIDE MINUIT case"
                 else :
                     pint = pp
-                outdict[kind+pint]= ROOT.TH2D(kind+'_'+pint,kind+'_'+pint,len(self.signList),array('f',[0,1,2]),len(self.etaBinning)-1,array('f',self.etaBinning))
+                outdict[kind+pp]= ROOT.TH2D(kind+'_'+pp,kind+'_'+pp,len(self.signList),array('f',[0,1,2]),len(self.etaBinning)-1,array('f',self.etaBinning))
                 for s in self.signList :
                      for e in self.etaBinningS :
                         #  print s,e,kind,pint, dictDict[kind][s+e+pint]
-                         outdict[kind+pint].SetBinContent(self.signList.index(s)+1,self.etaBinningS.index(e)+1,dictDict[kind][s+e+pint])
+                         outdict[kind+pp].SetBinContent(self.signList.index(s)+1,self.etaBinningS.index(e)+1,dictDict[kind][s+e+pint])
                         #  print s,e,kind,pint,outdict[kind+pint].GetBinContent(self.signList.index(s)+1,self.etaBinningS.index(e)+1),
                          if pp == 'offset' or pp=='slope' or pp=='2deg' :
-                            outdict[kind+pint].SetBinError(self.signList.index(s),self.etaBinningS.index(e),dictDict[kind][s+e+pint+'Err'])
+                            outdict[kind+pp].SetBinError(self.signList.index(s)+1,self.etaBinningS.index(e)+1,dictDict[kind][s+e+pint+'Err'])
 
-        return outdict    
+        return outdict
 
 
-    def hist2dictConverter(self,kind, parabolaFit=True,minimal=True) :
-        self.parabolaFit = parabolaFit
-        self.kind = kind #available kind = fake, prompt, histo
-        self.minimal=minimal
-
+    def hist2dictConverter(self,kind, outDir,parabolaFit=True,minimal=True, syst='nom') :
+        # self.parabolaFit = parabolaFit
+        # self.kind = kind #available kind = fake, prompt, histo
+        # self.minimal=minimal
         outdict = {}
+        inputfile=ROOT.TFile.Open(outDir+"/bkg_"+syst+"/bkg_parameters_file.root")
 
-        inputfile=ROOT.TFile.Open(self.outdir+"/bkg_parameters_file.root")
-
-        
-        if self.parabolaFit :
+        if parabolaFit :
             nameDict = {
                 'prompt' : ['offset','slope','2deg', 'offset*slope', 'offset*2deg','slope*2deg', 'chi2red'],
                 'fake'   : ['offset','slope','offset*slope']
@@ -1577,22 +1632,34 @@ class bkg_fakerateAnalyzer:
                 }
 
         if kind=="histo" :
-            print "TODO"
+            for p in self.ptBinningS :
+                for e in self.etaBinningS :
+                    for s in self.signList :
+                        for v,name in map(None,self.varList,self.varName) :
+                            outdict[p+e+s+v+'Data'+'Tot'] = inputfile.Get(p+'_'+e+'_Data_'+s+'_'+name+'_Tot')
         else :
-            for par in nameDict[self.kind] :
-                histotemp = inputfile.Get(kind+'_'+par)     
+            for par in nameDict[kind] :
+                histotemp = inputfile.Get(kind+'_'+par)
                 for s in self.signList :
-                     for e in self.etaBinningS : 
+                     for e in self.etaBinningS :
                          outdict[s+e+par] = histotemp.GetBinContent(self.signList.index(s)+1,self.etaBinningS.index(e)+1)
-                         if par == 'offset' or pp=='slope' or pp=='2deg' :
+                        #  print "reading point ",kind,  s, e, par, outdict[s+e+par], syst
+                         if par == 'offset' or par=='slope' or par=='2deg' :
                             outdict[s+e+par+'Err'] = histotemp.GetBinError(self.signList.index(s)+1,self.etaBinningS.index(e)+1)
-            if ((not self.minimal) and self.kind=='prompt'): 
-                histotemp = inputfile.Get(kind+'_'+'sigmaERFvec')
+                            # print "reading point ", kind, s, e, par, 'err', outdict[s+e+par+'Err'], syst
+            if not minimal :
                 for s in self.signList :
-                        for e in self.etaBinningS :
-                            for p in self.ptBinningS :
-                                outdict[s+e+p+'sigmaERFvec'].GetBinContent(self.signList.index(s)+1,self.etaBinningS.index(e)+1,self.ptBinningS.index(p)+1)
-        
+                     outdict[s] = inputfile.Get('h2Fakes_'+kind+'_'+s+'_'+e)
+                     for e in self.etaBinningS :
+                         outdict[s+e] = inputfile.Get('hFakes_pt_'+kind+'_'+s+'_'+e)
+                if kind=='prompt':
+                    histotemp = inputfile.Get(kind+'_'+'sigmaERFvec')
+                    for s in self.signList :
+                            for e in self.etaBinningS :
+                                sigmaERFvec = []
+                                for p in self.ptBinningS :
+                                    sigmaERFvec.append(histotemp.GetBinContent(self.signList.index(s)+1,self.etaBinningS.index(e)+1,self.ptBinningS.index(p)+1))
+                                outdict[s+e+'sigmaERFvec'] = sigmaERFvec
         return outdict
 
 
@@ -1653,11 +1720,11 @@ class bkg_fakerateAnalyzer:
 
     def differential_preliminary(self, fakerate = False, correlatedFit=False,produce_ext_output=False) :
         # print "loosecut preliminary", self.looseCut
-        self.fakerate = fakerate #if true calculate the fakerate in bin of eta, pt
-        self.correlatedFit=correlatedFit
-        self.produce_ext_output =produce_ext_output
+        # self.fakerate = fakerate #if true calculate the fakerate in bin of eta, pt
+        # self.correlatedFit=correlatedFit
+        # self.produce_ext_output =produce_ext_output
 
-        print "getting histos"
+        print "getting histos..."
         histoDict = {}
         mtDict = {}
         PVDict = {}
@@ -1818,7 +1885,7 @@ class bkg_fakerateAnalyzer:
 
         # ABCD_dir = output.mkdir("ABCD_checks")
         # ABCD_dir.cd()
-        print "isolation ana"
+        print "isolation analysis..."
         hIsoMC = self.isolationAna(kind=self.dataOpt,hdict=histoDict,varname = self.varFake, loosecut = self.looseCut)
         hIsoValidation = self.isolationAna(kind = 'validation',hdict=histoDict,varname = self.varFake, loosecut = self.looseCut)
         hIsoPrompt = self.isolationAna(kind = 'prompt',hdict=histoDict,varname = self.varFake, loosecut = self.looseCut)
@@ -1841,9 +1908,9 @@ class bkg_fakerateAnalyzer:
                 PVDict[s+'QCDTot'].Write()
                 PVDict[s+dataNameMt+'Tot'].Write()
 
-        if(self.fakerate) :
-            print "evaluating fakerates",  self.correlatedFit
-            hfakesMC = self.differential_fakerate(kind = self.dataOpt, hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut, EWSF=self.EWSF, highMtCut=90,parabolaFit = self.parabolaFit, asymmetry_EW=False,correlatedFit=self.correlatedFit)
+        if(fakerate) :
+            print "evaluating fakerates..."
+            hfakesMC = self.differential_fakerate(kind = self.dataOpt, hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut, EWSF=self.EWSF, highMtCut=90,parabolaFit = self.parabolaFit, asymmetry_EW=False,correlatedFit=correlatedFit)
             hprompt =self.differential_fakerate(kind = 'prompt', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut,parabolaFit = self.parabolaFit)
             hvalidation =self.differential_fakerate(kind = 'validation', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut,parabolaFit = self.parabolaFit)
             hvalidationSigReg =self.differential_fakerate(kind = 'validationSigReg', hdict = histoDict, mtDict = mtDict, varname = self.varFake, tightcut = self.tightCut, loosecut = self.looseCut,parabolaFit = self.parabolaFit)
@@ -1853,7 +1920,7 @@ class bkg_fakerateAnalyzer:
             fakerate_dir = output.mkdir("Fakerate")
             fakerate_dir.cd()
 
-            print ("writing fakerates")
+            # print ("writing fakerates")
             for b,c,d,e in map(None,hprompt,hvalidation,hvalidationSigReg,hpromptSideband):
                 if 'offset' in (b or c or d or e) or 'slope' in (b or c or d or e) or '2deg' in (b or c or d or e) or 'fitRes' in (b or c or d or e) or 'chi2red' in (b or c or d or e) or 'sigmaERFvec' in (b or c or d or e): continue
                 # if 'offset' in (b or c or d or e) or 'slope' in (b or c or d or e) : continue
@@ -1867,16 +1934,14 @@ class bkg_fakerateAnalyzer:
                 if 'offset' in a or 'slope' in a  or '2deg' in a or 'fitRes' in a or 'chi2red' in a or 'sigmaERFvec' in a: continue
                 # if 'offset' in a or 'slope' in a: continue
                 hfakesMC[a].Write()
-
             template_dir = output.mkdir("Template")
             template_dir.cd()
-            print "evaluating templates", self.correlatedFit
-            bkg_templateMC = self.bkg_template(kind = self.dataOpt, fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit, correlatedFit=self.correlatedFit)
+            print "evaluating templates..."
+            bkg_templateMC = self.bkg_template(kind = self.dataOpt, fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit, correlatedFit=correlatedFit)
             bkg_templatePrompt = self.bkg_template(kind = 'prompt', fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit)
             bkg_templateValidation = self.bkg_template(kind = 'validation', fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit)
             bkg_templateEWKbkg = self.bkg_template(kind = 'EWKbkg', fakedict=hfakesMC, promptdict=hprompt, hdict =histoDict, fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit)
-
-            print "Writing templates"
+            # print "Writing templates"
             template_dir.cd()
             for a,b,c,d in map(None, bkg_templateMC,bkg_templatePrompt,bkg_templateValidation, bkg_templateEWKbkg) :
                 # print a, bkg_templateMC[a]
@@ -1885,25 +1950,24 @@ class bkg_fakerateAnalyzer:
                 bkg_templateValidation[c].Write()
                 bkg_templateEWKbkg[d].Write()
 
-        output.Close()
-
-        if self.produce_ext_output :     
-            print "pre covnerter",   self.correlatedFit
-            external_histoDict = self.dict2histConverter(fakedict=hfakesMC,promptdict=hprompt,hdict=histoDict, minimal=False, parabolaFit=self.parabolaFit, correlatedFit=self.correlatedFit)
-            external_output = ROOT.TFile(self.folder+"/bkg/bkg_parameters_file.root","recreate")
+        output.Save()
+        if produce_ext_output :
+            external_histoDict = self.dict2histConverter(fakedict=hfakesMC,promptdict=hprompt,hdict=histoDict, minimal=False, parabolaFit=self.parabolaFit, correlatedFit=correlatedFit)
+            # external_output = ROOT.TFile(self.folder+"/bkg/bkg_parameters_file.root","recreate")
+            external_output = ROOT.TFile(self.outdir+"/bkg_parameters_file"+self.nameSuff+".root","recreate")
             external_output.cd()
             for a in external_histoDict :
                 external_histoDict[a].Write()
-        external_output.Close()
+            external_output.Close()
 
+        output.Close()
 
     def fakerate_plots(self, variations=False,tightCutList=[0.15],looseCutList=[40], parabolaFit = False) :
-        print "plotting fakerate"
-
-        self.variations = variations
-        self.tightCutList= tightCutList
-        self.looseCutList= looseCutList
-        self.parabolaFit = parabolaFit
+        print "plotting..."
+        # self.variations = variations
+        # self.tightCutList= tightCutList
+        # self.looseCutList= looseCutList
+        # self.parabolaFit = parabolaFit
 
         inputFile = ROOT.TFile.Open(self.outdir+"/bkg_differential_fakerate"+self.nameSuff+".root")
 
@@ -2090,6 +2154,8 @@ class bkg_fakerateAnalyzer:
                     h_W.Add(h_EWK)
                     # h_W.Add(h_template)
 
+                    # if(s=='Plus' and e=='0') : print "inside the plotter", h_template.GetBinContent(1)
+
                     # h_fake = inputFile.Get("Fakerate/hFakes_pt_fake_"+s+"_"+e)
 
                     h_template.SetLineWidth(3)
@@ -2195,13 +2261,13 @@ class bkg_fakerateAnalyzer:
                         # print "ISO plots"
 
                         c_Iso = ROOT.TCanvas("c_Iso_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),"c_Iso_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),800,600)
+
                         c_Iso.cd()
                         c_Iso.SetGridx()
                         c_Iso.SetGridy()
 
                         if(self.onData) : dataNameIso = 'fake'
                         else : dataNameIso = 'FakeMC'
-
                         h_iso_data = inputFile.Get("Isolation/Iso_"+dataNameIso+"_"+s+"_"+e+"_"+p)
                         h_iso_bkg = inputFile.Get("Isolation/Iso_validation_"+s+"_"+e+"_"+p)
                         h_iso_sig = inputFile.Get("Isolation/Iso_prompt_"+s+"_"+e+"_"+p)
@@ -2209,6 +2275,7 @@ class bkg_fakerateAnalyzer:
                         # print "Isolation/iso_EWKbkg_"+s+"_"+e+"_"+p
                         # print "Isolation/iso_prompt_"+s+"_"+e+"_"+p
                         h_iso_sig.Add(h_iso_EWKbkg)
+
 
                         # h_iso_sig.Rebin(20)
                         # h_iso_bkg.Rebin(20)
@@ -2227,7 +2294,7 @@ class bkg_fakerateAnalyzer:
                         h_iso_sig.SetFillColor(416+2) #green
                         # h_fake.SetLineColor(1) #black
 
-                        h_iso_data.Sumw2()
+                        # h_iso_data.Sumw2()
                         h_iso_data.SetMarkerStyle(20)
                         h_iso_data.Draw()
 
@@ -2327,11 +2394,10 @@ class bkg_fakerateAnalyzer:
 
 
 
-
         #---------------------------------------------FIT CHECK PLOTS ---------------------------------------------#
         # print "Fit check plots"
 
-        if not self.parabolaFit :
+        if not parabolaFit :
             typeFitDict = {
                 'EWSF' : ['chi2', 'bkg', 'sig'],
                 'Templ' : ['chi2','slope', 'offset'],
@@ -2455,14 +2521,14 @@ class bkg_fakerateAnalyzer:
 
         #---------------------------------------------VARIATION OF CUTS PLOTS ---------------------------------------------#
 
-        if(self.variations) :
+        if(variations) :
             print "Cut Variation plots"
 
             fileVarDict = {}
             graphVarDict = {}
 
-            for lcut in self.looseCutList :
-                for tcut in self.tightCutList :
+            for lcut in looseCutList :
+                for tcut in tightCutList :
                     fileVarDict[str(lcut)+str(tcut)] = ROOT.TFile.Open(self.outdir+"/bkg_differential_fakerate"+"_"+str(lcut)+"_"+str(tcut)+".root")
 
             for s in self.signList :
@@ -2482,10 +2548,10 @@ class bkg_fakerateAnalyzer:
                         Wvalue.SetLineWidth(3)
                         # print "W VALUE", h_templW.GetBinContent(ptPoint), "sep", s,e, p
 
-                        for tcut in self.tightCutList :
+                        for tcut in tightCutList :
                             graphVarDict[s+e+p+str(tcut)] = ROOT.TGraphErrors()
                             loosePoint = 0
-                            for lcut in self.looseCutList :
+                            for lcut in looseCutList :
                                 h_template = fileVarDict[str(lcut)+str(tcut)].Get("Template/htempl_pt_"+self.dataOpt+"_"+s+"_"+e)
                                 graphVarDict[s+e+p+str(tcut)].SetPoint(loosePoint,lcut,h_template.GetBinContent(ptPoint))
                                 graphVarDict[s+e+p+str(tcut)].SetPointError(loosePoint,0,h_template.GetBinError(ptPoint))
@@ -2501,11 +2567,11 @@ class bkg_fakerateAnalyzer:
                             graphVarDict[s+e+p+str(tcut)].GetYaxis().SetTitle("N QCD tight")
                             graphVarDict[s+e+p+str(tcut)].GetYaxis().SetTitleOffset(1)
                             graphVarDict[s+e+p+str(tcut)].SetTitle("QCD tight varying the cuts, {min}<#eta<{max},{pmin}<Pt<{pmax}, W {sign}".format(min=e, max=self.etaBinning[self.etaBinning.index(float(e))+1],pmin=p, pmax=self.ptBinning[self.ptBinning.index(float(p))+1], sign=s))
-                            if(self.tightCutList.index(tcut)==len(self.tightCutList)-1) :
+                            if(tightCutList.index(tcut)==len(tightCutList)-1) :
                                 valuemaxX = ROOT.Double(0)
                                 valuemaxY = ROOT.Double(0)
                                 graphVarDict[s+e+p+str(tcut)].GetPoint(0,valuemaxX,valuemaxY)
-                                graphVarDict[s+e+p+str(self.tightCutList[0])].GetYaxis().SetRangeUser(0,valuemaxY+valuemaxY/20)
+                                graphVarDict[s+e+p+str(tightCutList[0])].GetYaxis().SetRangeUser(0,valuemaxY+valuemaxY/20)
                             legDict[e+s+p+"Variation"].AddEntry(graphVarDict[s+e+p+str(tcut)], "Iso<"+str(tcut))
                             tightPoint = tightPoint+1
                         Wvalue.Draw("SAME")
@@ -2521,22 +2587,22 @@ class bkg_fakerateAnalyzer:
                 for e in self.etaBinningS :
                     for p in self.ptBinningS :
 
-                        h2qcd = ROOT.TH2F("h2qcd_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),"h2qcd_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),len(self.looseCutList)-1, array('f',self.looseCutList), len(self.tightCutList)-1, array('f',self.tightCutList) )
+                        h2qcd = ROOT.TH2F("h2qcd_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),"h2qcd_{sign}_{eta}_{pt}".format(sign=s,eta=e, pt=p),len(looseCutList)-1, array('f',looseCutList), len(tightCutList)-1, array('f',tightCutList) )
                         # tightPoint =0
-                        for tcut in self.tightCutList :
+                        for tcut in tightCutList :
                             # loosePoint = 0
-                            if self.tightCutList.index(tcut)== len(self.tightCutList)-1 : continue #skip the lat
+                            if tightCutList.index(tcut)== len(tightCutList)-1 : continue #skip the lat
                             y_t_down = graphVarDict[s+e+p+str(tcut)].GetY()
-                            tcutUP = self.tightCutList[self.tightCutList.index(tcut)+1]
+                            tcutUP = tightCutList[tightCutList.index(tcut)+1]
                             y_t_up = graphVarDict[s+e+p+str(tcutUP)].GetY()
                             diff_list= []
-                            for ll in range(len(self.looseCutList)) :
+                            for ll in range(len(looseCutList)) :
                                 diff_list.append(y_t_up[ll]-y_t_down[ll])
-                            for ll in range(len(self.looseCutList)) :
-                                if ll == len(self.looseCutList)-1 : continue #skip the last
+                            for ll in range(len(looseCutList)) :
+                                if ll == len(looseCutList)-1 : continue #skip the last
                                 valBin = diff_list[ll]-diff_list[ll+1]
-                                h2qcd.SetBinContent(ll+1,self.tightCutList.index(tcut)+1,valBin)
-                                # print ll+1, self.tightCutList.index(tcut)+1, valBin
+                                h2qcd.SetBinContent(ll+1,tightCutList.index(tcut)+1,valBin)
+                                # print ll+1, tightCutList.index(tcut)+1, valBin
 
 
                         h2qcd.GetXaxis().SetTitle("M_{T} [GeV]")
@@ -2559,12 +2625,24 @@ class bkg_fakerateAnalyzer:
                 canvasList[h].Write()
                 # canvasList[h].SaveAs(self.outdir+"/bkg_plot/"+canvasList[h].GetName()+'.png')
 
+        for h in range(len(canvasList)) :
+            if "h2qcd" in canvasList[h].GetName() :
+                 continue
+            else :
+                canvasList[h].IsA().Destructor(canvasList[h])
 
-    def finalPlots(self, outDir,systDict =bkg_systematics, sum2Bands=True,correlatedFit = False) :
-        self.systDict = systDict
-        self.sum2Bands =sum2Bands
-        self.outdir = outDir
-        self.correlatedFit = correlatedFit
+
+    def finalPlots(self, outDir,systDict =bkg_systematics, sum2Bands=True,correlatedFit = False, noratio=False) :
+        # self.systDict = systDict
+        # self.sum2Bands =sum2Bands
+        # self.outDir = outDir
+        # self.correlatedFit = correlatedFit
+        print "plotting (final)..."
+        noratio = False
+
+        # NB: if noratio=True In the ratio plots are plotted fake and prompt rate of systematics and nominals
+
+
 
         histoNameDict = {
         'comparison' : {
@@ -2584,9 +2662,9 @@ class bkg_fakerateAnalyzer:
         finalHistoDict = {}
         finalLegDict = {}
 
-        for sKind, sList in self.systDict.iteritems():
+        for sKind, sList in systDict.iteritems():
             for sName in sList :
-                finalPlotFileDict[sName]=ROOT.TFile.Open(self.outdir+"/bkg_"+sName+"/bkg_plots"+self.nameSuff+".root")
+                finalPlotFileDict[sName]=ROOT.TFile.Open(outDir+"/bkg_"+sName+"/bkg_plots"+self.nameSuff+".root")
                 for s in self.signList :
                     for e in self.etaBinningS :
                         for canvas in histoNameDict :
@@ -2595,7 +2673,7 @@ class bkg_fakerateAnalyzer:
                                 for histo in histoNameDict[canvas][name] :
                                     finalHistoDict[sName+canvas+histo+s+e] =   finalPlotFileDict[sName].Get('c_'+canvas+'_'+s+'_'+e).GetPrimitive('h'+name+'_pt_'+histo+'_'+s+'_'+e)
         #nominal
-        finalPlotFileDict['nom']=ROOT.TFile.Open(self.outdir+"/bkg_"+"nom"+"/bkg_plots"+self.nameSuff+".root")
+        finalPlotFileDict['nom']=ROOT.TFile.Open(outDir+"/bkg_"+"nom"+"/bkg_plots"+self.nameSuff+".root")
         for s in self.signList :
             for e in self.etaBinningS :
                 for canvas in histoNameDict : #comparison, ABCD...,
@@ -2604,17 +2682,26 @@ class bkg_fakerateAnalyzer:
                             # finalHistoDict['nom'+canvas+histo+s+e] = finalCanvasDict['nom'+canvas+s+e].GetPrimitive('h'+name+'_pt_'+histo+'_'+s+'_'+e)
                             finalHistoDict['nom'+canvas+histo+s+e] = finalPlotFileDict['nom'].Get('c_'+canvas+'_'+s+'_'+e).GetPrimitive('h'+name+'_pt_'+histo+'_'+s+'_'+e)
 
+        if correlatedFit: #if correlated fit produce another version of varied template without variation of fake rate
+            par4TemplateDict={}
+            for kind in ['fake','prompt','histo'] :
+                par4TemplateDict[kind+'nom'] = self.hist2dictConverter(syst='nom', kind=kind,outDir=outDir, minimal=False)
+            # prova = self.bkg_template(kind = self.dataOpt, fakedict=par4TemplateDict['fake'+'nom'], promptdict=par4TemplateDict['prompt'+'nom'], hdict =par4TemplateDict['histo'+'nom'], fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit, correlatedFit=False)
 
-        # if self.correlatedFit and 0 : #if correlated fit produce another version of varied template without variation of fake rate
-        #     fakedict = self.hist2dictConverter(kind=fake)
-        #     promptdict = self.hist2dictConverter(kind=prompt, parabolaFit=True, minimal=False)
-        #     basehistodict =self.hist2dictConverter(kind=histo)
-            
+            for sKind, sList in systDict.iteritems():
+                for sName in sList :
+                    par4TemplateDict['prompt'+sName] = self.hist2dictConverter(syst=sName, kind='prompt',outDir=outDir, minimal=False)
+                    # templateCorrelatedFit = self.bkg_template(kind = self.dataOpt, fakedict=par4TemplateDict['fake'+'nom'], promptdict=par4TemplateDict['prompt'+'nom'], hdict =par4TemplateDict['histo'+'nom'], fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit, correlatedFit=False)
+                    templateCorrelatedFit = self.bkg_template(kind = self.dataOpt, fakedict=par4TemplateDict['fake'+'nom'], promptdict=par4TemplateDict['prompt'+sName], hdict =par4TemplateDict['histo'+'nom'], fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit, correlatedFit=False)
+                    for s in self.signList :
+                        for e in self.etaBinningS :
+                            canvas = 'template'
+                            histo = 'fake'
+                            finalHistoDict[sName+canvas+histo+s+e] = templateCorrelatedFit[s+e]
 
-            
 
         #building of error bands on the "nom" hisotgrams
-        # finalPlotFileDict['nom']=ROOT.TFile.Open(self.outdir+"/bkg_"+"nom"+"/bkg_plots"+self.nameSuff+".root")
+        # finalPlotFileDict['nom']=ROOT.TFile.Open(outDir+"/bkg_"+"nom"+"/bkg_plots"+self.nameSuff+".root")
         for s in self.signList :
             for e in self.etaBinningS :
                 for canvas in histoNameDict : #comparison, ABCD...,
@@ -2627,13 +2714,57 @@ class bkg_fakerateAnalyzer:
                             finalHistoDict['nom'+canvas+histo+s+e+'error'] = ROOT.TGraphAsymmErrors()#finalCanvasDict['nom'+canvas+s+e]
                             finalHistoDict['nom'+canvas+histo+s+e+'error'].SetName(finalHistoDict['nom'+canvas+histo+s+e].GetName()+'_error')
 
+                            if(correlatedFit and canvas=='comparison' and histo=='fake') : #histo=='fake' is only to select one, this is done once per canvas
+                            
+                                def createFitGraph(self, offset=par4TemplateDict['fake'+'nom'][s+e+'offset'],slope=par4TemplateDict['fake'+'nom'][s+e+'slope'],key='def') :
+                                    fit_func =ROOT.TF1("fit_func_{s}_{e}".format(s=s,e=e), 'pol1',30,66,2)
+                                    fit_func.SetParameters(offset,slope)
+                                    finalHistoDict['nom'+canvas+s+e+'functionG'+key] = ROOT.TGraphErrors()
+                                    npoint = 35
+                                    for xg in range(npoint) :
+                                        xgraph = 30+xg*35/npoint+0.5*(35/npoint)
+                                        finalHistoDict['nom'+canvas+s+e+'functionG'+key].SetPoint(xg,xgraph,fit_func(xgraph))
+                                        dx_f = float(abs(xgraph-(30+(xg+1)*35/35+0.5*(35/npoint))))/2
+                                        if key=='def' :
+                                            errg = math.sqrt(par4TemplateDict['fake'+'nom'][s+e+'offsetErr']**2+(dx_f**2)*(par4TemplateDict['fake'+'nom'][s+e+'slope']**2)+(xgraph**2)*(par4TemplateDict['fake'+'nom'][s+e+'slopeErr']**2)+2*xg*par4TemplateDict['fake'+'nom'][s+e+'offset*slope'])
+                                            finalHistoDict['nom'+canvas+s+e+'functionG'+key].SetPointError(xg,dx_f,errg)         
+                                    print "DEBUG", key, offset, slope                
+
+                                offPlus= par4TemplateDict['fake'+'nom'][s+e+'offset']+par4TemplateDict['fake'+'nom'][s+e+'offsetErr']
+                                offMinus= par4TemplateDict['fake'+'nom'][s+e+'offset']-par4TemplateDict['fake'+'nom'][s+e+'offsetErr']
+                                slopePlus= par4TemplateDict['fake'+'nom'][s+e+'slope']+par4TemplateDict['fake'+'nom'][s+e+'slopeErr']
+                                slopeMinus= par4TemplateDict['fake'+'nom'][s+e+'slope']-par4TemplateDict['fake'+'nom'][s+e+'slopeErr']
+                                createFitGraph(self)
+                                createFitGraph(self, offset=offPlus,key='offsePlus')
+                                createFitGraph(self, offset=offMinus,key='offsetMinus')
+                                createFitGraph(self, slope=slopePlus,key='slopePlus')
+                                createFitGraph(self, slope=slopeMinus,key='slopeMinus')
+                                
+                                
+                                # finalHistoDict['nom'+canvas+s+e+'function'] =ROOT.TF1("fit_func_{s}_{e}".format(s=s,e=e), 'pol1',30,66,2)
+                                # finalHistoDict['nom'+canvas+s+e+'function'].SetParameters(float(par4TemplateDict['fake'+'nom'][s+e+'offset']),float(par4TemplateDict['fake'+'nom'][s+e+'slope']) )
+                                # # finalHistoDict['nom'+canvas+s+e+'function'].Draw("SAME")
+                                # # print "func(30)", finalHistoDict['nom'+canvas+s+e+'function'](30), "func(40)", finalHistoDict['nom'+canvas+s+e+'function'](40), "func(60)", finalHistoDict['nom'+canvas+s+e+'function'](60)
+                                # finalHistoDict['nom'+canvas+s+e+'functionG'] = ROOT.TGraphErrors()
+                                # for xg in range(35) :
+                                #     xgraph = 30+xg*35/35+0.5
+                                #     finalHistoDict['nom'+canvas+s+e+'functionG'].SetPoint(xg,xgraph,finalHistoDict['nom'+canvas+s+e+'function'](xgraph))
+                                #     dx_f = float(abs(xgraph-(30+(xg+1)*35/35+0.5)))/2
+                                #     # print "dx_f=", xg, xgraph,dx_f, 30+(xg+1)*35/35
+                                #     errg = math.sqrt(par4TemplateDict['fake'+'nom'][s+e+'offsetErr']**2+(dx_f**2)*(par4TemplateDict['fake'+'nom'][s+e+'slope']**2)+(xgraph**2)*(par4TemplateDict['fake'+'nom'][s+e+'slopeErr']**2)+2*xg*par4TemplateDict['fake'+'nom'][s+e+'offset*slope'])
+                                #     print "errore=",s,e,xg, errg
+                                #     finalHistoDict['nom'+canvas+s+e+'functionG'].SetPointError(xg,dx_f,errg)
+                                
+
+
+
                             for p in self.ptBinning :
                                 if(p==self.ptBinning[-1]) : continue
                                 varErr = []
                                 varErr.append(finalHistoDict['nom'+canvas+histo+s+e].GetBinContent(self.ptBinning.index(float(p))+1))
                                 varErrSum2Up = 0
                                 varErrSum2Down = 0.
-                                for sKind, sList in self.systDict.iteritems():
+                                for sKind, sList in systDict.iteritems():
                                     # if canvas == 'template' and histo=='prompt' and ('Muon' not in sKind) :
                                     #     print "JUMPED", sKind, sList, canvas, histo
                                         # continue #for data-like template only Muon SF to compare scale of the error
@@ -2650,7 +2781,7 @@ class bkg_fakerateAnalyzer:
                                 maxBand = varErr[len(varErr)-1]
                                 errLow = finalHistoDict['nom'+canvas+histo+s+e].GetBinContent(self.ptBinning.index(float(p))+1)-minBand
                                 errHigh = maxBand-finalHistoDict['nom'+canvas+histo+s+e].GetBinContent(self.ptBinning.index(float(p))+1)
-                                if self.sum2Bands :
+                                if sum2Bands :
                                     errLow = varErrSum2Down
                                     errHigh = varErrSum2Up
                                     # if histo == 'fake' and canvas =='comparison': #debug lines
@@ -2675,6 +2806,14 @@ class bkg_fakerateAnalyzer:
                             finalHistoDict['nom'+canvas+histo+s+e+'error'].SetLineWidth(1)
 
                             finalHistoDict['nom'+canvas+histo+s+e+'error'].Draw("SAME 0P5")
+                            if(correlatedFit and canvas=='comparison' and histo=='fake') :
+                                keyList = ['def','offsePlus','offsetMinus','slopePlus','slopeMinus']
+                                for key in keyList :
+                                    finalHistoDict['nom'+canvas+s+e+'functionG'+key].Draw("SAME")
+                                    finalHistoDict['nom'+canvas+s+e+'functionG'+key].SetLineWidth(3)
+                                    finalHistoDict['nom'+canvas+s+e+'functionG'+key].SetLineColor(2+keyList.index(key))
+
+
                             finalCanvasDict['nom'+canvas+s+e].Update()
                             finalCanvasDict['nom'+canvas+s+e].Modified()
                             fillSyle =fillSyle+1
@@ -2704,7 +2843,7 @@ class bkg_fakerateAnalyzer:
                             colorList = [600,616,416,632,432,800,900]
                             colorCounter = 0
 
-                            for sKind, sList in self.systDict.iteritems():
+                            for sKind, sList in systDict.iteritems():
                                 colorNumber = colorList[colorCounter]
                                 colorCounter = colorCounter+1
                                 for sName in sList :
@@ -2713,7 +2852,8 @@ class bkg_fakerateAnalyzer:
                                         colorNumber = colorList[colorCounter]+2
                                     finalHistoDict[sName+canvas+histo+s+e+'ratio'] = ROOT.TH1F(canvas+'_'+finalHistoDict[sName+canvas+histo+s+e].GetName()+'_'+sName+'_ratio',canvas+'_'+finalHistoDict[sName+canvas+histo+s+e].GetName()+'_'+sName+'_ratio',len(self.ptBinning)-1, array('f',self.ptBinning))
                                     finalHistoDict[sName+canvas+histo+s+e+'ratio'].Divide(finalHistoDict[sName+canvas+histo+s+e],finalHistoDict['nom'+canvas+histo+s+e],1,1)
-                                    # finalHistoDict[sName+canvas+histo+s+e+'ratio'] = finalHistoDict[sName+canvas+histo+s+e].Clone()
+                                    if noratio :
+                                        finalHistoDict[sName+canvas+histo+s+e+'ratio'] = finalHistoDict[sName+canvas+histo+s+e].Clone()
 
                                     finalHistoDict[sName+canvas+histo+s+e+'ratio'].SetLineColor(colorNumber)
                                     for b in range(1,finalHistoDict[sName+canvas+histo+s+e+'ratio'].GetNbinsX()+1) :
@@ -2732,7 +2872,8 @@ class bkg_fakerateAnalyzer:
                             #nominal
                             finalHistoDict['nom'+canvas+histo+s+e+'ratio'] = ROOT.TH1F(canvas+'_'+finalHistoDict['nom'+canvas+histo+s+e].GetName()+'_'+'nom'+'_ratio',canvas+'_'+finalHistoDict['nom'+canvas+histo+s+e].GetName()+'_'+'nom'+'_ratio',len(self.ptBinning)-1, array('f',self.ptBinning))
                             finalHistoDict['nom'+canvas+histo+s+e+'ratio'].Divide(finalHistoDict['nom'+canvas+histo+s+e],finalHistoDict['nom'+canvas+histo+s+e],1,1)
-                            # finalHistoDict['nom'+canvas+histo+s+e+'ratio'] =finalHistoDict['nom'+canvas+histo+s+e].Clone()
+                            if noratio :
+                                finalHistoDict['nom'+canvas+histo+s+e+'ratio'] =finalHistoDict['nom'+canvas+histo+s+e].Clone()
 
                             finalHistoDict['nom'+canvas+histo+s+e+'ratio'].SetLineColor(1)
                             for b in range(1,finalHistoDict['nom'+canvas+histo+s+e+'ratio'].GetNbinsX()+1) :
@@ -2785,13 +2926,18 @@ class bkg_fakerateAnalyzer:
                             finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetName(canvas+'_'+finalHistoDict['nom'+canvas+histo+s+e].GetName()+'_'+'nom'+'_ratio_sum2')
 
                             for p in self.ptBinning :
-                                if(p==self.ptBinning[-1]) : continue
+                                # if(p==self.ptBinning[-1]) : continue
                                 bin_p = self.ptBinning.index(float(p))
                                 finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetPoint(bin_p,finalHistoDict['nom'+canvas+histo+s+e].GetBinCenter(bin_p+1),1)
-                                finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetPointEYhigh(bin_p,finalHistoDict['nom'+canvas+histo+s+e+'error'].GetErrorYhigh(bin_p))
-                                finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetPointEYlow(bin_p,finalHistoDict['nom'+canvas+histo+s+e+'error'].GetErrorYlow(bin_p))
-                                finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetPointEXhigh(bin_p,finalHistoDict['nom'+canvas+histo+s+e+'error'].GetErrorXhigh(bin_p))
-                                finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetPointEXlow(bin_p,finalHistoDict['nom'+canvas+histo+s+e+'error'].GetErrorXlow(bin_p))
+                                finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetPointEYhigh(bin_p,finalHistoDict['nom'+canvas+histo+s+e+'error'].GetErrorYhigh(bin_p+1)+finalHistoDict['nom'+canvas+histo+s+e].GetBinError(bin_p+1))
+                                finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetPointEYlow(bin_p,finalHistoDict['nom'+canvas+histo+s+e+'error'].GetErrorYlow(bin_p+1)+finalHistoDict['nom'+canvas+histo+s+e].GetBinError(bin_p+1))
+                                finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetPointEXhigh(bin_p,finalHistoDict['nom'+canvas+histo+s+e+'error'].GetErrorXhigh(bin_p+1))
+                                finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetPointEXlow(bin_p,finalHistoDict['nom'+canvas+histo+s+e+'error'].GetErrorXlow(bin_p+1))
+                                # if correlatedFit :
+                                    # print "only if prompt rate syst is negligible"
+                                    # finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetPointEYhigh(bin_p,finalHistoDict['nom'+canvas+histo+s+e].GetBinError(bin_p))
+                                    # finalHistoDict['nom'+canvas+histo+s+e+'sum2'].SetPointEYlow(bin_p,finalHistoDict['nom'+canvas+histo+s+e].GetBinError(bin_p))
+
                             c_errCompare.cd()
                             if histo == 'fake' :
                                 finalHistoDict['nom'+canvas+histo+s+e+'sum2'].Draw()
@@ -2893,7 +3039,7 @@ class bkg_fakerateAnalyzer:
 
                         sameFlagUNR = True
 
-                        for sKind, sList in self.systDict.iteritems():
+                        for sKind, sList in systDict.iteritems():
                             for sName in sList :
                                 finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'] = ROOT.TH1F(finalHistoDict[sName+canvas+histo+s+'0ratio'].GetName()+'_ratio_unrolled',finalHistoDict[sName+canvas+histo+s+'0ratio'].GetName()+'_ratio_unrolled',len(unrolledPtEta)-1, array('f',unrolledPtEta))
                                 finalHistoDict[sName+s+canvas+histo+'ratio_unrolled'].SetLineColor(finalHistoDict[sName+canvas+histo+s+'0ratio'].GetLineColor())
@@ -2998,7 +3144,7 @@ class bkg_fakerateAnalyzer:
 
 
         # outputFinal.Close()
-        outputFinal = ROOT.TFile(self.outdir+"/final_plots"+self.nameSuff+".root","recreate")
+        outputFinal = ROOT.TFile(outDir+"/final_plots"+self.nameSuff+".root","recreate")
         dirFinalDict = {}
         for s in self.signList :
             for e in self.etaBinningS :
@@ -3019,7 +3165,7 @@ class bkg_fakerateAnalyzer:
 
 
     def strategy_syst(self, preOutDir) :
-        self.preOutDir = preOutDir
+        # self.preOutDir = preOutDir
 
         systlist = ['mT_fit', 'EWSFdown10','EWSFup10', 'slopeDown10','slopeUp10', 'mT_fit_2deg', 'mT_countHigh', 'MET_fit', 'MET_countHigh']
         colorList = [600,616,416,632,432,800,900,881,402]
@@ -3038,7 +3184,7 @@ class bkg_fakerateAnalyzer:
                 unrolledPtEta.append(unrolledPtEta[-1]+p)
 
         for var in systlist :
-            straSystDict_file[var]=ROOT.TFile.Open(self.preOutDir+"/bkg_"+var+"/final_plots"+self.nameSuff+".root")
+            straSystDict_file[var]=ROOT.TFile.Open(preOutDir+"/bkg_"+var+"/final_plots"+self.nameSuff+".root")
             for s in self.signList :
 
                 straSystDict_histo[var+s] =   straSystDict_file[var].Get(s+'_unrolled/c_unrolled_template'+'_'+s).GetPrimitive('template_htempl_pt_fake_'+s+'_0_unrolled')
@@ -3094,14 +3240,14 @@ class bkg_fakerateAnalyzer:
 
             straSystDict_canvas[s] = c_straSyst
 
-        outputraSyst= ROOT.TFile(self.preOutDir+"/bkg_mT_fit/strategy_syst"+self.nameSuff+".root","recreate")
+        outputraSyst= ROOT.TFile(preOutDir+"/bkg_mT_fit/strategy_syst"+self.nameSuff+".root","recreate")
         for s in self.signList :
             straSystDict_canvas[s].Write()
 
 
     def clousure_plots(self, outdir, MC=False) :
-        self.outDir = outdir
-        self.MC = MC #do not apply correction
+        # self.outDir = outDir
+        # self.MC = MC #do not apply correction
 
 
         histoDict = {}
@@ -3203,7 +3349,7 @@ class bkg_fakerateAnalyzer:
 
                 canvasList.append(c_clousure)
 
-        outputFake = ROOT.TFile(self.outDir+"/bkg_clousure.root","recreate")
+        outputFake = ROOT.TFile(outDir+"/bkg_clousure.root","recreate")
         for h in range(len(canvasList)) :
             canvasList[h].Write()
 
