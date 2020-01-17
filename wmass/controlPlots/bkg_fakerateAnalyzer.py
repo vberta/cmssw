@@ -50,8 +50,8 @@ class bkg_fakerateAnalyzer:
         self.EWSF =EWSF
         self.correlatedFit = correlatedFit
         if self.correlatedFit :
-            # self.corrFitSuff = '_correlatedFit' #OPTION DISABLED
-            self.corrFitSuff = ''
+            self.corrFitSuff = '_CF'  
+            # self.corrFitSuff = '' #option disabled
         else :
             self.corrFitSuff = ''
 
@@ -1811,7 +1811,11 @@ class bkg_fakerateAnalyzer:
         # self.kind = kind #available kind = fake, prompt, histo
         # self.minimal=minimal
         outdict = {}
-        inputfile=ROOT.TFile.Open(outDir+"/bkg_"+syst+"/bkg_parameters_file"+self.corrFitSuff+".root")
+        if syst == 'nom' :
+            suffPar = self.corrFitSuff
+        else :
+            suffPar = ''
+        inputfile=ROOT.TFile.Open(outDir+"/bkg_"+syst+"/bkg_parameters_file"+suffPar+".root")
 
         if parabolaFit :
             nameDict = {
@@ -2893,7 +2897,7 @@ class bkg_fakerateAnalyzer:
             print "ATTENTION: FIT RANGE 25-45, MARC-LIKE TEST!!!"
 
 
-    def finalPlots(self, outDir,systDict =bkg_systematics, sum2Bands=True,correlatedFit = False, noratio=False) :
+    def finalPlots(self, outDir,systDict =bkg_systematics, sum2Bands=True,correlatedFit = False, noratio=False, correlatedFit_alreadyDone=False) :
         # self.systDict = systDict
         # self.sum2Bands =sum2Bands
         # self.outDir = outDir
@@ -2953,26 +2957,51 @@ class bkg_fakerateAnalyzer:
                             finalHistoDict['nom'+canvas+histo+s+e] = finalPlotFileDict['nom'].Get('c_'+canvas+'_'+s+'_'+e).GetPrimitive('h'+name+'_pt_'+histo+'_'+s+'_'+e)
         
         if correlatedFit: #if correlated fit produce another version of varied template without variation of fake rate
-            par4TemplateDict={}
-            for kind in ['fake','prompt','histo'] :
-                par4TemplateDict[kind+'nom'] = self.hist2dictConverter(syst='nom', kind=kind,outDir=outDir, minimal=False)
-                # print "DEBUGDIO PRE0", 
-                # print par4TemplateDict[kind+'nom']['Plus2.3']
-            # prova = self.bkg_template(kind = self.dataOpt, fakedict=par4TemplateDict['fake'+'nom'], promptdict=par4TemplateDict['prompt'+'nom'], hdict =par4TemplateDict['histo'+'nom'], fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit, correlatedFit=False)
+            if correlatedFit_alreadyDone : #read corrfit template from file instead to reproduce it
+                finalPlotFileDict['CorrelatedTemplate']=ROOT.TFile.Open(outDir+"/New_template"+self.corrFitSuff+self.nameSuff+".root")
+                for sKind, sList in systDict.iteritems():
+                    for sName in sList :
+                        for s in self.signList :
+                            for e in self.etaBinningS :
+                                canvas = 'template'
+                                histo = 'fake'
+                                corrTemplate_temp = finalPlotFileDict['CorrelatedTemplate'].Get('correlatedFit_'+histo+'_'+canvas+'_'+s+'_'+e+'_'+sName)
+                                corrTemplate_temp.SetName('h'+name+'_pt_'+histo+'_'+s+'_'+e)
+                                finalHistoDict[sName+canvas+histo+s+e] = corrTemplate_temp  
+            else :    #if correlated fit produce another version of varied template without variation of fake rate       
+                par4TemplateDict={}
+                for kind in ['fake','prompt','histo'] :
+                    par4TemplateDict[kind+'nom'] = self.hist2dictConverter(syst='nom', kind=kind,outDir=outDir, minimal=False)
+                    # print "DEBUGDIO PRE0", 
+                    # print par4TemplateDict[kind+'nom']['Plus2.3']
+                # prova = self.bkg_template(kind = self.dataOpt, fakedict=par4TemplateDict['fake'+'nom'], promptdict=par4TemplateDict['prompt'+'nom'], hdict =par4TemplateDict['histo'+'nom'], fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit, correlatedFit=False)
 
-            for sKind, sList in systDict.iteritems():
-                for sName in sList :
-                    par4TemplateDict['prompt'+sName] = self.hist2dictConverter(syst=sName, kind='prompt',outDir=outDir, minimal=False)
-                    # print "DEBUGDIO 0", sName
-                    # print type(par4TemplateDict['prompt'+sName]['Plus2.3'])
-                    # templateCorrelatedFit = self.bkg_template(kind = self.dataOpt, fakedict=par4TemplateDict['fake'+'nom'], promptdict=par4TemplateDict['prompt'+'nom'], hdict =par4TemplateDict['histo'+'nom'], fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit, correlatedFit=False)
-                    templateCorrelatedFit = self.bkg_template(kind = self.dataOpt, fakedict=par4TemplateDict['fake'+'nom'], promptdict=par4TemplateDict['prompt'+sName], hdict =par4TemplateDict['histo'+'nom'], fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit, correlatedFit=False)
-                    for s in self.signList :
-                        for e in self.etaBinningS :
-                            canvas = 'template'
-                            histo = 'fake'
-                            finalHistoDict[sName+canvas+histo+s+e] = templateCorrelatedFit[s+e]
-             
+                for sKind, sList in systDict.iteritems():
+                    for sName in sList :
+                        par4TemplateDict['prompt'+sName] = self.hist2dictConverter(syst=sName, kind='prompt',outDir=outDir, minimal=False)
+                        # print "DEBUGDIO 0", sName
+                        # print type(par4TemplateDict['prompt'+sName]['Plus2.3'])
+                        # templateCorrelatedFit = self.bkg_template(kind = self.dataOpt, fakedict=par4TemplateDict['fake'+'nom'], promptdict=par4TemplateDict['prompt'+'nom'], hdict =par4TemplateDict['histo'+'nom'], fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit, correlatedFit=False)
+                        templateCorrelatedFit = self.bkg_template(kind = self.dataOpt, fakedict=par4TemplateDict['fake'+'nom'], promptdict=par4TemplateDict['prompt'+sName], hdict =par4TemplateDict['histo'+'nom'], fit =self.fitOnTemplate, tightcut = self.tightCut, loosecut=self.looseCut, varname = self.varFake, parabolaFit = self.parabolaFit, correlatedFit=False)
+                        for s in self.signList :
+                            for e in self.etaBinningS :
+                                canvas = 'template'
+                                histo = 'fake'
+                                finalHistoDict[sName+canvas+histo+s+e] = templateCorrelatedFit[s+e]
+                    
+                    #save new template (so you can do correlatedFit_alreadyDone next time)
+                    outCorrelatedTemplate = ROOT.TFile(outDir+"/New_template"+self.corrFitSuff+self.nameSuff+".root","recreate")
+                    for sKind, sList in systDict.iteritems():
+                        for sName in sList :
+                            for s in self.signList :
+                                for e in self.etaBinningS :
+                                    canvas = 'template'
+                                    histo = 'fake'
+                                    corrTemplate_temp = finalHistoDict[sName+canvas+histo+s+e].Clone()
+                                    corrTemplate_temp.SetName('correlatedFit_'+histo+'_'+canvas+'_'+s+'_'+e+'_'+sName)
+                                    corrTemplate_temp.Write()
+                                    
+                # outCorrelatedTemplate.Close()
         #building of error bands on the "nom" hisotgrams
         # finalPlotFileDict['nom']=ROOT.TFile.Open(outDir+"/bkg_"+"nom"+"/bkg_plots"+self.nameSuff+".root")
         for s in self.signList :
@@ -2987,7 +3016,8 @@ class bkg_fakerateAnalyzer:
                             finalHistoDict['nom'+canvas+histo+s+e+'error'] = ROOT.TGraphAsymmErrors()#finalCanvasDict['nom'+canvas+s+e]
                             finalHistoDict['nom'+canvas+histo+s+e+'error'].SetName(finalHistoDict['nom'+canvas+histo+s+e].GetName()+'_error')
 
-                            if(correlatedFit and canvas=='comparison' and histo=='fake') : #histo=='fake' is only to select one, this is done once per canvas
+                            if(correlatedFit and canvas=='comparison' and histo=='fake' and 0) : #histo=='fake' is only to select one, this is done once per canvas
+                                #disabled: this if plot additional lines on the plot to have a graphical estimation of the errors from correlatedFit
                             
                                 def createFitGraph(self, offset=par4TemplateDict['fake'+'nom'][s+e+'offset'],slope=par4TemplateDict['fake'+'nom'][s+e+'slope'],key='def') :
                                     fit_func =ROOT.TF1("fit_func_{s}_{e}".format(s=s,e=e), 'pol1',25,66,2)
@@ -3079,7 +3109,7 @@ class bkg_fakerateAnalyzer:
                             finalHistoDict['nom'+canvas+histo+s+e+'error'].SetLineWidth(1)
 
                             finalHistoDict['nom'+canvas+histo+s+e+'error'].Draw("SAME 0P5")
-                            if(correlatedFit and canvas=='comparison' and histo=='fake') :
+                            if(correlatedFit and canvas=='comparison' and histo=='fake' and 0) : #DISABLED (see if with the same boolean )
                                 keyList = ['def','offsePlus','offsetMinus','slopePlus','slopeMinus']
                                 for key in keyList :
                                     finalHistoDict['nom'+canvas+s+e+'functionG'+key].Draw("SAME")
@@ -3432,7 +3462,8 @@ class bkg_fakerateAnalyzer:
             }
         for sKind, sList in systDict.iteritems():
             for sName in sList :
-                finalPlotFileDict[sName+'parameters'] = ROOT.TFile.Open(outDir+"/bkg_"+sName+"/bkg_parameters_file"+self.corrFitSuff+".root")
+                suffPar = ''
+                finalPlotFileDict[sName+'parameters'] = ROOT.TFile.Open(outDir+"/bkg_"+sName+"/bkg_parameters_file.root")
                 for s in self.signList :
                     for kind in ParnameDict :
                         for par in ParnameDict[kind] :

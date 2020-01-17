@@ -192,8 +192,8 @@ inputDir = ('/scratch/sroychow/NanoAOD%s-%s/' % (str(dataYear), tag))
 
 # outDir =  'NanoAOD%s-%s_ptStudy_syst/' % (str(dataYear), tag)
 
-outDir =  'NanoAOD%s-%s_fast_syst/' % (str(dataYear), tag)
-# outDir =  'NanoAOD%s-%s_fast_25-45/' % (str(dataYear), tag)
+# outDir =  'NanoAOD%s-%s_fast_syst/' % (str(dataYear), tag)
+outDir =  'NanoAOD%s-%s_fast_DoubleCorrelated/' % (str(dataYear), tag)
 
 
 
@@ -362,7 +362,7 @@ if fakerate :
         fakeFinal = bkg_fakerateAnalyzer(outdir=outDir+'/bkg/bkg_nom', folder=outDir,norm = NORM, fitOnTemplate=True, ptBinning=ptBinning, etaBinning=etaBinning, onData=True, slicing=False, systName='nom',systKind='nom', parabolaFit=PARFIT,EWSF='Iso_pt', tightCut=TCUT, looseCut=LCUT, fastHistos=FASTHISTOS, extraValidationPlots=EXTRAVALPLOT, correlatedFit=CORRFIT)
         fakeFinal.differential_preliminary(fakerate=fakerate, correlatedFit=CORRFIT, produce_ext_output=True)
         fakeFinal.fakerate_plots(variations=fakerateVar,tightCutList=tightCutList,looseCutList=looseCutList, parabolaFit = PARFIT,correlatedFit=CORRFIT)
-        fakeFinal.finalPlots(systDict=bkg_systematics, sum2Bands=True, outDir=outDir+'/bkg/',correlatedFit=CORRFIT, noratio=False)
+        fakeFinal.finalPlots(systDict=bkg_systematics, sum2Bands=True, outDir=outDir+'/bkg/',correlatedFit=CORRFIT, noratio=False, correlatedFit_alreadyDone=True)
         
         # fakeFinal.clousure_plots(outdir=outDir+'/bkg/', MC=False)
 
