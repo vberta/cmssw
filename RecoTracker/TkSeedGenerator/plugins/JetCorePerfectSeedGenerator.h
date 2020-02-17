@@ -63,17 +63,16 @@
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 // #include "SimG4Core/Application/interface/G4SimTrack.h"
-// #include "SimDataFormats/Track/interface/SimTrack.h"
+#include "SimDataFormats/Track/interface/SimTrack.h"
 
-// #include "SimDataFormats/Vertex/interface/SimVertex.h"
-#include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
+#include "SimDataFormats/Vertex/interface/SimVertex.h"
 
 
 #include "Geometry/TrackerGeometryBuilder/interface/PixelGeomDetUnit.h"
 
 #include "DataFormats/TrajectorySeed/interface/TrajectorySeedCollection.h"
 
-// #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
+#include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 
 
 #include "TTree.h"
@@ -149,11 +148,10 @@ class JetCorePerfectSeedGenerator : public edm::one::EDProducer<edm::one::Shared
   edm::Handle<edmNew::DetSetVector<SiPixelCluster> > inputPixelClusters;
   edm::EDGetTokenT< edm::DetSetVector<PixelDigiSimLink> > pixeldigisimlinkToken;
   edm::EDGetTokenT<edm::View<reco::Candidate> > cores_;
-  // edm::EDGetTokenT<std::vector<SimTrack> > simtracksToken;
-  // edm::EDGetTokenT<std::vector<SimVertex> > simvertexToken;
-  // edm::EDGetTokenT<std::vector<PSimHit> > PSimHitToken;
-  edm::EDGetTokenT<std::vector<TrackingParticle> > trackingParticleToken;
-  // edm::Handle<std::vector<PSimHit> > simhits;
+  edm::EDGetTokenT<std::vector<SimTrack> > simtracksToken;
+  edm::EDGetTokenT<std::vector<SimVertex> > simvertexToken;
+  edm::EDGetTokenT<std::vector<PSimHit> > PSimHitToken;
+  edm::Handle<std::vector<PSimHit> > simhits;
 
   double ptMin_;
   double deltaR_;
@@ -181,14 +179,12 @@ class JetCorePerfectSeedGenerator : public edm::one::EDProducer<edm::one::Shared
 
   std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex, int );
 
-  // std::vector<PSimHit> coreHitsFilling(auto,const GeomDet*,GlobalVector,const reco::Vertex&);
-  // std::pair<std::vector<SimTrack>,std::vector<SimVertex>> coreTracksFilling(std::vector<PSimHit>, const auto &, const auto &);
+  std::vector<PSimHit> coreHitsFilling(auto,const GeomDet*,GlobalVector,const reco::Vertex&);
+  std::pair<std::vector<SimTrack>,std::vector<SimVertex>> coreTracksFilling(std::vector<PSimHit>, const auto &, const auto &);
 
-    // std::vector<std::array<double,5>> seedParFilling(std::pair<std::vector<SimTrack>,std::vector<SimVertex>>,const GeomDet*);
-  std::vector<std::array<double,5>> seedParFilling(std::vector<TrackingParticle>,const GeomDet*);
+  std::vector<std::array<double,5>> seedParFilling(std::pair<std::vector<SimTrack>,std::vector<SimVertex>>,const GeomDet*, const reco::Candidate&);
 
-  // std::pair<std::vector<SimTrack>,std::vector<SimVertex>> coreTracksFillingDeltaR( const auto &, const auto &,const GeomDet* , const reco::Candidate& );
-  std::vector<TrackingParticle> coreTracksFillingDeltaR( const auto &,const GeomDet* , const reco::Candidate& );
+  std::pair<std::vector<SimTrack>,std::vector<SimVertex>> coreTracksFillingDeltaR( const auto &, const auto &,const GeomDet* , const reco::Candidate&,auto );
 
 
 };
