@@ -147,7 +147,7 @@ void JetCorePerfectSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
   auto result = std::make_unique<TrajectorySeedCollection>();
   auto resultTracks = std::make_unique<reco::TrackCollection>();
 
-  evt_counter++;
+  // evt_counter++;
 
 
   using namespace edm;
@@ -207,7 +207,7 @@ int jet_number = 0;
       std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex, 1);
       if(splitClustDirSet.size()==0) {//if layer 1 is broken find direcitons on layer 2
         splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex, 2);
-        std::cout << "split on lay2, in numero=" << splitClustDirSet.size() << "+jetDir" << std::endl;
+        // std::cout << "split on lay2, in numero=" << splitClustDirSet.size() << "+jetDir" << std::endl;
       }
       if(inclusiveConeSeed) splitClustDirSet.clear();
       splitClustDirSet.push_back(GlobalVector(jet.px(),jet.py(),jet.pz()));
@@ -251,7 +251,7 @@ int jet_number = 0;
       for(uint tk=0; tk<seedVector.size(); tk++ ){
         LocalPoint localSeedPoint = LocalPoint(seedVector.at(tk).at(0),seedVector.at(tk).at(1),0);
         double track_theta = 2*std::atan(std::exp(-seedVector.at(tk).at(2)));
-        double track_phi =seedVector.at(tk).at(2);
+        double track_phi =seedVector.at(tk).at(3);
         double pt =  1./ seedVector.at(tk).at(4);
 
         double normdirR =  pt/sin(track_theta);
@@ -260,7 +260,8 @@ int jet_number = 0;
 
 	       int64_t  seedid=  (int64_t(localSeedPoint.x()*200.)<<0)+(int64_t(localSeedPoint.y()*200.)<<16)+(int64_t(seedVector.at(tk).at(2)*400.)<<32)+(int64_t(track_phi*400.)<<48);
 	        if(ids.count(seedid)!=0) {
-		          continue;
+		          // continue;
+              std::cout << "seed not removed with DirectSeed cleaner" << std::endl;
             }
 	           ids.insert(seedid);
 
@@ -431,7 +432,7 @@ std::vector<GlobalVector> JetCorePerfectSeedGenerator::splittedClusterDirections
 */
 	if(1){
               // shouldBeSplit = true;
-              std::cout << "trovato cluster con deltaR=" << Geom::deltaR(jetDir, clusterDir)<< ", on layer=" <<lay << std::endl;
+              // std::cout << "trovato cluster con deltaR=" << Geom::deltaR(jetDir, clusterDir)<< ", on layer=" <<lay << std::endl;
               clustDirs.push_back(clusterDir);
             }
           }
