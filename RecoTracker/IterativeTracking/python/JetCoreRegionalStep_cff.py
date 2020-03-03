@@ -174,7 +174,7 @@ import RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi
 import RecoTracker.TkSeedGenerator.jetCorePerfectSeedGenerator_cfi
 jetCoreSeeds  = RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi.jetCoreDirectSeedGenerator.clone(
 # jetCoreSeeds  = RecoTracker.TkSeedGenerator.jetCorePerfectSeedGenerator_cfi.JetCorePerfectSeedGenerator.clone(
- vertices="firstStepPrimaryVertices"
+vertices="firstStepPrimaryVertices"
 )
 
 # MAKING OF TRACK CANDIDATES
