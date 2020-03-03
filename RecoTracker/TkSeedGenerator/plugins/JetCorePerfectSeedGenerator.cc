@@ -165,7 +165,6 @@ void JetCorePerfectSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
   // evt_counter++;
 //  std::cout << "event number (iterative)=" << evt_counter<< ", event number (id)="<< iEvent.id().event() << std::endl;
 
-
   using namespace edm;
   using namespace reco;
 
@@ -328,8 +327,8 @@ int seed_number = 0;
 
 	       int64_t  seedid=  (int64_t(localSeedPoint.x()*200.)<<0)+(int64_t(localSeedPoint.y()*200.)<<16)+(int64_t(seedVector.at(tk).at(2)*400.)<<32)+(int64_t(track_phi*400.)<<48);
 	        if(ids.count(seedid)!=0) {
-		  //continue;
-		  std::cout << "seed not removed with DirectSeed cleaner" << std::endl;
+		          // continue;
+              std::cout << "seed not removed with DirectSeed cleaner" << std::endl;
             }
 	           ids.insert(seedid);
 
