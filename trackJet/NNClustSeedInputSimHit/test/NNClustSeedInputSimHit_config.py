@@ -29,14 +29,19 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 
 process.GlobalTag.globaltag="94X_mc2017_realistic_v10"
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) ) #-1 = tutti (numero edi eventi)
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) #-1 = tutti (numero edi eventi)
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root',' with the source file you want to use
     fileNames = cms.untracked.vstring(
+        # 'root://cms-xrd-global.cern.ch//store/user/vbertacc/TrainJetCore/QCD_Pt_1000to1400_TuneCP5_13TeV_pythia8/TrainJetCoreAll/190808_093923/0005/step3_5820.root' #EC standard sample
+        'file:/afs/cern.ch/work/v/vbertacc/CMSSW_10_2_5/src/trackJet/PrepareNtupleInputs/twoFileSol_bug_1000-7000_100ev_FlatP.root' #my produced sample
+
         # 'file:../../NNClustSeedInput/test/909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root'
         # 'file:/scratch/arizzi/jetCoreNN/slc6/clean/CMSSW_10_2_5/src/RecoTracker/TkSeedGenerator/test/3000/step3_1800_debug.root'
-        'root://cms-xrd-global.cern.ch//store/user/arizzi/TrainJetCore/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/TrainJetCoreAll/181026_130638/0005/step3_5435.root' #GOOD ONE
+
+        # 'root://cms-xrd-global.cern.ch//store/user/arizzi/TrainJetCore/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/TrainJetCoreAll/181026_130638/0005/step3_5435.root' #GOOD ONE
+
         # 'root://cms-xrd-global.cern.ch//store/user/arizzi/TrainJetCore/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/TrainJetCoreAll/181026_130638/0001/step3_1321.root' #NAN ONE
         # 'file:step3.root'
         # 'root://cms-xrd-global.cern.ch//store/mc/RunIIFall17DRPremix/QCD_Pt_1800to2400_TuneCP5_13TeV_pythia8/GEN-SIM-RECODEBUG/94X_mc2017_realistic_v10-v1/510000/909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root'
@@ -143,13 +148,14 @@ process.demo = cms.EDProducer('NNClustSeedInputSimHit' ,#demo = nome libero
  vertices = cms.InputTag("offlinePrimaryVertices"),
  cores = cms.InputTag("ak4CaloJets"),
  #cores =cms.InputTag("ak4PFJetsCHS"),
- ptMin = cms.double(500), #1000#800
+ ptMin = cms.double(1000), #500 is the goodone (for barel training) #1000#800
  deltaR = cms.double(0.1),
  centralMIPCharge = cms.double(18000.0),
  chargeFractionMin = cms.double(2), #a caso
  simTracks= cms.InputTag("g4SimHits"),
  # simVertex= cms.InputTag("g4SimHits"),
  simHit= cms.InputTag("g4SimHits","TrackerHitsPixelBarrelLowTof"),
+ simHitEC= cms.InputTag("g4SimHits","TrackerHitsPixelEndcapLowTof"),
  pixelCPE = cms.string( "PixelCPEGeneric" )
 )
 
@@ -159,7 +165,7 @@ process.SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",
 )
 
 process.TFileService = cms.Service("TFileService",
-      fileName = cms.string("ntuple_simHit_1LayClustPt_cutPt_100ev.root"),
+      fileName = cms.string("ntuple_EC_bug_1000-7000_100ev.root"),
       closeFileFast = cms.untracked.bool(True)
   )
 

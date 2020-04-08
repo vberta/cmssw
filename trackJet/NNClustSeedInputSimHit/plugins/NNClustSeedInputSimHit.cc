@@ -125,9 +125,9 @@ class NNClustSeedInputSimHit : public edm::one::EDProducer<edm::one::SharedResou
 
   TFile* NNClustSeedInputSimHit_out;
   TTree* NNClustSeedInputSimHitTree;
-  static const int jetDimX =30;
-  static const int jetDimY =30;
-  static const int Nlayer =4;
+  static const int jetDimX =30;//30
+  static const int jetDimY =30;//30
+  static const int Nlayer =7;//4;
   static const int Ntrack = 100;
   static const int Npar = 5; //added 1/pt
   static const int Nover = 3;
@@ -141,9 +141,15 @@ class NNClustSeedInputSimHit : public edm::one::EDProducer<edm::one::SharedResou
   double track_eta[Ntrack] = {0.0};
   double track_phi[Ntrack] = {0.0};
   double jet_pt;
+  double jet_p;
   double jet_eta;
   double jet_phi;
   double jet_Ntrack = 0;
+  // int NPixL4=0;
+  // int NPixL5=0;
+  // int NPixL6=0;
+  int NPixLay[Nlayer] = {0};
+
 
   int eventID;
 
@@ -196,7 +202,8 @@ class NNClustSeedInputSimHit : public edm::one::EDProducer<edm::one::SharedResou
   // edm::EDGetTokenT<std::vector<SimVertex> > simvertexToken;
   edm::EDGetTokenT<std::vector<PSimHit> > PSimHitToken;
   edm::Handle<std::vector<PSimHit> > simhits;
-
+  edm::EDGetTokenT<std::vector<PSimHit> > PSimHitECToken;
+  edm::Handle<std::vector<PSimHit> > simhitsEC;
 
 
 
@@ -226,7 +233,7 @@ class NNClustSeedInputSimHit : public edm::one::EDProducer<edm::one::SharedResou
 
   GlobalVector recenter(const reco::Candidate&, GlobalVector, const reco::Vertex&, const TrackerTopology* const, const PixelClusterParameterEstimator*);
 
-  void fillTrackInfo(const reco::Candidate&, const auto &, auto, auto, auto, const GeomDet*, const PixelClusterParameterEstimator*, std::vector<PSimHit>);
+  void fillTrackInfo(const reco::Candidate&, const auto &, auto, auto, auto, const GeomDet*, const PixelClusterParameterEstimator*, std::vector<PSimHit>, const TrackerTopology* const);
 
   const GeomDet* DetectorSelector(int ,const reco::Candidate& jet, GlobalVector,  const reco::Vertex& jetVertex, const TrackerTopology* const, const PixelClusterParameterEstimator*, const auto &);
 
@@ -265,6 +272,7 @@ NNClustSeedInputSimHit::NNClustSeedInputSimHit(const edm::ParameterSet& iConfig)
       simtracksToken(consumes<std::vector<SimTrack> >(iConfig.getParameter<edm::InputTag>("simTracks"))),
       // simvertexToken(consumes<std::vector<SimVertex> >(iConfig.getParameter<edm::InputTag>("simVertex"))),
       PSimHitToken(consumes<std::vector<PSimHit> >(iConfig.getParameter<edm::InputTag>("simHit"))),
+      PSimHitECToken(consumes<std::vector<PSimHit> >(iConfig.getParameter<edm::InputTag>("simHitEC"))),
       ptMin_(iConfig.getParameter<double>("ptMin")),
       deltaR_(iConfig.getParameter<double>("deltaR")),
       chargeFracMin_(iConfig.getParameter<double>("chargeFractionMin")),
@@ -288,12 +296,13 @@ NNClustSeedInputSimHit::NNClustSeedInputSimHit(const edm::ParameterSet& iConfig)
   // NNClustSeedInputSimHitTree= new TTree("NNClustSeedInputSimHitTree","NNClustSeedInputSimHitTree");
    NNClustSeedInputSimHitTree= fileService->make<TTree>("NNClustSeedInputSimHitTree","NNClustSeedInputSimHitTree");
   //  NNClustSeedInputSimHitTree->SetAutoFlush(10000);
-   NNClustSeedInputSimHitTree->Branch("cluster_measured",clusterMeas,"cluster_measured[30][30][4]/D");
+   NNClustSeedInputSimHitTree->Branch("cluster_measured",clusterMeas,"cluster_measured[30][30][7]/D");
    NNClustSeedInputSimHitTree->Branch("trackPar", trackPar, "trackPar[30][30][3][6]/D"); //NOFLAG
    NNClustSeedInputSimHitTree->Branch("trackProb", trackProb, "trackProb[30][30][3]/D");
   //  NNClustSeedInputSimHitTree->Branch("cluster_splitted",clusterSplit,"cluster_splitted[100][4][100][100]/D");
    NNClustSeedInputSimHitTree->Branch("jet_eta",&jet_eta);
    NNClustSeedInputSimHitTree->Branch("jet_pt",&jet_pt);
+   NNClustSeedInputSimHitTree->Branch("jet_p",&jet_p);
    NNClustSeedInputSimHitTree->Branch("jet_phi",&jet_phi);
    NNClustSeedInputSimHitTree->Branch("jet_Ntrack",&jet_Ntrack);
    NNClustSeedInputSimHitTree->Branch("track_pt",track_pt,"track_pt[100]/D");
@@ -301,6 +310,12 @@ NNClustSeedInputSimHit::NNClustSeedInputSimHit(const edm::ParameterSet& iConfig)
    NNClustSeedInputSimHitTree->Branch("track_eta",track_eta,"track_eta[100]/D");
    NNClustSeedInputSimHitTree->Branch("track_phi",track_phi,"track_phi[100]/D");
    NNClustSeedInputSimHitTree->Branch("event_ID",&eventID);
+
+   //debug branches
+   NNClustSeedInputSimHitTree->Branch("NPixLay",NPixLay, "NPixLay[7]/I");
+   // NNClustSeedInputSimHitTree->Branch("NPixL5",&NPixL5);
+   // NNClustSeedInputSimHitTree->Branch("NPixL6",&NPixL6);
+
 
 
    // //sto usando fileservice quindi non servono in fondo
@@ -310,7 +325,7 @@ NNClustSeedInputSimHit::NNClustSeedInputSimHit(const edm::ParameterSet& iConfig)
 
 
    /// dichiarare cosa produce  produces<asd
-     for(int i=0; i<Npar+1; i++){ //NOFLAG
+     for(int i=0; i<Nlayer; i++){ //NOFLAG
        for(int j=0; j<jetDimX; j++){
          for(int k=0; k<jetDimY; k++){
            if(j<jetDimX && k<jetDimY && i< Nlayer) clusterMeas[j][k][i] = 0.0;
@@ -345,6 +360,7 @@ NNClustSeedInputSimHit::~NNClustSeedInputSimHit()
 
 void NNClustSeedInputSimHit::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+
   evt_counter++;
   std::cout << "event number (iterative)=" << evt_counter<< ", event number (id)="<< iEvent.id().event() << std::endl;
 
@@ -390,6 +406,8 @@ void NNClustSeedInputSimHit::produce(edm::Event& iEvent, const edm::EventSetup& 
   //const reco::Vertex& pv = (*vertices)[0];
 
   iEvent.getByToken(PSimHitToken, simhits);
+  iEvent.getByToken(PSimHitECToken, simhitsEC);
+
 
   Handle<edm::View<reco::Candidate> > cores;
   iEvent.getByToken(cores_, cores);
@@ -414,32 +432,67 @@ void NNClustSeedInputSimHit::produce(edm::Event& iEvent, const edm::EventSetup& 
 
   auto output = std::make_unique<edmNew::DetSetVector<SiPixelCluster>>();
 
-print = false;
-int jet_number = 0;
-  std::cout << "jet tot number =" << cores->size() << std::endl;
+  print = false;
+  int jet_number = 0;
+  std::cout << " ---------------------NEW EVENT: N of jets in the event =" << cores->size() << std::endl;
+  std::cout << "THIS IS A ENDCAP-ONLY TRAINING NTUPLE!!!!"<< std::endl;
+
+
+
+
+
+
   for (unsigned int ji = 0; ji < cores->size(); ji++) { //loop jet
+    // continue;
     jet_number++;
 
-    if ((*cores)[ji].pt() > ptMin_) {
+    // if(iEvent.id().event()!=4807889) continue;
+
+
+    if(std::abs((*cores)[ji].eta())<1.4 || std::abs((*cores)[ji].eta())>2.1) continue; //TRAINING ON ENDCAP ONLY;//DEBUGGGG
+    std:: cout << "good eta!" << (*cores)[ji].eta()<< ", p="<< (*cores)[ji].p()  << std::endl;
+    if ((*cores)[ji].p() > ptMin_ ) { //NB: the cut is on PT!!!, if you want p-->(*cores)[ji].p()
       // std::cout << " __________________________________________________________" <<std::endl;
        std::cout << "|____________________NEW JET_______________________________| jet number=" << jet_number  << ", pt= "<< (*cores)[ji].pt() << ", eta=" << (*cores)[ji].eta() << std::endl;
+
       //
       // std::cout << "jet number " << jetnum << std::endl;
       //if(ji==1) print = true;
       //  if(print2)std::cout << "|____________________NEW JET_______________________________|" <<std::endl;
+      if(std::abs((*cores)[ji].eta())>1.4) std::cout << "ENDCAP JET, eta="<<(*cores)[ji].eta() << std::endl;
+      else std::cout << "BARREL JET, eta="<<(*cores)[ji].eta() << std::endl;
 
       const reco::Candidate& jet = (*cores)[ji];
       const reco::Vertex& jetVertex = (*vertices)[0];
       GlobalVector jetDirection(jet.px(), jet.py(), jet.pz());
 
+      // // DEBUGG LINES /////
+      // jet_pt = jet.pt();
+      // jet_p = jet.p();
+      // jet_eta = jet.eta();
+      // jet_phi = jet.phi();
+      // eventID= iEvent.id().event();
+      // NNClustSeedInputSimHitTree->Fill();
+      // continue;
+      // END OF DEBUGGGG///////
+
       std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex, 1);
-      std::cout << "numero of cluster da splittare" << splitClustDirSet.size() << "+jetDir" << std::endl;
+      std::cout << "numero of cluster da splittare:" << splitClustDirSet.size() << "+jetDir" << std::endl;
       if(splitClustDirSet.size()==0) {//if layer 1 is broken find direcitons on layer 2
         splitClustDirSet = splittedClusterDirections(jet, tTopo, pp, jetVertex, 2);
         std::cout << "split on lay2, in numero=" << splitClustDirSet.size() << "+jetDir" << std::endl;
       }
       splitClustDirSet.push_back(jetDirection);
+
       for(int cc=0; cc<(int)splitClustDirSet.size(); cc++){
+      int counterPX=0;
+      // NPixL4=0;
+      // NPixL5=0;
+      // NPixL6=0;
+      for(int lp=0; lp<Nlayer; lp++) NPixLay[lp] = 0;
+
+
+
       GlobalVector bigClustDir = splitClustDirSet.at(cc);
 
       std::set<int> trkIDset;
@@ -450,9 +503,11 @@ int jet_number = 0;
       // const auto & simvertexVector = simvertex.product();
 
       jet_pt = jet.pt();
+      jet_p = jet.p();
       jet_eta = jet.eta();
       jet_phi = jet.phi();
       eventID= iEvent.id().event();
+      // std::cout <<"pt="<< jet_pt <<",   p="<< jet_p << ", eta=" << jet_eta << std::endl;
 
 
       // GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
@@ -472,12 +527,27 @@ int jet_number = 0;
       //reco::Candidate::Point jetVertex = jet.vertex(); //probably equivalent
 
       edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt = inputPixelClusters->begin();
+      // std::cout << "DEBUG 1, pre detsel" << std::endl;
 
       const GeomDet* globDet = DetectorSelector(2, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector); //select detector mostly hitten by the jet
       // if(globDet == 0) continue;
-      const GeomDet* goodDet1 = DetectorSelector(1, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector);
-      const GeomDet* goodDet3 = DetectorSelector(3, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector);
-      const GeomDet* goodDet4 = DetectorSelector(4, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector);
+      // const GeomDet* goodDet1 = DetectorSelector(1, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector);
+      // const GeomDet* goodDet3 = DetectorSelector(3, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector);
+      // const GeomDet* goodDet4 = DetectorSelector(4, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector);
+
+      //fill the good det vector
+      std::vector<const GeomDet*> goodDets;
+      for(int l=1; l<8; l++){
+        // std::cout << "DEBUG 1.5, inside pre detsel, l=" << l<<std::endl;
+
+        const GeomDet* goodDet = DetectorSelector(l, jet, bigClustDir, jetVertex, tTopo,pp, simtracksVector);
+        // std::cout << "layer=" << l << " det="<< goodDet << std::endl;
+        goodDets.push_back(goodDet);
+        // std::cout << "DEBUG 1.5, inside post detsel, l=" << l<<std::endl;
+
+      }
+
+      // std::cout << "DEBUG 2, post detsel" << std::endl;
 
 
       for (; detIt != inputPixelClusters->end(); detIt++) { //loop deset
@@ -486,6 +556,12 @@ int jet_number = 0;
         const GeomDet* det = geometry_->idToDet(detset.id()); //lui sa il layer con cast a  PXBDetId (vedi dentro il layer function)
         //std::cout << "detset size = " << detset.size() << std::endl;
         // if(det!=globDet) continue;
+
+        bool goodDetBool = false;
+        for(int l=0; l<(int)goodDets.size(); l++){
+          if(goodDets.at(l)==det) goodDetBool = true;
+        }
+
         for (auto cluster = detset.begin(); cluster != detset.end(); cluster++) { //loop cluster
           // std::cout << " ---- new cluster ----" << std::endl;
 
@@ -493,11 +569,16 @@ int jet_number = 0;
           det_id_type aClusterID= detset.id();
 
           // if(aClusterID.subdetId()!=1) continue;
-          if(DetId(aClusterID).subdetId()!=1) continue;
+          // if(DetId(aClusterID).subdetId()!=1) continue; #select only  barrel clusters
 
           // PXBDetId detPX = (PXBDetId)detset.id();
           //int lay = detPX.layer();
           int lay = tTopo->layer(det->geographicalId());
+          // std::cout << "lay" << lay << ", subdetID="<< det->geographicalId().subdetId() << ", Endcap detID=" << PixelSubdetector::PixelEndcap << std::endl;
+          if(det->geographicalId().subdetId()==PixelSubdetector::PixelEndcap) {
+            lay=lay+4; //endcap layer counting = 5,6,7
+            // std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>endcap layer"<< lay << std::endl;
+            }
 
           std::pair<bool, Basic3DVector<float>> interPair = findIntersection(bigClustDir,(reco::Candidate::Point)jetVertex.position(), det);
 
@@ -526,11 +607,21 @@ int jet_number = 0;
 
           //--------------------------end---------------------//
 
-
+          // if(lay>4) std::cout << "layer" << lay << "  cPos_local.x()-localInter.x()/pitchX" << cPos_local.x()-localInter.x()/pitchX << "   cPos_local.y()-localInter.y())/pitchY" << cPos_local.y()-localInter.y()/pitchY<<std::endl;
           if(std::abs(cPos_local.x()-localInter.x())/pitchX<=jetDimX/2 && std::abs(cPos_local.y()-localInter.y())/pitchY<=jetDimY/2){ // per ora preso baricentro, da migliorare
-
-            if(det==goodDet1 || det==goodDet3 || det==goodDet4 || det==globDet) {
+            if(lay>4) {
+              counterPX++;
+            //   if(lay==5) NPixL4++;
+            //   if(lay==6) NPixL5++;
+            //   if(lay==7) NPixL6++;
+              }
+            NPixLay[lay-1]= NPixLay[lay-1]+1;
+            // std::cout <<"npixlay=" <<NPixLay[lay-1] << ", l="<<lay << std::endl;
+            // if(det==goodDet1 || det==goodDet3 || det==goodDet4 || det==globDet)
+            if(goodDetBool) {
               // std::cout << ">>>>>>>>>>>>>>>>>>>>>>>> Another Det, det==" << det << "layer=" << lay <<std::endl;
+
+              // if(lay>4) std::cout << ">>>>>>>>>>>>>>>>>>>>>>>> DEBUGG --- layer=" << lay << std::endl;
               fillPixelMatrix(aCluster,lay,localInter, det);
               }
 
@@ -542,6 +633,7 @@ int jet_number = 0;
               //  }
 
               // if(det!=globDet) continue;
+              // std::cout << "DEBUG 5, inside lay2" << std::endl;
 
               std::map<int,SiPixelCluster> splittedCluster = splitClusterInTracks(aCluster,aClusterID); //accesso/assegnazione splittedClister[id]=cluser
               clusterMapVector.push_back(splittedCluster);//(non è davvero usato questo, è old)
@@ -555,18 +647,31 @@ int jet_number = 0;
               for(std::map<int,SiPixelCluster>::iterator track_iter= splittedCluster.begin(); track_iter!=splittedCluster.end(); track_iter++){ //not rused:old implementation
                 trkIDset.insert(track_iter->first); //trackID
                 fillPixelTrackMap(track_iter->first, track_iter->second,lay,localInter, det);
+                // std::cout << "DEBUG 6, post fill pixeltrakcpmap" << std::endl;
+
                 //aggiungere salvataggio info traccia (pt eta ecc) usando trackID
               }//tracks in cluster
           }
-          } //cluster in ROI
+          }
+          // else {if(lay>4) std::cout << "FAIL" << std::endl;} //cluster in ROI
         } //cluster
       } //detset
 
 
       // ------------------------  good sim hit selection (hit inside window) --------------------------------------//
-      std::vector<PSimHit>::const_iterator shIt = simhits->begin();
+      std::vector<PSimHit> simhitsALL;
+      std::vector<PSimHit>::const_iterator shItB = simhits->begin();
+      for (; shItB != simhits->end(); shItB++) { //loop on simit to find correspondent det (barrel)
+        simhitsALL.push_back((*shItB));
+      }
+      // std::vector<PSimHit>::const_iterator shItEC = simhitsEC->begin();
+      // for (; shItEC != simhitsEC->end(); shItEC++) { //loop on simit to find correspondent det (endCaps)
+      //   simhitsALL.push_back((*shItEC));
+      // }
+
+      std::vector<PSimHit>::const_iterator shIt = simhitsALL.begin();
       // std::set<const GeomDet*> simhitsDetSet;
-      for (; shIt != simhits->end(); shIt++) { //loop deset
+      for (; shIt != simhitsALL.end(); shIt++) { //loop deset
         // const edmNew::DetSet<PSimHit>& detset = *shIt;
         const GeomDet* det = geometry_->idToDet((*shIt).detUnitId());
         // if(det!=goodDet1 && det!=goodDet3 && det!=goodDet4 && det!=globDet) continue;
@@ -579,23 +684,106 @@ int jet_number = 0;
 
         // int flip = pixelFlipper(det);
         if(std::abs(((*shIt).localPosition()).x()-localInter.x())/pitchX<=jetDimX/2 && std::abs(((*shIt).localPosition()).y()-localInter.y())/pitchY<=jetDimY/2){
-          // std::cout << "good sim hit" << (*shIt).trackId()<< std::endl;
+          // std::cout << "good sim hit on MAIN LAYER,  track ID" << (*shIt).trackId()<< std::endl;
           goodSimHit.push_back((*shIt));
+
         }
       }
+
+
+      //------ DEBUG ENDCAP ------------------------//
+      std::vector<PSimHit> goodSimHitEC;
+      std::vector<PSimHit>::const_iterator shItEC = simhitsEC->begin();
+      for (; shItEC != simhitsEC->end(); shItEC++) { //loop deset
+        // const edmNew::DetSet<PSimHit>& detset = *shItEC;
+        const GeomDet* det = geometry_->idToDet((*shItEC).detUnitId());
+        // if(det!=goodDet1 && det!=goodDet3 && det!=goodDet4 && det!=globDet) continue;
+        bool goodDetBoolEC = false;
+        for(int l=0; l<(int)goodDets.size(); l++){
+          if(goodDets.at(l)==det) {
+          goodDetBoolEC = true;
+          // std::cout <<  "layer ok="<< l+1 << std::endl;
+          }
+        }
+        // if(det!=goodDets.at(6)) continue;
+        if(goodDetBoolEC==false) continue;
+        std::pair<bool, Basic3DVector<float>> interPair = findIntersection(bigClustDir,(reco::Candidate::Point)jetVertex.position(), det);
+        if(interPair.first==false) continue;
+        Basic3DVector<float> inter = interPair.second;
+        auto localInter = det->specificSurface().toLocal((GlobalPoint)inter);
+        if(jetInter.x()==0 && jetInter.y()==0 && jetInter.z()==0) jetInter = localInter; //filling infoTracks
+
+        // int flip = pixelFlipper(det);
+        if(std::abs(((*shItEC).localPosition()).x()-localInter.x())/pitchX<=jetDimX/2 && std::abs(((*shItEC).localPosition()).y()-localInter.y())/pitchY<=jetDimY/2){
+          int lay = tTopo->layer(det->geographicalId());
+          if(det->geographicalId().subdetId()==PixelSubdetector::PixelEndcap) lay=lay+4;
+          // std::cout << "good sim hit on lay=" <<lay << ", track ID="<<(*shItEC).trackId()<< std::endl;
+
+          goodSimHitEC.push_back((*shItEC));
+        }
+      }
+      // std::cout <<  "=====================================================>>counting numer of good hits" << goodSimHitEC.size();
+
+      // const auto & simtracksVector2 = simtracks.product();
+      //   for(uint j=0; j<simtracksVector2->size(); j++){
+      //     for(std::vector<PSimHit>::const_iterator it=simhitsEC->begin(); it!=simhitsEC->end(); ++it) {
+      //       SimTrack st = simtracksVector2->at(j);
+      //       if(st.trackId()==(*it).trackId()) {
+      //         const GeomDet* det = geometry_->idToDet((*it).detUnitId());
+      //         int lay = tTopo->layer(det->geographicalId());
+      //         if(det->geographicalId().subdetId()==PixelSubdetector::PixelEndcap) {
+      //           lay=lay+4; //endcap layer counting = 5,6,7
+      //           std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!endcap layer"<< lay << "   det" << det->gdetIndex() << std::endl;
+      //           }
+      //         // else  std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!barrel layer"<< lay << "   det" << det->gdetIndex() << std::endl;
+      //
+      //       }
+      //     }
+      //
+      //   }
+
+
+
+
+
+
+
+        //------ DEBUG ENDCAP ------------------------//
+
+
+
+
       // ------------------------  End good sim hit selection --------------------------------------//
       // std::cout << "size sim hit in window" << goodSimHit.size() << std::endl;
 
     // int lay = tTopo->layer(globDet->geographicalId());
     // std::cout << "layer filled=" << lay << std::endl;
     // if(globDet == 0) continue;
+    // std::cout << "DEBUG 7, pre filltrakcinfo" << std::endl;
 
-    fillTrackInfo(jet, simtracksVector, jetInter, bigClustDir, jetVert, globDet, pp, goodSimHit);
+    //debug endcap ------
+
+    // std::vector<PSimHit> simhitsEC_copy;
+    //
+    // std::vector<PSimHit>::const_iterator shItEC = simhitsEC->begin();
+    // for (; shItEC != simhitsEC->end(); shItEC++) { //loop on simit to find correspondent det (endCaps)
+    //   simhitsEC_copy.push_back((*shItEC));
+    // }
+    //end of debug endcap ------
+
+    fillTrackInfo(jet, simtracksVector, jetInter, bigClustDir, jetVert, globDet, pp, goodSimHit,tTopo);
+    // std::cout << "DEBUG 8, post filltrakcinfo" << std::endl;
+
+
+
     clusterMapVector.clear();
     NNClustSeedInputSimHitTree->Fill();
     std::cout << "FILL!" << std::endl;
+    std::cout << ">>> counterPX_EC=" <<counterPX << ", 0=" <<NPixLay[0] << ", 1=" <<NPixLay[1] <<", 2=" <<NPixLay[1] << ", 3=" <<NPixLay[2]<<", 4=" <<NPixLay[4] <<", 5=" <<NPixLay[5] << ", 6=" <<NPixLay[6]<<std::endl;
 
-    for(int i=0; i<Npar+1; i++){
+
+
+    for(int i=0; i<Nlayer; i++){
       for(int j=0; j<jetDimX; j++){
         for(int k=0; k<jetDimY; k++){
           if(j<jetDimX && k<jetDimY && i< Nlayer) clusterMeas[j][k][i] = 0.0;
@@ -782,11 +970,11 @@ trackMap.clear();
         ny = ny+jetDimY/2;
         if(nx<jetDimX && ny<jetDimY && layer-1< Nlayer && layer-1>=0 && nx>=0 && ny>=0) clusterMeas[nx][ny][layer-1] += (pix.adc)/(float)(14000);
 
-        if(layer==1 && 0){std::cout << "x position pixel " << nx-jetDimX/2 <<std::endl;
+        if(layer>4 && 0){std::cout << "x position pixel " << nx-jetDimX/2 <<std::endl;
         std::cout << "y position pixel " << ny-jetDimY/2 <<std::endl;
         std::cout << "charge " << pix.adc <<std::endl;}
 
-        if(0){std::cout << "---------INPUT debug -------- det=" <<det->gdetIndex()<< std::endl;
+        if(layer>4 && 0){std::cout << "---------INPUT debug -------- det=" <<det->gdetIndex()<< ", layer="<< layer<< std::endl;
         std::cout<< "x=" << nx << ", y=" << ny << "("<<nx-jetDimX/2 << ", " << ny-jetDimY/2 << ")" << std::endl;
         std::cout << "jetInter X="<< pixInter.first <<", Y=" << pixInter.second << std::endl;
         std::cout << "trkInter X="<< pix.x <<", Y=" << pix.y << std::endl;
@@ -873,7 +1061,7 @@ trackMap.clear();
 
 
 
-  void NNClustSeedInputSimHit::fillTrackInfo(const reco::Candidate& jet, const auto & stVector, auto jti, auto jetDir, auto jVert, const GeomDet* det, const PixelClusterParameterEstimator* cpe,  std::vector<PSimHit> goodSimHit){
+  void NNClustSeedInputSimHit::fillTrackInfo(const reco::Candidate& jet, const auto & stVector, auto jti, auto jetDir, auto jVert, const GeomDet* det, const PixelClusterParameterEstimator* cpe,  std::vector<PSimHit> goodSimHit, const TrackerTopology* const tTopo){
 
     bool oneHitInfo = false;
 
@@ -923,7 +1111,7 @@ trackMap.clear();
       for(std::vector<PSimHit>::const_iterator it=goodSimHit.begin(); it!=goodSimHit.end(); ++it) {
         SimTrack st = stVector->at(j);
         if(st.trackId()==(*it).trackId()) {
-          std::cout << "matched track " << st.trackId() << std::endl;
+          // std::cout << "matched track " << st.trackId() << std::endl;
           // if(st.momentum().Pt()>100){
           if(st.momentum().Pt()<1 or st.momentum().Pt()>100000) continue; //Pt CUT ON TRACKS!!!!!!!! (1 GeV)
           goodSimTrk.push_back(st);
@@ -1012,6 +1200,27 @@ trackMap.clear();
       // //--------------END OF debug lines -------------
 
     }
+
+    //debugging for endcap------------------------
+    for(uint j=0; j<goodSimTrk.size(); j++){
+      SimTrack st = goodSimTrk.at(j);
+      for(std::vector<PSimHit>::const_iterator it=simhitsEC->begin(); it!=simhitsEC->end(); ++it) {
+        if(st.trackId()==(*it).trackId()){
+          // const GeomDet* det = *detIt;
+
+          const GeomDet* det = geometry_->idToDet((*it).detUnitId());
+          int layy = tTopo->layer(det->geographicalId());
+          if(det->geographicalId().subdetId()==PixelSubdetector::PixelEndcap) {
+            layy=layy+4; //endcap layer counting = 5,6,7
+          }
+          int detIID = det->gdetIndex();
+          // std::cout << "track ID=" << st.trackId() << ", layer=" << layy << ", detID=" << detIID << std::endl;
+        }
+      }
+    }
+    //end of debuggin for endcap------------------------
+
+
     // std::cout << "New Info filling, track Number="<< goodSimTrk.size() << " det=" << det << std::endl;
     for(int x=0; x<jetDimX; x++){
       for(int y=0; y<jetDimY; y++){
@@ -1109,7 +1318,7 @@ trackMap.clear();
 
           if (x==pixX && y==pixY) {
             // if(theCluster.sizeX()==1) std::cout << "PROB1 " << "size x="<< theCluster.sizeX()<< ", size Y="<< theCluster.sizeY()<<", local x ="<<localTrkInter.x()<< ", local y="<<localTrkInter.y() << ", divided by pitch X=" << localTrkInter.x()/pitchX << ", divided by pitch Y=" << localTrkInter.y()/pitchY << ", flipped=" << flip << ", pixel num=" << theCluster.minPixelRow() << "," << theCluster.minPixelCol() << std::endl;
-            std::cout << "PROB1 " << ", local x ="<<localTrkInter.x()<< ", local y="<<localTrkInter.y() << ", divided by pitch X=" << localTrkInter.x()/pitchX << ", divided by pitch Y=" << localTrkInter.y()/pitchY << ", flipped=" << flip << std::endl;
+            // std::cout << "PROB1 " << ", local x ="<<localTrkInter.x()<< ", local y="<<localTrkInter.y() << ", divided by pitch X=" << localTrkInter.x()/pitchX << ", divided by pitch Y=" << localTrkInter.y()/pitchY << ", flipped=" << flip << std::endl;
 
             // if(flagOver[x][y] < Nover){
             //   trackProb[x][y][flagOver[x][y]] = 1;
@@ -1317,7 +1526,7 @@ trackMap.clear();
          }
          if(trackPar[x][y][2][4]!=0 && 0) std::cout << "-------------------------------------------------" << ", prob="<<trackProb[x][y][2]<< ", x="<< x << ", y=" << y<< ", "<<  "xpos=" << trackPar[x][y][2][0] << " ypos=" << trackPar[x][y][2][1] << "par2="<< trackPar[x][y][2][2] << "par3="<<trackPar[x][y][2][3]<< "flag="<<trackPar[x][y][2][4]<< std::endl;
           //----debug lines ----
-          if(tracksInfo.at(trk).prob==1){
+          if(tracksInfo.at(trk).prob==1 && 0){
             std::cout << " NEW TRACK: " << std::endl;
             std::cout << " x position:" << tracksInfo.at(trk).xpos << std::endl;
             std::cout << " y position:" << tracksInfo.at(trk).ypos << std::endl;
@@ -1543,20 +1752,41 @@ trackMap.clear();
     // const reco::Vertex& jetVertex = (*vertices)[0];
     // auto jetVert = jetVertex; //trackInfo filling
     // std::vector<std::map<int,SiPixelCluster>> clusterMapVector;
+    // std::cout << "DEBUG DETSEL, pre loops" << std::endl;
 
     std::vector<PSimHit>::const_iterator shIt = simhits->begin();
+    std::vector<PSimHit>::const_iterator shItEC = simhitsEC->begin();
+
     std::set<const GeomDet*> simhitsDetSet;
 
-    for (; shIt != simhits->end(); shIt++) { //loop deset
+    for (; shIt != simhits->end(); shIt++) { //loop on simit to find correspondent det (barrel)
       // const edmNew::DetSet<PSimHit>& detset = *shIt;
       const GeomDet* det = geometry_->idToDet((*shIt).detUnitId());
 
       simhitsDetSet.insert(det);
     }
 
+    // std::cout << "DEBUG DETSEL, between loops" << std::endl;
+
+
+    for (; shItEC != simhitsEC->end(); shItEC++) { //loop on simit to find correspondent det (endCaps)
+      // const edmNew::DetSet<PSimHit>& detset = *shIt;
+      // std::cout << "DEBUG DETSEL, pre ECdet" << std::endl;
+
+      const GeomDet* det = geometry_->idToDet((*shItEC).detUnitId());
+      // std::cout << "DEBUG DETSEL,post ECdet" << std::endl;
+
+      simhitsDetSet.insert(det);
+      // std::cout << "DEBUG DETSEL,inserted ECdet" << std::endl;
+
+    }
+
+    // std::cout << "DEBUG DETSEL, post loops" << std::endl;
+
     // edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt = simhits->begin();
 
     for (std::set<const GeomDet*>::iterator detIt=simhitsDetSet.begin(); detIt != simhitsDetSet.end(); detIt++) { //loop deset
+      // std::cout << "DEBUG DETSEL, in iteration" << std::endl;
 
       // std::set<int> trkIDset;
       // std::set<double> distSet; //distance square from center of det
@@ -1571,6 +1801,10 @@ trackMap.clear();
         // if(DetId(aClusterID).subdetId()!=1) continue;
 
         int lay = tTopo->layer(det->geographicalId());
+        if(det->geographicalId().subdetId()==PixelSubdetector::PixelEndcap){
+           lay=lay+4; //endcap layer counting = 5,6,7
+          //  std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< endcap detector" << std::endl;
+        }
         std::pair<bool, Basic3DVector<float>> interPair = findIntersection(jetDir,(reco::Candidate::Point)jetVertex.position(), det);
         if(interPair.first==false) continue;
         Basic3DVector<float> inter = interPair.second;
@@ -1586,7 +1820,7 @@ trackMap.clear();
           // fillPixelMatrix(aCluster,lay,localInter, det);
           if(lay==llay) {
             double dist2 = localInter.x()*localInter.x()+localInter.y()*localInter.y();
-            // std::cout << "lay=" << lay << " dist=" << dist2 << std::endl;
+            // std::cout << "lay=" << lay << " dist=" << dist2 << " det="<< det->gdetIndex() << std::endl;
             std::pair<double,const GeomDet*> distDet(dist2, det);
             distDetSet.insert(distDet);
           }
@@ -1622,14 +1856,84 @@ trackMap.clear();
 
     } //detset
 
-    if(distDetSet.size()!=0) std::cout << "layer ="<< llay << "  det=" << distDetSet.begin()->second->gdetIndex() << ", distance =" << distDetSet.begin()->first << std::endl;
+    if(distDetSet.size()!=0 && 0) std::cout << "layer ="<< llay << "  det=" << distDetSet.begin()->second->gdetIndex() << ", distance =" << distDetSet.begin()->first << std::endl;
     // for(std::set<std::pair<double,const GeomDet*>, distCompare>::iterator track_iter= distDetSet.begin(); track_iter!=distDetSet.end(); track_iter++){
     //   std::cout << "det=" << track_iter->second << ", trk number=" << track_iter->first << std::endl;
     // }
-    std::cout << "---------" << std::endl;
-    if(distDetSet.size()==0) std::cout << "VUOTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+    // std::cout << "---------" << std::endl;
+    // if(distDetSet.size()==0) std::cout << "VUOTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
     if(distDetSet.size()==0) return (GeomDet*)0;
-    else return distDetSet.begin()->second;
+    else {
+
+    //start debug EC-------------------------------
+    // int   NTracksCounter = 0;
+    // std::map<int, int> mapCount;
+    //     for(uint j=0; j<simtracksVector->size(); j++){
+    //       for(std::vector<PSimHit>::const_iterator it=simhitsEC->begin(); it!=simhitsEC->end(); ++it) {
+    //         SimTrack st = simtracksVector->at(j);
+    //         if(st.trackId()==(*it).trackId()) {
+    //           const GeomDet* det = geometry_->idToDet((*it).detUnitId());
+    //           int lay = tTopo->layer(det->geographicalId());
+    //           if(det->geographicalId().subdetId()==PixelSubdetector::PixelEndcap) {
+    //             lay=lay+4; //endcap layer counting = 5,6,7
+    //           }
+    //             // std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!endcap layer"<< lay << "   det" << det->gdetIndex() << std::endl;
+    //             if(det == distDetSet.begin()->second) NTracksCounter++;
+    //             if(lay==llay) {
+    //               if(mapCount.find(det->gdetIndex())!=mapCount.end()) mapCount[det->gdetIndex()]++;
+    //               else   mapCount[det->gdetIndex()]=0;
+    //               }
+    //           // else  std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!barrel layer"<< lay << "   det" << det->gdetIndex() << std::endl;
+    //
+    //         }
+    //       }
+    //     }
+    // for(uint j=0; j<simtracksVector->size(); j++){
+    //
+    //       for(std::vector<PSimHit>::const_iterator it=simhits->begin(); it!=simhits->end(); ++it) {
+    //         SimTrack st = simtracksVector->at(j);
+    //         if(st.trackId()==(*it).trackId()) {
+    //           const GeomDet* det = geometry_->idToDet((*it).detUnitId());
+    //           int lay = tTopo->layer(det->geographicalId());
+    //           if(det->geographicalId().subdetId()==PixelSubdetector::PixelEndcap) {
+    //             lay=lay+4; //endcap layer counting = 5,6,7
+    //           }
+    //             // std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!endcap layer"<< lay << "   det" << det->gdetIndex() << std::endl;
+    //             if(det == distDetSet.begin()->second) NTracksCounter++;
+    //             if(lay==llay) {
+    //               if(mapCount.find(det->gdetIndex())!=mapCount.end()) mapCount[det->gdetIndex()]++;
+    //               else   mapCount[det->gdetIndex()]=0;
+    //               }
+    //           // else  std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!barrel layer"<< lay << "   det" << det->gdetIndex() << std::endl;
+    //
+    //         }
+    //       }
+    //     }
+    //     int maxMap = 0;
+    //     int detmap=0;
+    //     double distMap = 0;
+    //     for(auto const & x : mapCount){
+    //       if(x.second>maxMap ){
+    //          maxMap=x.second;
+    //          detmap = x.first;
+    //        }
+    //     for( auto x : distDetSet){
+    //       if(x.second->gdetIndex()==detmap) {
+    //         distMap=x.first;
+    //       }
+    //     }
+    //     }
+    //
+    //       std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>lay=" << llay << " dist=" << distDetSet.begin()->first << " det="<< distDetSet.begin()->second->gdetIndex() << "nTracks on it=" <<  NTracksCounter << "  map value=" << maxMap << " map det=" << detmap <<"   distMap=" << distMap <<std::endl;
+    //      // if(distDetSet.begin()->second->geographicalId().subdetId()==PixelSubdetector::PixelEndcap) std::cout << "EC det!" << std::endl;
+
+      //End of debug EC-------------------------------
+
+
+
+
+      return distDetSet.begin()->second;
+    }
   }
 
 
@@ -1745,6 +2049,7 @@ std::vector<GlobalVector> NNClustSeedInputSimHit::splittedClusterDirections(cons
     const edmNew::DetSet<SiPixelCluster>& detset_int = *detIt_int;
     const GeomDet* det_int = geometry_->idToDet(detset_int.id());
     int lay = tTopo->layer(det_int->geographicalId());
+    if(det_int->geographicalId().subdetId()==PixelSubdetector::PixelEndcap) lay=lay+4; //endcap layer counting = 5,6,7
     // std::cout<< "LAYYYYYYYYYYYY=" << lay <<std::endl;
     if(lay != layer) continue; //NB: saved bigclusetr on all the layers!!
 
