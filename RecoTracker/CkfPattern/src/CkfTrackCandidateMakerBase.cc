@@ -11,6 +11,8 @@
 #include "DataFormats/TrackReco/interface/SeedStopInfo.h"
 
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
+#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+
 
 #include "TrackingTools/PatternTools/interface/Trajectory.h"
 #include "TrackingTools/TrajectoryCleaning/interface/TrajectoryCleanerBySharedHits.h"
@@ -27,6 +29,10 @@
 #include "RecoTracker/CkfPattern/interface/CachingSeedCleanerBySharedInput.h"
 
 #include "RecoTracker/MeasurementDet/interface/MeasurementTrackerEvent.h"
+#include "RecoTracker/TransientTrackingRecHit/interface/TRecHit2DPosConstraint.h"
+#include "TrackPropagation/SteppingHelixPropagator/interface/SteppingHelixPropagator.h"
+#include "DataFormats/GeometrySurface/interface/SimpleCylinderBounds.h"
+#include "DataFormats/GeometrySurface/interface/Cylinder.h"
 
 #include "RecoTracker/Record/interface/NavigationSchoolRecord.h"
 #include "TrackingTools/DetLayers/interface/NavigationSchool.h"
@@ -154,6 +160,10 @@ namespace cms{
 
     // set the correct navigation
     // NavigationSetter setter( *theNavigationSchool);
+    
+    //geometry, for jetCore iteration
+    edm::ESHandle<GlobalTrackingGeometry> geometry_;
+    es.get<GlobalTrackingGeometryRecord>().get(geometry_);
 
     // propagator
     edm::ESHandle<Propagator> thePropagator;
@@ -317,7 +327,7 @@ namespace cms{
 
 	// Optionally continue building trajectory back through
 	// seed and if possible further inwards.
-
+  // std::cout << theTrajectoryCleanerName <<", DEBUG doSeedingRegionRebuilding=" << doSeedingRegionRebuilding << std::endl;
 	if (doSeedingRegionRebuilding) {
 	  theTrajectoryBuilder->rebuildTrajectories(startTraj,(*collseed)[j],theTmpTrajectories);
 
@@ -491,17 +501,57 @@ namespace cms{
 
            // Get inner state
            const bool doBackFit = (!doSeedingRegionRebuilding) & (!reverseTrajectories);
+           if(theTrajectoryCleanerName=="jetCoreTrajectoryCleanerBySharedHits" && doBackFit){ //jetCore seed appended to the trajectory
+             
+             //add fake hit on lay 2
+             PTrajectoryStateOnDet seedPTSODL2 = trialTrajectory.seed().startingState(); //this is the state of the seed (produced on L2)
+             LocalPoint seedPosL2 =  seedPTSODL2.parameters().position();
+             LocalError seedErrL2 = LocalError(seedPTSODL2.error(9),0.0,seedPTSODL2.error(14))  ;
+             const GeomDet* seedDetL2 = geometry_->idToDet(trialTrajectory.seed().startingState().detId());
+            //  const Surface *seedSurfaceL2 = &geometry_->idToDet(seed.startingState().detId())->specificSurface();
+             const Surface *seedSurfaceL2 = &seedDetL2->specificSurface();         
+             TrackingRecHit::RecHitPointer seedHitL2 = TRecHit2DPosConstraint::build(seedPosL2, seedErrL2, seedSurfaceL2);
+            assert(!seedHitL2->canImproveWithTrack());
+            TrajectoryStateOnSurface seedTSOSL2 = trajectoryStateTransform::transientState( trialTrajectory.seed().startingState(),  seedSurfaceL2, theMagField.product());
+            auto seedTrajectoryMeasurementL2 = TrajectoryMeasurement(seedTSOSL2,seedHitL2);
+            std::cout << "size before (l3):" << trialTrajectory.measurements().size();
+            trialTrajectory.measurements().insert(trialTrajectory.measurements().begin(), seedTrajectoryMeasurementL2);
+            std::cout << ", size after (l2):" << trialTrajectory.measurements().size() << std::endl;
+            
+            //add the fake hit on lay1
+            PropagationDirection backFitDirection = trialTrajectory.direction() == alongMomentum ? oppositeToMomentum: alongMomentum;
+            SteppingHelixPropagator seedProp = SteppingHelixPropagator(theMagField.product(),backFitDirection);
+            auto cylBoundL1 = new SimpleCylinderBounds(2.85f,2.9f,-100000,100000);//cilinder bounds centered at IP, R=lay1
+            Surface::RotationType rot; //cylinder radius 
+            const Cylinder* cylL1 = new Cylinder(Cylinder::computeRadius(*cylBoundL1), Surface::PositionType(0, 0, 0), rot, cylBoundL1); //cylinder  
+            std::pair<TrajectoryStateOnSurface, double> seedTSOSL1_wlen = seedProp.propagateWithPath(*seedTSOSL2.freeState(),*cylL1);
+            TrajectoryStateOnSurface seedTSOSL1 = seedTSOSL1_wlen.first;  //the state on L1
+            LocalPoint seedPosL1 = seedTSOSL1.localPosition();
+            LocalError seedErrL1 = LocalError(seedTSOSL1.localError().matrix()(3,3),0.0,seedTSOSL1.localError().matrix()(4,4));
+            const Surface * seedSurfaceL1 = &seedTSOSL1.surface();
+            TrackingRecHit::RecHitPointer seedHitL1 = TRecHit2DPosConstraint::build(seedPosL1, seedErrL1, seedSurfaceL1); //the fake hit on L1
+            assert(!seedHitL1->canImproveWithTrack());
+            auto seedTrajectoryMeasurementL1 = TrajectoryMeasurement(seedTSOSL1,seedHitL1);
+            trialTrajectory.measurements().insert(trialTrajectory.measurements().begin(), seedTrajectoryMeasurementL1);
+            std::cout << ", size after (l1):" << trialTrajectory.measurements().size() << "prop len=" <<seedTSOSL1_wlen.second <<std::endl;
+
+            
+           }
            initState = theInitialState->innerState(trialTrajectory, doBackFit);
+           if (theTrajectoryCleanerName=="jetCoreTrajectoryCleanerBySharedHits") std::cout << "DEBUG deepCore, doBackFit=" <<  doBackFit<< std::endl;
 
            // Check if that was successful
            failed =  (!initState.first.isValid()) || initState.second == nullptr || edm::isNotFinite(initState.first.globalPosition().x());
+           if (theTrajectoryCleanerName=="jetCoreTrajectoryCleanerBySharedHits") std::cout << "DEBUG deepCore,smoothing" << failed<< ", nHits=" << trialTrajectory.foundHits()<< std::endl;
          } while(failed && trialTrajectory.foundHits() > 3);
 
          if(failed) {
+           if (theTrajectoryCleanerName=="jetCoreTrajectoryCleanerBySharedHits") std::cout << "DEBUG deepCore,failed smoothing" << std::endl;
            const auto seedIndex = it->seedRef().key();
            (*outputSeedStopInfos)[seedIndex].setStopReason(SeedStopReason::SMOOTHING_FAILED);
            continue;
          }
+         if (theTrajectoryCleanerName=="jetCoreTrajectoryCleanerBySharedHits") std::cout <<"DEBUG deepCore,success smoothing" << std::endl; 
 
 
 
