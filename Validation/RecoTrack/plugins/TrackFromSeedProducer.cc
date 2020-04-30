@@ -41,6 +41,8 @@
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h" 
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateTransform.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
+#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
 
 //
 // class declaration
@@ -129,17 +131,33 @@ TrackFromSeedProducer::produce(edm::StreamID, edm::Event& iEvent, const edm::Eve
    edm::ESHandle<MagneticField> theMF;
    iSetup.get<IdealMagneticFieldRecord>().get(theMF);
 
+
    edm::ESHandle<TrackerTopology> httopo;
    iSetup.get<TrackerTopologyRcd>().get(httopo);
    const TrackerTopology& ttopo = *httopo;
+     
+    edm::ESHandle<GlobalTrackingGeometry> geometry_;
+    iSetup.get<GlobalTrackingGeometryRecord>().get(geometry_);
+
 
    // create tracks from seeds
    int nfailed  = 0;
    for(size_t iSeed=0; iSeed < seeds.size(); ++iSeed) {
+
      auto const& seed = seeds[iSeed];
      // try to create a track
+    TrajectoryStateOnSurface state;
+    if(seed.nHits()==0) { //deepCore seeds (jetCoreDirectSeedGenerator)
+      std::cout << "DEBUG: 0 hit seed " << std::endl;
+      const Surface *deepCore_sruface = &geometry_->idToDet(seed.startingState().detId())->specificSurface();
+      state = trajectoryStateTransform::transientState( seed.startingState(),  deepCore_sruface, theMF.product());
+    }
+    else {
      TransientTrackingRecHit::RecHitPointer lastRecHit = tTRHBuilder->build(&*(seed.recHits().second-1));
-     TrajectoryStateOnSurface state = trajectoryStateTransform::transientState( seed.startingState(), lastRecHit->surface(), theMF.product());
+    //  TrajectoryStateOnSurface state = trajectoryStateTransform::transientState( seed.startingState(), lastRecHit->surface(), theMF.product());
+      state = trajectoryStateTransform::transientState( seed.startingState(), lastRecHit->surface(), theMF.product());
+    }
+
      TrajectoryStateClosestToBeamLine tsAtClosestApproachSeed = tscblBuilder(*state.freeState(),*beamSpot);//as in TrackProducerAlgorithm
      if(tsAtClosestApproachSeed.isValid()) {
        const reco::TrackBase::Point vSeed1(tsAtClosestApproachSeed.trackStateAtPCA().position().x(),

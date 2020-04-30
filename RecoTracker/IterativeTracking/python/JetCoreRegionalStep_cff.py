@@ -170,7 +170,8 @@ CkfBaseTrajectoryFilter_blockLoose = cms.PSet(
 
 import RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi
 import RecoTracker.TkSeedGenerator.jetCorePerfectSeedGenerator_cfi
-jetCoreSeeds  = RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi.jetCoreDirectSeedGenerator.clone(
+jetCoreRegionalStepSeeds = RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi.jetCoreDirectSeedGenerator.clone(
+# jetCoreSeeds  = RecoTracker.TkSeedGenerator.jetCoreDirectSeedGenerator_cfi.jetCoreDirectSeedGenerator.clone(
 # jetCoreSeeds  = RecoTracker.TkSeedGenerator.jetCorePerfectSeedGenerator_cfi.JetCorePerfectSeedGenerator.clone(
 vertices="firstStepPrimaryVertices"
 )
@@ -178,12 +179,13 @@ vertices="firstStepPrimaryVertices"
 # MAKING OF TRACK CANDIDATES
 import RecoTracker.CkfPattern.CkfTrackCandidates_cfi
 jetCoreRegionalStepTrackCandidates = RecoTracker.CkfPattern.CkfTrackCandidates_cfi.ckfTrackCandidates.clone(
-    # src = cms.InputTag('jetCoreRegionalStepSeeds'),
-    src = cms.InputTag('jetCoreSeeds'),
+    src = cms.InputTag('jetCoreRegionalStepSeeds'),
+    # src = cms.InputTag('jetCoreSeeds'),
     maxSeedsBeforeCleaning = cms.uint32(10000),
     TrajectoryBuilderPSet = cms.PSet( refToPSet_ = cms.string('jetCoreRegionalStepTrajectoryBuilder')),
     TrajectoryCleaner = 'jetCoreTrajectoryCleanerBySharedHits',
     NavigationSchool = cms.string('SimpleNavigationSchool'),
+    doSeedingRegionRebuilding = False,
     ### these two parameters are relevant only for the CachingSeedCleanerBySharedInput
     #numHitsForSeedCleaner = cms.int32(50),
     #onlyPixelHitsForSeedCleaner = cms.bool(True),
@@ -267,7 +269,7 @@ JetCoreRegionalStepTask = cms.Task(jetsForCoreTracking,
                                    jetCoreRegionalStepTrackingRegions,
                                    jetCoreRegionalStepHitDoublets,
                                    jetCoreRegionalStepSeeds,
-                                   jetCoreSeeds,
+                                #    jetCoreSeeds,
                                    jetCoreRegionalStepTrackCandidates,
                                    jetCoreRegionalStepTracks,
 #                                   jetCoreRegionalStepClassifier1,jetCoreRegionalStepClassifier2,
