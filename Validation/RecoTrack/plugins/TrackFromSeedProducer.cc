@@ -169,11 +169,19 @@ TrackFromSeedProducer::produce(edm::StreamID, edm::Event& iEvent, const edm::Eve
        //GlobalPoint vSeed(vSeed1.x()-beamSpot->x0(),vSeed1.y()-beamSpot->y0(),vSeed1.z()-beamSpot->z0());
        PerigeeTrajectoryError seedPerigeeErrors = PerigeeConversions::ftsToPerigeeError(tsAtClosestApproachSeed.trackStateAtPCA());
        tracks->emplace_back(0.,0., vSeed1, pSeed, state.charge(), seedPerigeeErrors.covarianceMatrix());
+      //  std::cout << "DEBUG: SEED VALIDATOR PASSED ------------" << std::endl;
+      //  std::cout << "initial parameters:" << ", inv.Pt=" << state.freeState()->parameters().signedInverseTransverseMomentum() <<  ", trans.Curv=" <<state.freeState()->transverseCurvature()<< ", p=" << state.freeState()->momentum().mag() << ", pt=" << state.freeState()->momentum().perp() <<", phi=" <<state.freeState()->momentum().phi()  << ", eta="<<state.freeState()->momentum().eta() << std::endl;
+      //  std::cout << "initial matrix (diag)=" << std::sqrt(state.freeState()->curvilinearError().matrix()(0, 0)) << " , " << std::sqrt(state.freeState()->curvilinearError().matrix()(1, 1)) << " , " << std::sqrt(state.freeState()->curvilinearError().matrix()(2, 2)) << " , " << std::sqrt(state.freeState()->curvilinearError().matrix()(3, 3)) << " , " << std::sqrt(state.freeState()->curvilinearError().matrix()(4, 4)) << std::endl;
+      //  std::cout << "initial matrix (diag)=" << std::sqrt(state.localError().matrix()(0, 0)) << " , " << std::sqrt(state.localError().matrix()(1, 1)) << " , " << std::sqrt(state.localError().matrix()(2, 2)) << " , " << std::sqrt(state.localError().matrix()(3, 3)) << " , " << std::sqrt(state.localError().matrix()(4, 4)) << std::endl;
+      //  std::cout << "PCA parameters:" << ", inv.Pt=" << tsAtClosestApproachSeed.trackStateAtPCA().parameters().signedInverseTransverseMomentum() <<  ", trans.Curv=" <<tsAtClosestApproachSeed.trackStateAtPCA().transverseCurvature()<< ", p=" << tsAtClosestApproachSeed.trackStateAtPCA().momentum().mag() << ", pt=" << tsAtClosestApproachSeed.trackStateAtPCA().momentum().perp() <<", phi=" <<tsAtClosestApproachSeed.trackStateAtPCA().momentum().phi()  << ", eta="<<tsAtClosestApproachSeed.trackStateAtPCA().momentum().eta() << std::endl;
+      //  std::cout << "PCA matrix (diag)=" << std::sqrt(tsAtClosestApproachSeed.trackStateAtPCA().curvilinearError().matrix()(0, 0)) << " , " << std::sqrt(tsAtClosestApproachSeed.trackStateAtPCA().curvilinearError().matrix()(1, 1)) << " , " << std::sqrt(tsAtClosestApproachSeed.trackStateAtPCA().curvilinearError().matrix()(2, 2)) << " , " << std::sqrt(tsAtClosestApproachSeed.trackStateAtPCA().curvilinearError().matrix()(3, 3)) << " , " << std::sqrt(tsAtClosestApproachSeed.trackStateAtPCA().curvilinearError().matrix()(4, 4)) << std::endl;
+      //  std::cout << "perigee matrix (diag)=" <<  std::sqrt(seedPerigeeErrors.covarianceMatrix()(0, 0)) << " , " << std::sqrt(seedPerigeeErrors.covarianceMatrix()(1, 1)) << " , " << std::sqrt(seedPerigeeErrors.covarianceMatrix()(2, 2)) << " , " << std::sqrt(seedPerigeeErrors.covarianceMatrix()(3, 3)) << " , " << std::sqrt(seedPerigeeErrors.covarianceMatrix()(4, 4)) << std::endl;
      }
      else {
        edm::LogVerbatim("SeedValidator")<<"TrajectoryStateClosestToBeamLine not valid";
        // use magic values chi2<0, ndof<0, charge=0 to denote a case where the fit has failed
        // If this definition is changed, change also interface/trackFromSeedFitFailed.h
+      //  std::cout << "DEBUG:" << "SEED VALIDATOR FAILED" << std::endl;
        tracks->emplace_back(-1, -1, reco::TrackBase::Point(), reco::TrackBase::Vector(), 0, reco::TrackBase::CovarianceMatrix());
        nfailed++;
      }
