@@ -45,17 +45,10 @@ public:
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
-<<<<<<< HEAD
 private:
   void produce(edm::StreamID, edm::Event&, const edm::EventSetup&) const override;
 
   // ----------member data ---------------------------
-=======
-   private:
-      void produce(edm::StreamID, edm::Event&, const edm::EventSetup&) const override;
-
-      // ----------member data ---------------------------
->>>>>>> vberta/CMSSW_10_5_0_pre2_trackjet_DeepCore
   edm::EDGetTokenT<SimHitTPAssociationList> theSimHitTpMapToken;
   std::string thePname;
   double theQminCut;

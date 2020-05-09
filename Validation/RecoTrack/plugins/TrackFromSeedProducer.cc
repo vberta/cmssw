@@ -146,6 +146,7 @@ void TrackFromSeedProducer::produce(edm::StreamID, edm::Event& iEvent, const edm
     else {
       TransientTrackingRecHit::RecHitPointer lastRecHit = tTRHBuilder->build(&*(seed.recHits().second - 1));
       state = trajectoryStateTransform::transientState(seed.startingState(), lastRecHit->surface(), theMF.product());
+    }
     TrajectoryStateClosestToBeamLine tsAtClosestApproachSeed =
         tscblBuilder(*state.freeState(), *beamSpot);  //as in TrackProducerAlgorithm
     if (tsAtClosestApproachSeed.isValid()) {

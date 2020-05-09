@@ -321,19 +321,11 @@ namespace cms {
                                  << PrintoutHelper::dumpCandidates(theTmpTrajectories);
         }
 
-<<<<<<< HEAD
         // Optionally continue building trajectory back through
         // seed and if possible further inwards.
 
         if (doSeedingRegionRebuilding) {
           theTrajectoryBuilder->rebuildTrajectories(startTraj, (*collseed)[j], theTmpTrajectories);
-=======
-	// Optionally continue building trajectory back through
-	// seed and if possible further inwards.
-  // std::cout << theTrajectoryCleanerName <<", DEBUG doSeedingRegionRebuilding=" << doSeedingRegionRebuilding << std::endl;
-	if (doSeedingRegionRebuilding) {
-	  theTrajectoryBuilder->rebuildTrajectories(startTraj,(*collseed)[j],theTmpTrajectories);
->>>>>>> vberta/CMSSW_10_5_0_pre2_trackjet_DeepCore
 
           LogDebug("CkfPattern") << "======== Out-in trajectory building found " << theTmpTrajectories.size()
                                  << " valid/invalid trajectories from seed " << j << " ========\n"
