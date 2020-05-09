@@ -22,7 +22,7 @@ RecoToSimCollection TrackAssociatorByChi2Impl::associateRecoToSim(
     const edm::RefToBaseVector<reco::Track>& tC, const edm::RefVector<TrackingParticleCollection>& tPCH) const {
   const reco::BeamSpot& bs = *theBeamSpot;
 
-  RecoToSimCollection outputCollection;
+  RecoToSimCollection outputCollection(productGetter_);
 
   //dereference the edm::Refs only once
   std::vector<TrackingParticle const*> tPC;
@@ -53,6 +53,7 @@ RecoToSimCollection TrackAssociatorByChi2Impl::associateRecoToSim(
 
     recoTrackCovMatrix.Invert();
 
+<<<<<<< HEAD
     int tpindex = 0;
     for (auto tp = tPC.begin(); tp != tPC.end(); tp++, ++tpindex) {
       //skip tps with a very small pt
@@ -70,6 +71,24 @@ RecoToSimCollection TrackAssociatorByChi2Impl::associateRecoToSim(
             tC[tindex],
             std::make_pair(tPCH[tpindex],
                            -chi2));  //-chi2 because the Association Map is ordered using std::greater
+=======
+    int tpindex =0;
+    for (auto tp=tPC.begin(); tp!=tPC.end(); tp++, ++tpindex){
+
+      //skip tps with a very small pt
+      //if (sqrt((*tp)->momentum().perp2())<0.5) continue;
+      int charge = (*tp)->charge();
+      if (charge==0) continue;
+      Basic3DVector<double> momAtVtx((*tp)->momentum().x(),(*tp)->momentum().y(),(*tp)->momentum().z());
+      Basic3DVector<double> vert=(Basic3DVector<double>) (*tp)->vertex();
+
+      double chi2 = getChi2(rParameters,recoTrackCovMatrix,momAtVtx,vert,charge,bs);
+
+      if (chi2<chi2cut) {
+	outputCollection.insert(tC[tindex],
+				std::make_pair(tPCH[tpindex],
+					       -chi2));//-chi2 because the Association Map is ordered using std::greater
+>>>>>>> vberta/CMSSW_10_5_0_pre2_trackjet_DeepCore
       }
     }
   }
@@ -81,7 +100,7 @@ SimToRecoCollection TrackAssociatorByChi2Impl::associateSimToReco(
     const edm::RefToBaseVector<reco::Track>& tC, const edm::RefVector<TrackingParticleCollection>& tPCH) const {
   const reco::BeamSpot& bs = *theBeamSpot;
 
-  SimToRecoCollection outputCollection;
+  SimToRecoCollection outputCollection(productGetter_);
 
   int tpindex = 0;
   for (auto tp = tPCH.begin(); tp != tPCH.end(); tp++, ++tpindex) {

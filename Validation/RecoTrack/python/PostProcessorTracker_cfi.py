@@ -16,7 +16,7 @@ def _addNoFlow(module):
             module.noFlowDists.append(tmp[ind-1])
 
 postProcessorTrack = DQMEDHarvester("DQMGenericClient",
-    subDirs = cms.untracked.vstring("Tracking/Track/*", "Tracking/TrackTPPtLess09/*", "Tracking/TrackFromPV/*", "Tracking/TrackFromPVAllTP/*", "Tracking/TrackAllTPEffic/*", "Tracking/TrackBuilding/*", "Tracking/TrackConversion/*", "Tracking/TrackGsf/*", "Tracking/TrackBHadron/*"),
+    subDirs = cms.untracked.vstring("Tracking/Track/*", "Tracking/TrackTPPtLess09/*", "Tracking/TrackFromPV/*", "Tracking/TrackFromPVAllTP/*", "Tracking/TrackAllTPEffic/*", "Tracking/TrackBuilding/*", "Tracking/TrackConversion/*", "Tracking/TrackGsf/*", "Tracking/TrackBHadron/*", "Tracking/jetCoreRegionalStep/*"),
     efficiency = cms.vstring(
     "effic 'Efficiency vs #eta' num_assoc(simToReco)_eta num_simul_eta",
     "efficPt 'Efficiency vs p_{T}' num_assoc(simToReco)_pT num_simul_pT",
@@ -287,7 +287,7 @@ _addNoFlow(postProcessorTrackNrecVsNsim2D)
 
 
 postProcessorTrackSummary = DQMEDHarvester("DQMGenericClient",
-    subDirs = cms.untracked.vstring("Tracking/Track", "Tracking/TrackTPPtLess09", "Tracking/TrackFromPV", "Tracking/TrackFromPVAllTP", "Tracking/TrackAllTPEffic", "Tracking/TrackBuilding", "Tracking/TrackConversion", "Tracking/TrackGsf", "Tracking/TrackBHadron"),
+    subDirs = cms.untracked.vstring("Tracking/Track", "Tracking/TrackTPPtLess09", "Tracking/TrackFromPV", "Tracking/TrackFromPVAllTP", "Tracking/TrackAllTPEffic", "Tracking/TrackBuilding", "Tracking/TrackConversion", "Tracking/TrackGsf", "Tracking/TrackBHadron", "Tracking/jetCoreRegionalStep"),
     efficiency = cms.vstring(
     "effic_vs_coll 'Efficiency vs track collection' num_assoc(simToReco)_coll num_simul_coll",
     "effic_vs_coll_allPt 'Efficiency vs track collection' num_assoc(simToReco)_coll_allPt num_simul_coll_allPt",

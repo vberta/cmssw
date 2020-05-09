@@ -75,6 +75,8 @@ std::pair<TrajectoryStateOnSurface, const GeomDet*> TransientInitialStateEstimat
   TSOS startingState = measvec[actualLast].updatedState();
   startingState.rescaleError(100.);
 
+  std::cout << "DEBUG DEEPCORE: distance first hit" << measvec[0].recHit()->globalPosition().perp() << std::endl;
+
   // avoid cloning...
   KFUpdator const aKFUpdator;
   Chi2MeasurementEstimator const aChi2MeasurementEstimator(100., 3);
@@ -119,4 +121,6 @@ std::pair<TrajectoryStateOnSurface, const GeomDet*> TransientInitialStateEstimat
       << "\n the pointer from the state of the back fit was: " << firstMeas.updatedState().magneticField();
 
   return std::pair<TrajectoryStateOnSurface, const GeomDet*>(std::move(firstState), firstMeas.recHit()->det());
+  std::cout << "DEBUG deepCore: firstState------>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>:\n" << "initial parameters:" << ", inv.Pt=" << firstState.freeState()->parameters().signedInverseTransverseMomentum() <<  ", trans.Curv=" <<firstState.freeState()->transverseCurvature()<< ", p=" << firstState.freeState()->momentum().mag() << ", pt=" << firstState.freeState()->momentum().perp() <<", phi=" <<firstState.freeState()->momentum().phi()  << ", eta="<<firstState.freeState()->momentum().eta() << std::endl;
+
 }

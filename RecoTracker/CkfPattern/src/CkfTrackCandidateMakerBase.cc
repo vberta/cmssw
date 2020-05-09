@@ -11,6 +11,8 @@
 #include "DataFormats/TrackReco/interface/SeedStopInfo.h"
 
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
+// #include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+
 
 #include "TrackingTools/PatternTools/interface/Trajectory.h"
 #include "TrackingTools/TrajectoryCleaning/interface/TrajectoryCleanerBySharedHits.h"
@@ -26,6 +28,10 @@
 #include "RecoTracker/CkfPattern/interface/CachingSeedCleanerBySharedInput.h"
 
 #include "RecoTracker/MeasurementDet/interface/MeasurementTrackerEvent.h"
+// #include "RecoTracker/TransientTrackingRecHit/interface/TRecHit2DPosConstraint.h"
+// #include "TrackPropagation/SteppingHelixPropagator/interface/SteppingHelixPropagator.h"
+// #include "DataFormats/GeometrySurface/interface/SimpleCylinderBounds.h"
+// #include "DataFormats/GeometrySurface/interface/Cylinder.h"
 
 #include "RecoTracker/Record/interface/NavigationSchoolRecord.h"
 #include "TrackingTools/DetLayers/interface/NavigationSchool.h"
@@ -148,6 +154,10 @@ namespace cms {
 
     // set the correct navigation
     // NavigationSetter setter( *theNavigationSchool);
+    
+    //geometry, for jetCore iteration
+    // edm::ESHandle<GlobalTrackingGeometry> geometry_;
+    // es.get<GlobalTrackingGeometryRecord>().get(geometry_);
 
     // propagator
     edm::ESHandle<Propagator> thePropagator;
@@ -311,11 +321,19 @@ namespace cms {
                                  << PrintoutHelper::dumpCandidates(theTmpTrajectories);
         }
 
+<<<<<<< HEAD
         // Optionally continue building trajectory back through
         // seed and if possible further inwards.
 
         if (doSeedingRegionRebuilding) {
           theTrajectoryBuilder->rebuildTrajectories(startTraj, (*collseed)[j], theTmpTrajectories);
+=======
+	// Optionally continue building trajectory back through
+	// seed and if possible further inwards.
+  // std::cout << theTrajectoryCleanerName <<", DEBUG doSeedingRegionRebuilding=" << doSeedingRegionRebuilding << std::endl;
+	if (doSeedingRegionRebuilding) {
+	  theTrajectoryBuilder->rebuildTrajectories(startTraj,(*collseed)[j],theTmpTrajectories);
+>>>>>>> vberta/CMSSW_10_5_0_pre2_trackjet_DeepCore
 
           LogDebug("CkfPattern") << "======== Out-in trajectory building found " << theTmpTrajectories.size()
                                  << " valid/invalid trajectories from seed " << j << " ========\n"

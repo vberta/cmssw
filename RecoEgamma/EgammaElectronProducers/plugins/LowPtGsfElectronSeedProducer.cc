@@ -217,7 +217,7 @@ void LowPtGsfElectronSeedProducer::loop(const edm::Handle<std::vector<T> >& hand
     if (!passThrough_ && (trackRef->pt() < minPtThreshold_)) {
       continue;
     }
-
+    if(trackRef->algo() == 11) continue; //Skip jetcore tracks because the seeds are hitless
     // Create ElectronSeed
     reco::ElectronSeed seed(*(trackRef->seedRef()));
     seed.setCtfTrack(trackRef);
@@ -389,7 +389,6 @@ void LowPtGsfElectronSeedProducer::propagateTrackToCalo(
       particle.particle().vertex().x(), particle.particle().vertex().y(), particle.particle().vertex().z());
 
   // Preshower limit
-  bool below_ps = pow(ecal_pos.z(), 2.) > boundary_ * ecal_pos.perp2();
 
   // Iterate through ECAL clusters
   for (unsigned int iclu = 0; iclu < ecalClusters.product()->size(); iclu++) {
@@ -403,17 +402,11 @@ void LowPtGsfElectronSeedProducer::propagateTrackToCalo(
                                                .unit() *
                                            shower_depth;
 
-    // Determine dR squared
-    float dr2 = reco::deltaR2(cluRef->positionREP(), showerPos);
-
-    // Find nearest ECAL cluster
-    if (dr2 < info.dr2min) {
-      info.dr2min = dr2;
-      info.cluRef = cluRef;
-      info.deta = std::abs(cluRef->positionREP().eta() - showerPos.eta());
-      info.dphi = std::abs(reco::deltaPhi(cluRef->positionREP().phi(), showerPos.phi())) * kfTrackRef->charge();
+	kfTrackRef->charge();
       info.showerPos = showerPos;
     }
+
+>>>>>>> vberta/CMSSW_10_5_0_pre2_trackjet_DeepCore
   }
 
   // Populate PreId object
