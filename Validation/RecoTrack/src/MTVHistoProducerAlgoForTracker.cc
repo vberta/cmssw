@@ -76,7 +76,7 @@ namespace {
                      const std::vector<float>& mvas,
                      unsigned int selectsLoose, unsigned int selectsHP) {
     // Fill MVA1 histos with all tracks, MVA2 histos only with tracks
-    // not selected by MVA1, etc. 
+    // not selected by MVA1, etc.
     for(size_t i=0; i<mvas.size(); ++i) {
       if(i<=selectsLoose) {
         h_mva[i].fill(mvas[i]);
@@ -171,6 +171,11 @@ MTVHistoProducerAlgoForTracker::MTVHistoProducerAlgoForTracker(const edm::Parame
   maxdr  = pset.getParameter<double>("maxdr");
   nintdr = pset.getParameter<int>("nintdr");
 
+  //parameters for _vs_dR_jet plots
+  mindrj  = pset.getParameter<double>("mindrj");
+  maxdrj  = pset.getParameter<double>("maxdrj");
+  nintdrj = pset.getParameter<int>("nintdrj");
+
   // paramers for _vs_chi2 plots
   minChi2  = pset.getParameter<double>("minChi2");
   maxChi2  = pset.getParameter<double>("maxChi2");
@@ -202,25 +207,25 @@ MTVHistoProducerAlgoForTracker::MTVHistoProducerAlgoForTracker(const edm::Parame
   nintMVA = pset.getParameter<int>("nintMVA");
 
   //parameters for resolution plots
-  ptRes_rangeMin = pset.getParameter<double>("ptRes_rangeMin");
-  ptRes_rangeMax = pset.getParameter<double>("ptRes_rangeMax");
-  ptRes_nbin = pset.getParameter<int>("ptRes_nbin");
+  ptRes_rangeMin = 10*pset.getParameter<double>("ptRes_rangeMin");
+  ptRes_rangeMax = 10*pset.getParameter<double>("ptRes_rangeMax");
+  ptRes_nbin = 10*pset.getParameter<int>("ptRes_nbin");
 
-  phiRes_rangeMin = pset.getParameter<double>("phiRes_rangeMin");
-  phiRes_rangeMax = pset.getParameter<double>("phiRes_rangeMax");
-  phiRes_nbin = pset.getParameter<int>("phiRes_nbin");
+  phiRes_rangeMin = 10*pset.getParameter<double>("phiRes_rangeMin");
+  phiRes_rangeMax = 10*pset.getParameter<double>("phiRes_rangeMax");
+  phiRes_nbin = 10*pset.getParameter<int>("phiRes_nbin");
 
-  cotThetaRes_rangeMin = pset.getParameter<double>("cotThetaRes_rangeMin");
-  cotThetaRes_rangeMax = pset.getParameter<double>("cotThetaRes_rangeMax");
-  cotThetaRes_nbin = pset.getParameter<int>("cotThetaRes_nbin");
+  cotThetaRes_rangeMin = 10*pset.getParameter<double>("cotThetaRes_rangeMin");
+  cotThetaRes_rangeMax = 10*pset.getParameter<double>("cotThetaRes_rangeMax");
+  cotThetaRes_nbin = 10*pset.getParameter<int>("cotThetaRes_nbin");
 
-  dxyRes_rangeMin = pset.getParameter<double>("dxyRes_rangeMin");
-  dxyRes_rangeMax = pset.getParameter<double>("dxyRes_rangeMax");
-  dxyRes_nbin = pset.getParameter<int>("dxyRes_nbin");
+  dxyRes_rangeMin = 10*pset.getParameter<double>("dxyRes_rangeMin");
+  dxyRes_rangeMax = 10*pset.getParameter<double>("dxyRes_rangeMax");
+  dxyRes_nbin = 10*pset.getParameter<int>("dxyRes_nbin");
 
-  dzRes_rangeMin = pset.getParameter<double>("dzRes_rangeMin");
-  dzRes_rangeMax = pset.getParameter<double>("dzRes_rangeMax");
-  dzRes_nbin = pset.getParameter<int>("dzRes_nbin");
+  dzRes_rangeMin = 10*pset.getParameter<double>("dzRes_rangeMin");
+  dzRes_rangeMax = 10*pset.getParameter<double>("dzRes_rangeMax");
+  dzRes_nbin = 10*pset.getParameter<int>("dzRes_nbin");
 
 
   maxDzpvCum = pset.getParameter<double>("maxDzpvCumulative");
@@ -405,6 +410,10 @@ void MTVHistoProducerAlgoForTracker::bookSimTrackHistos(DQMStore::ConcurrentBook
   histograms.h_assocdr.push_back( make1DIfLogX(ibook, true, "num_assoc(simToReco)_dr","N of associated tracks (simToReco) vs dR",nintdr,log10(mindr),log10(maxdr)) );
   histograms.h_simuldr.push_back( make1DIfLogX(ibook, true, "num_simul_dr","N of simulated tracks vs dR",nintdr,log10(mindr),log10(maxdr)) );
 
+  histograms.h_assocdrj.push_back( make1DIfLogX(ibook, true, "num_assoc(simToReco)_drj","N of associated tracks (simToReco) vs dR(TP,jet)",nintdrj,log10(mindrj),log10(maxdrj)) );
+  histograms.h_simuldrj.push_back( make1DIfLogX(ibook, true, "num_simul_drj","N of simulated tracks vs dR(TP,jet)",nintdrj,log10(mindrj),log10(maxdrj)) );
+
+
   histograms.h_simul_simpvz.push_back( ibook.book1D("num_simul_simpvz", "N of simulated tracks vs. sim PV z", nintPVz, minPVz, maxPVz) );
   histograms.h_assoc_simpvz.push_back( ibook.book1D("num_assoc(simToReco)_simpvz", "N of associated tracks (simToReco) vs. sim PV z", nintPVz, minPVz, maxPVz) );
 
@@ -552,6 +561,11 @@ void MTVHistoProducerAlgoForTracker::bookRecoHistos(DQMStore::ConcurrentBooker& 
   histograms.h_assoc2dr.push_back( make1DIfLogX(ibook, true, "num_assoc(recoToSim)_dr","N of associated tracks (recoToSim) vs dR",nintdr,log10(mindr),log10(maxdr)) );
   histograms.h_looperdr.push_back( make1DIfLogX(ibook, true, "num_duplicate_dr","N of associated (recoToSim) looper tracks vs dR",nintdr,log10(mindr),log10(maxdr)) );
   histograms.h_pileupdr.push_back( make1DIfLogX(ibook, true, "num_pileup_dr","N of associated (recoToSim) pileup tracks vs dR",nintdr,log10(mindr),log10(maxdr)) );
+
+  histograms.h_recodrj.push_back( make1DIfLogX(ibook, true, "num_reco_drj","N of reconstructed tracks vs dR(track,jet)",nintdrj,log10(mindrj),log10(maxdrj)) );
+  histograms.h_assoc2drj.push_back( make1DIfLogX(ibook, true, "num_assoc(recoToSim)_drj","N of associated tracks (recoToSim) vs dR(track,jet)",nintdrj,log10(mindrj),log10(maxdrj)) );
+  histograms.h_looperdrj.push_back( make1DIfLogX(ibook, true, "num_duplicate_drj","N of associated (recoToSim) looper tracks vs dR(track,jet)",nintdrj,log10(mindrj),log10(maxdrj)) );
+  histograms.h_pileupdrj.push_back( make1DIfLogX(ibook, true, "num_pileup_drj","N of associated (recoToSim) pileup tracks vs dR(track,jet)",nintdrj,log10(mindrj),log10(maxdrj)) );
 
   histograms.h_reco_simpvz.push_back( ibook.book1D("num_reco_simpvz", "N of reco track vs. sim PV z", nintPVz, minPVz, maxPVz) );
   histograms.h_assoc2_simpvz.push_back( ibook.book1D("num_assoc(recoToSim)_simpvz", "N of associated tracks (recoToSim) vs. sim PV z", nintPVz, minPVz, maxPVz) );
@@ -882,6 +896,7 @@ void MTVHistoProducerAlgoForTracker::fill_recoAssociated_simTrack_histos(const H
 									 const reco::Track* track,
 									 int numVertices,
 									 double dR,
+                                                                         double dRJet,
 									 const math::XYZPoint *pvPosition,
                                                                          const TrackingVertex::LorentzVector *simPVPosition,
                                                                          const math::XYZPoint& bsPosition,
@@ -942,6 +957,9 @@ void MTVHistoProducerAlgoForTracker::fill_recoAssociated_simTrack_histos(const H
     //efficiency vs dR
     histograms.h_simuldr[count].fill(dR);
     if (isMatched) histograms.h_assocdr[count].fill(dR);
+    //efficiency vs dR jet
+    histograms.h_simuldrj[count].fill(dRJet);
+    if (isMatched) histograms.h_assocdrj[count].fill(dRJet);
   }
 
   if((*TpSelectorForEfficiencyVsPt)(tp)){
@@ -1047,6 +1065,7 @@ void MTVHistoProducerAlgoForTracker::fill_generic_recoTrack_histos(const Histogr
 								   int nSimHits,
 								   double sharedFraction,
 								   double dR,
+                                                                   double dRJet,
                                                                    const std::vector<float>& mvas,
                                                                    unsigned int selectsLoose, unsigned int selectsHP) const {
 
@@ -1087,6 +1106,7 @@ void MTVHistoProducerAlgoForTracker::fill_generic_recoTrack_histos(const Histogr
     histograms.h_recovertpos[count].fill(vertxy);
     histograms.h_recozpos[count].fill(vertz);
     histograms.h_recodr[count].fill(dR);
+    histograms.h_recodrj[count].fill(dRJet);
     if(fillSeedingLayerSets) histograms.h_reco_seedingLayerSet[count].fill(seedingLayerSetBin);
     if(pvPosition) {
       histograms.h_recodxypv[count].fill(dxypv);
@@ -1132,6 +1152,7 @@ void MTVHistoProducerAlgoForTracker::fill_generic_recoTrack_histos(const Histogr
       histograms.h_assoc2vertpos[count].fill(vertxy);
       histograms.h_assoc2zpos[count].fill(vertz);
       histograms.h_assoc2dr[count].fill(dR);
+      histograms.h_assoc2drj[count].fill(dRJet);
       if(fillSeedingLayerSets) histograms.h_assoc2_seedingLayerSet[count].fill(seedingLayerSetBin);
       if(pvPosition) {
         histograms.h_assoc2dxypv[count].fill(dxypv);
@@ -1192,6 +1213,7 @@ void MTVHistoProducerAlgoForTracker::fill_generic_recoTrack_histos(const Histogr
         histograms.h_loopervertpos[count].fill(vertxy);
         histograms.h_looperzpos[count].fill(vertz);
         histograms.h_looperdr[count].fill(dR);
+        histograms.h_looperdrj[count].fill(dRJet);
         if(fillSeedingLayerSets) histograms.h_looper_seedingLayerSet[count].fill(seedingLayerSetBin);
         if(pvPosition) {
           histograms.h_looperdxypv[count].fill(dxypv);
@@ -1220,6 +1242,7 @@ void MTVHistoProducerAlgoForTracker::fill_generic_recoTrack_histos(const Histogr
         histograms.h_pileupvertpos[count].fill(vertxy);
         histograms.h_pileupzpos[count].fill(vertz);
         histograms.h_pileupdr[count].fill(dR);
+        histograms.h_pileupdrj[count].fill(dRJet);
         if(fillSeedingLayerSets) histograms.h_pileup_seedingLayerSet[count].fill(seedingLayerSetBin);
         if(pvPosition) {
           histograms.h_pileupdxypv[count].fill(dxypv);
@@ -1379,7 +1402,13 @@ void MTVHistoProducerAlgoForTracker::fill_ResoAndPull_recoTrack_histos(const His
   double phiPull=phiRes/phiErrorRec;
   double dxyPull=dxyRes/track.dxyError();
   double dzPull=dzRes/track.dzError();
-
+  
+  // std::cout << "reco track par:" <<"pt="<<track.pt() << ",phi=" << track.phi() << ", eta=" << track.eta() << std::endl;
+  // if(fabs(dxyRes) > 0.1 && fabs(dxyPull)>10) std::cout << "DEBUG res (res out, pull out):" << ",   res=" << dxyRes << ", reco=" << dxyRec << ", sim=" << dxySim << ", err=" << track.dxyError() << ", pull=" << dxyPull << std::endl;
+  // if(fabs(dxyRes) < 0.1 && fabs(dxyPull)<10) std::cout << "DEBUG res (res in, pull in):" << ",   res=" << dxyRes << ", reco=" << dxyRec << ", sim=" << dxySim << ", err=" << track.dxyError() << ", pull=" << dxyPull << std::endl;
+  // if(fabs(dxyRes) < 0.1 && fabs(dxyPull)>10) std::cout << "DEBUG res (res in, pull out):" << ",   res=" << dxyRes << ", reco=" << dxyRec << ", sim=" << dxySim << ", err=" << track.dxyError() << ", pull=" << dxyPull << std::endl;
+  // if(fabs(dxyRes) > 0.1 && fabs(dxyPull)<10) std::cout << "DEBUG res (res out, pull in):" << ",   res=" << dxyRes << ", reco=" << dxyRec << ", sim=" << dxySim << ", err=" << track.dxyError() << ", pull=" << dxyPull << std::endl;
+  
 #ifdef EDM_ML_DEBUG
   double contrib_Qoverp = ((qoverpRec-qoverpSim)/qoverpErrorRec)*
     ((qoverpRec-qoverpSim)/qoverpErrorRec)/5;

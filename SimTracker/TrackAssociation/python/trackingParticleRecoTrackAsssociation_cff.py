@@ -1,6 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 from SimTracker.TrackAssociatorProducers.quickTrackAssociatorByHits_cfi import *
+from SimTracker.TrackAssociatorProducers.trackAssociatorByChi2_cfi import *
 
 from SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi import *
 import SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi
@@ -14,4 +15,3 @@ assoc2thStepTk.label_tr = 'thStep'
 assoc2GsfTracks.label_tr = 'electronGsfTracks'
 assocOutInConversionTracks.label_tr = 'ckfOutInTracksFromConversions'
 assocInOutConversionTracks.label_tr = 'ckfInOutTracksFromConversions'
-
