@@ -314,6 +314,7 @@ void MultiTrackValidator::bookHistograms(DQMStore::IBooker& ibook,
       ibook.setCurrentFolder(dirName);
 
       const bool doResolutionPlots = doResolutionPlots_[www];
+      // const bool doResolutionPlots = true;
 
       if (doSimTrackPlots_) {
         histoProducerAlgo_->bookSimTrackHistos(ibook, histograms.histoProducerAlgo, doResolutionPlots);
@@ -1162,6 +1163,10 @@ void MultiTrackValidator::dqmAnalyze(const edm::Event& event,
           TrackingParticle::Vector momentumTP = parametersDefinerTP->momentum(event, setup, tpr);
           TrackingParticle::Point vertexTP = parametersDefinerTP->vertex(event, setup, tpr);
           int chargeTP = tpr->charge();
+
+          if( doSeedPlots_) std::cout<< "DEBUG SEEDING-----------------------------------------------------------------------> ALGO="<< track->algo() << std::endl;
+          if (dirName_=="Tracking/jetCoreRegionalStep/")  std::cout << "DEBUG direct JETCORE iteration ----------------------------" << std::endl;
+          std::cout <<  "directory:"<< dirName_<<std::endl;
 
           histoProducerAlgo_->fill_ResoAndPull_recoTrack_histos(
               histograms.histoProducerAlgo, w, momentumTP, vertexTP, chargeTP, *track, bs.position());
