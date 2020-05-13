@@ -31,6 +31,7 @@ multiTrackValidator = DQMEDAnalyzer(
     # if False, the src's above should specify the TP-RecoTrack association
     # if True, the src's above should specify the associator
     UseAssociators = cms.bool(False),
+    # UseAssociators = cms.bool(True),
 
     ### sim input configuration ###
     label_tp_effic = cms.InputTag("mix","MergedTrackTruth"),
@@ -101,6 +102,7 @@ multiTrackValidator = DQMEDAnalyzer(
     doResolutionPlotsForLabels = cms.VInputTag(),
 
     cores = cms.InputTag("highPtJetsForTrk"), #ak4CaloJets with pt>1 TeV
+
 )
 
 from Configuration.Eras.Modifier_fastSim_cff import fastSim
