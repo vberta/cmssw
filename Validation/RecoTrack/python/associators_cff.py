@@ -2,6 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 #### TrackAssociation
 import SimTracker.TrackAssociatorProducers.quickTrackAssociatorByHits_cfi
+import SimTracker.TrackAssociatorProducers.trackAssociatorByChi2_cfi
 import SimTracker.TrackAssociatorProducers.trackAssociatorByPosition_cfi
 from SimTracker.TrackerHitAssociation.tpClusterProducer_cfi import tpClusterProducer as _tpClusterProducer
 from SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi import trackingParticleRecoTrackAsssociation as _trackingParticleRecoTrackAsssociation
@@ -17,6 +18,11 @@ hltTrackAssociatorByHits.cluster2TPSrc            = cms.InputTag("hltTPClusterPr
 hltTrackAssociatorByHits.UseGrouped               = cms.bool( False )
 hltTrackAssociatorByHits.UseSplitting             = cms.bool( False )
 hltTrackAssociatorByHits.ThreeHitTracksAreSpecial = cms.bool( False )
+
+#NOT BY HIT NOW!!! uncomment lines 16-20 to do byhits
+# hltTrackAssociatorByHits = SimTracker.TrackAssociatorProducers.trackAssociatorByChi2_cfi.trackAssociatorByChi2.clone()
+
+
 
 hltTrackAssociatorByDeltaR = SimTracker.TrackAssociatorProducers.trackAssociatorByPosition_cfi.trackAssociatorByPosition.clone()
 hltTrackAssociatorByDeltaR.method             = cms.string('momdr')

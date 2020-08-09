@@ -2,7 +2,7 @@
 //
 // Package:    SimTracker/TrackAssociatorProducers
 // Class:      TrackAssociatorByChi2Producer
-// 
+//
 /**\class TrackAssociatorByChi2Producer TrackAssociatorByChi2Producer.cc SimTracker/TrackAssociatorProducers/plugins/TrackAssociatorByChi2Producer.cc
 
  Description: [one line class summary]
@@ -34,7 +34,7 @@
 #include "SimDataFormats/Associations/interface/TrackToGenParticleAssociator.h"
 #include "SimDataFormats/Associations/interface/TrackToTrackingParticleAssociatorBaseImpl.h"
 
-#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h" 
+#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 
 #include "TrackAssociatorByChi2Impl.h"
 #include "TrackGenAssociatorByChi2Impl.h"
@@ -47,12 +47,12 @@ class TrackAssociatorByChi2Producer : public edm::global::EDProducer<> {
 public:
   explicit TrackAssociatorByChi2Producer(const edm::ParameterSet&);
   ~TrackAssociatorByChi2Producer() override;
-  
+
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-  
+
 private:
   void produce(edm::StreamID, edm::Event&, const edm::EventSetup&) const override;
-  
+
   // ----------member data ---------------------------
   edm::EDGetTokenT<reco::BeamSpot> bsToken_;
   const double chi2cut_;
@@ -84,7 +84,7 @@ TrackAssociatorByChi2Producer::TrackAssociatorByChi2Producer(const edm::Paramete
 
 TrackAssociatorByChi2Producer::~TrackAssociatorByChi2Producer()
 {
- 
+
    // do anything here that needs to be done at desctruction time
    // (e.g. close files, deallocate resources etc.)
 
@@ -108,13 +108,14 @@ TrackAssociatorByChi2Producer::produce(edm::StreamID, edm::Event& iEvent, const 
    iEvent.getByToken(bsToken_,beamSpot);
 
    {
-     std::unique_ptr<reco::TrackToTrackingParticleAssociatorBaseImpl> impl( new TrackAssociatorByChi2Impl(*magField,
-                                                                                                        *beamSpot,
+     std::unique_ptr<reco::TrackToTrackingParticleAssociatorBaseImpl> impl( new TrackAssociatorByChi2Impl(iEvent.productGetter(),
+                                                                                                          *magField,
+                                                                                                          *beamSpot,
                                                                                                           chi2cut_,
                                                                                                           onlyDiagonal_));
-     
+
      std::unique_ptr<reco::TrackToTrackingParticleAssociator> assoc(new reco::TrackToTrackingParticleAssociator(std::move(impl)));
-     
+
      iEvent.put(std::move(assoc));
    }
 
@@ -123,14 +124,14 @@ TrackAssociatorByChi2Producer::produce(edm::StreamID, edm::Event& iEvent, const 
                                                                                                         *beamSpot,
                                                                                                         chi2cut_,
                                                                                                         onlyDiagonal_));
-     
+
      std::unique_ptr<reco::TrackToGenParticleAssociator> assoc(new reco::TrackToGenParticleAssociator(std::move(impl)));
-     
+
      iEvent.put(std::move(assoc));
    }
 }
 
- 
+
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
 TrackAssociatorByChi2Producer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

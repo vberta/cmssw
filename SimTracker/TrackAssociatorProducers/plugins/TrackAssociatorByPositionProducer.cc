@@ -2,7 +2,7 @@
 //
 // Package:    SimTracker/TrackAssociatorProducers
 // Class:      TrackAssociatorByPositionProducer
-// 
+//
 /**\class TrackAssociatorByPositionProducer TrackAssociatorByPositionProducer.cc SimTracker/TrackAssociatorProducers/plugins/TrackAssociatorByPositionProducer.cc
 
  Description: [one line class summary]
@@ -48,7 +48,7 @@ class TrackAssociatorByPositionProducer : public edm::global::EDProducer<> {
 
    private:
       void produce(edm::StreamID, edm::Event&, const edm::EventSetup&) const override;
-      
+
       // ----------member data ---------------------------
   edm::EDGetTokenT<SimHitTPAssociationList> theSimHitTpMapToken;
   std::string thePname;
@@ -99,7 +99,7 @@ TrackAssociatorByPositionProducer::TrackAssociatorByPositionProducer(const edm::
 
 TrackAssociatorByPositionProducer::~TrackAssociatorByPositionProducer()
 {
- 
+
    // do anything here that needs to be done at desctruction time
    // (e.g. close files, deallocate resources etc.)
 
@@ -121,12 +121,13 @@ TrackAssociatorByPositionProducer::produce(edm::StreamID, edm::Event& iEvent, co
 
    edm::ESHandle<Propagator> theP;
    iSetup.get<TrackingComponentsRecord>().get(thePname,theP);
-   
+
    edm::ESHandle<GlobalTrackingGeometry> theG;
    iSetup.get<GlobalTrackingGeometryRecord>().get(theG);
 
-   std::unique_ptr<reco::TrackToTrackingParticleAssociatorBaseImpl> impl{ 
-     new TrackAssociatorByPositionImpl(theG.product(),
+   std::unique_ptr<reco::TrackToTrackingParticleAssociatorBaseImpl> impl{
+     new TrackAssociatorByPositionImpl(iEvent.productGetter(),
+                                       theG.product(),
                                        theP.product(),
                                        assocList.product(),
                                        theQminCut,
@@ -142,7 +143,7 @@ TrackAssociatorByPositionProducer::produce(edm::StreamID, edm::Event& iEvent, co
 
 }
 
- 
+
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
 TrackAssociatorByPositionProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

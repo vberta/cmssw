@@ -24,6 +24,10 @@
 
 #include<map>
 
+namespace edm {
+  class EDProductGetter;
+}
+
 //Note that the Association Map is filled with -ch2 and not chi2 because it is ordered using std::greater:
 //the track with the lowest association chi2 will be the first in the output map.
 
@@ -34,7 +38,8 @@ class TrackAssociatorByPositionImpl : public reco::TrackToTrackingParticleAssoci
   typedef std::vector<SimHitTPPair> SimHitTPAssociationList;
   enum class Method { chi2, dist, momdr, posdr};
 
-  TrackAssociatorByPositionImpl(const TrackingGeometry* geo,
+  TrackAssociatorByPositionImpl(edm::EDProductGetter const& productGetter,
+                                const TrackingGeometry* geo,
                                 const Propagator* prop,
                                 const SimHitTPAssociationList* assocList,
                                 double qMinCut,
@@ -43,7 +48,8 @@ class TrackAssociatorByPositionImpl : public reco::TrackToTrackingParticleAssoci
                                 Method method,
                                 bool minIfNoMatch,
                                 bool considerAllSimHits):
-  theGeometry(geo),
+    productGetter_(&productGetter),
+    theGeometry(geo),
     thePropagator(prop),
     theSimHitsTPAssoc(assocList),
     theQminCut(qMinCut),
@@ -52,21 +58,24 @@ class TrackAssociatorByPositionImpl : public reco::TrackToTrackingParticleAssoci
     theMethod(method),
     theMinIfNoMatch(minIfNoMatch),
     theConsiderAllSimHits(considerAllSimHits) {}
-    
-                                
+
+
   /// compare reco to sim the handle of reco::Track and TrackingParticle collections
-  
+
   reco::RecoToSimCollection associateRecoToSim(const edm::RefToBaseVector<reco::Track>&,
 					       const edm::RefVector<TrackingParticleCollection>& ) const override;
 
   /// compare reco to sim the handle of reco::Track and TrackingParticle collections
-  
+
   reco::SimToRecoCollection associateSimToReco(const edm::RefToBaseVector<reco::Track>&,
 					       const edm::RefVector<TrackingParticleCollection>&) const override;
 
 
  private:
   double quality(const TrajectoryStateOnSurface&, const TrajectoryStateOnSurface &)const;
+
+
+  edm::EDProductGetter const* productGetter_;
 
   const TrackingGeometry * theGeometry;
   const Propagator * thePropagator;
@@ -77,7 +86,7 @@ class TrackAssociatorByPositionImpl : public reco::TrackToTrackingParticleAssoci
   Method theMethod;
   bool theMinIfNoMatch;
   bool theConsiderAllSimHits;
-  
+
   FreeTrajectoryState getState(const reco::Track &) const;
   TrajectoryStateOnSurface getState(const TrackingParticleRef&, const SimHitTPAssociationList& simHitsTPAssoc)const;
   //edm::InputTag _simHitTpMapTag;
