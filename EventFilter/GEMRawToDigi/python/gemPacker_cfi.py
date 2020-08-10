@@ -3,4 +3,4 @@ from EventFilter.GEMRawToDigi.gemPackerDefault_cfi import gemPackerDefault as _g
 gemPacker = _gemPackerDefault.clone()
 
 from Configuration.Eras.Modifier_run2_GEM_2017_cff import run2_GEM_2017
-run2_GEM_2017.toModify(gemPacker, useDBEMap = True)
+run2_GEM_2017.toModify(gemPacker, useDBEMap = False)
