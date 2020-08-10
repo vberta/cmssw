@@ -24,6 +24,9 @@
 
 #include<map>
 
+namespace edm {
+  class EDProductGetter;
+}
 //Note that the Association Map is filled with -ch2 and not chi2 because it is ordered using std::greater:
 //the track with the lowest association chi2 will be the first in the output map.
 
@@ -34,7 +37,8 @@ class TrackAssociatorByPositionImpl : public reco::TrackToTrackingParticleAssoci
   typedef std::vector<SimHitTPPair> SimHitTPAssociationList;
   enum class Method { chi2, dist, momdr, posdr};
 
-  TrackAssociatorByPositionImpl(const TrackingGeometry* geo,
+TrackAssociatorByPositionImpl(edm::EDProductGetter const& productGetter,
+                                const TrackingGeometry* geo,
                                 const Propagator* prop,
                                 const SimHitTPAssociationList* assocList,
                                 double qMinCut,
@@ -43,7 +47,8 @@ class TrackAssociatorByPositionImpl : public reco::TrackToTrackingParticleAssoci
                                 Method method,
                                 bool minIfNoMatch,
                                 bool considerAllSimHits):
-  theGeometry(geo),
+    productGetter_(&productGetter),
+    theGeometry(geo),
     thePropagator(prop),
     theSimHitsTPAssoc(assocList),
     theQminCut(qMinCut),
@@ -67,6 +72,8 @@ class TrackAssociatorByPositionImpl : public reco::TrackToTrackingParticleAssoci
 
  private:
   double quality(const TrajectoryStateOnSurface&, const TrajectoryStateOnSurface &)const;
+  
+  edm::EDProductGetter const* productGetter_;
 
   const TrackingGeometry * theGeometry;
   const Propagator * thePropagator;

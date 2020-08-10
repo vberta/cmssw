@@ -126,7 +126,8 @@ TrackAssociatorByPositionProducer::produce(edm::StreamID, edm::Event& iEvent, co
    iSetup.get<GlobalTrackingGeometryRecord>().get(theG);
 
    std::unique_ptr<reco::TrackToTrackingParticleAssociatorBaseImpl> impl{ 
-     new TrackAssociatorByPositionImpl(theG.product(),
+    new TrackAssociatorByPositionImpl(iEvent.productGetter(),
+                                       theG.product(),
                                        theP.product(),
                                        assocList.product(),
                                        theQminCut,
