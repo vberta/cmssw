@@ -21,6 +21,9 @@
 
 //Note that the Association Map is filled with -ch2 and not chi2 because it is ordered using std::greater:
 //the track with the lowest association chi2 will be the first in the output map.
+namespace edm {
+  class EDProductGetter;
+}
 
 namespace reco{
   typedef edm::AssociationMap<edm::OneToManyWithQualityGeneric
@@ -54,9 +57,11 @@ class TrackAssociatorByChi2Impl : public reco::TrackToTrackingParticleAssociator
   */
 
   /// Constructor
-  TrackAssociatorByChi2Impl(const MagneticField& mF, 
+  TrackAssociatorByChi2Impl(edm::EDProductGetter const& productGetter,
+                            const MagneticField& mF, 
                             const reco::BeamSpot& bs,
                             double chi2Cut, bool onlyDiag):
+    productGetter_(&productGetter),
     theMF(&mF),
     theBeamSpot(&bs),
     chi2cut(chi2Cut),
@@ -96,6 +101,7 @@ class TrackAssociatorByChi2Impl : public reco::TrackToTrackingParticleAssociator
 		 int charge,
 		 const reco::BeamSpot&) const;
 
+  edm::EDProductGetter const* productGetter_;
   const MagneticField* theMF;
   const reco::BeamSpot* theBeamSpot;
   double chi2cut;
