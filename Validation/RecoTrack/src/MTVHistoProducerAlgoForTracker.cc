@@ -633,6 +633,8 @@ void MTVHistoProducerAlgoForTracker::bookRecoHistos(DQMStore::ConcurrentBooker& 
 
   histograms.chi2_vs_eta.push_back( ibook.bookProfile("chi2mean","mean #chi^{2} vs #eta",nintEta,minEta,maxEta, 200, 0, 20, " " ));
   histograms.chi2_vs_phi.push_back( ibook.bookProfile("chi2mean_vs_phi","mean #chi^{2} vs #phi",nintPhi,minPhi,maxPhi, 200, 0, 20, " " ) );
+  histograms.chi2_vs_pt.push_back(makeProfileIfLogX(ibook, useLogPt,"chi2mean_vs_pt","mean #chi^{2} vs p_{T}",nintPt,minPt,maxPt, 0, 20) );
+  histograms.chi2_vs_drj.push_back(makeProfileIfLogX(ibook, true,"chi2mean_vs_drj","mean #chi^{2} vs dR(track,jet)",nintdrj,log10(mindrj),log10(maxdrj), 0, 20) );
 
   histograms.nhits_vs_eta.push_back( ibook.bookProfile("hits_eta","mean hits vs eta",nintEta,minEta,maxEta,nintHit,minHit,maxHit, " ") );
   histograms.nPXBhits_vs_eta.push_back( ibook.bookProfile("PXBhits_vs_eta","mean # PXB its vs eta",nintEta,minEta,maxEta,nintHit,minHit,maxHit, " ") );
@@ -711,6 +713,12 @@ void MTVHistoProducerAlgoForTracker::bookRecoHistos(DQMStore::ConcurrentBooker& 
   bookResolutionPlots2D(histograms.dzpull_vs_eta, false, "dzpull_vs_eta","dzpull_vs_eta",nintEta,minEta,maxEta,100,-10,10);
   bookResolutionPlots2D(histograms.phipull_vs_eta, false, "phipull_vs_eta","phipull_vs_eta",nintEta,minEta,maxEta,100,-10,10);
   bookResolutionPlots2D(histograms.thetapull_vs_eta, false, "thetapull_vs_eta","thetapull_vs_eta",nintEta,minEta,maxEta,100,-10,10);
+  
+  bookResolutionPlots2D(histograms.dxypull_vs_pt, useLogPt, "dxypull_vs_pt","dxypull_vs_pt",nintPt,minPt,maxPt,100,-10,10);
+  bookResolutionPlots2D(histograms.ptpull_vs_pt, useLogPt, "ptpull_vs_pt","ptpull_vs_pt",nintPt,minPt,maxPt,100,-10,10);
+  bookResolutionPlots2D(histograms.dzpull_vs_pt, useLogPt, "dzpull_vs_pt","dzpull_vs_pt",nintPt,minPt,maxPt,100,-10,10);
+  bookResolutionPlots2D(histograms.phipull_vs_pt, useLogPt, "phipull_vs_pt","phipull_vs_pt",nintPt,minPt,maxPt,100,-10,10);
+  bookResolutionPlots2D(histograms.thetapull_vs_pt, useLogPt, "thetapull_vs_pt","thetapull_vs_pt",nintPt,minPt,maxPt,100,-10,10);
 
   //      histograms.h_ptshiftetamean.push_back( ibook.book1D("h_ptshifteta_Mean","<#deltapT/pT>[%] vs #eta",nintEta,minEta,maxEta) );
 
@@ -1107,6 +1115,7 @@ void MTVHistoProducerAlgoForTracker::fill_generic_recoTrack_histos(const Histogr
     histograms.h_recozpos[count].fill(vertz);
     histograms.h_recodr[count].fill(dR);
     histograms.h_recodrj[count].fill(dRJet);
+    histograms.chi2_vs_drj[count].fill(dRJet,track.normalizedChi2());
     if(fillSeedingLayerSets) histograms.h_reco_seedingLayerSet[count].fill(seedingLayerSetBin);
     if(pvPosition) {
       histograms.h_recodxypv[count].fill(dxypv);
@@ -1468,10 +1477,18 @@ void MTVHistoProducerAlgoForTracker::fill_ResoAndPull_recoTrack_histos(const His
   histograms.dzpull_vs_eta[count].fill(etaSim, dzPull);
   histograms.phipull_vs_eta[count].fill(etaSim, phiPull);
   histograms.thetapull_vs_eta[count].fill(etaSim, thetaPull);
+  
+  //pulls of track params vs pt: fill 2D histos
+  histograms.dxypull_vs_pt[count].fill(ptSim, dxyPull);
+  histograms.ptpull_vs_pt[count].fill(ptSim, ptres/ptError);
+  histograms.dzpull_vs_pt[count].fill(ptSim, dzPull);
+  histograms.phipull_vs_pt[count].fill(ptSim, phiPull);
+  histograms.thetapull_vs_pt[count].fill(ptSim, thetaPull);
 
   //plots vs phi
   histograms.nhits_vs_phi[count].fill(phiRec,track.numberOfValidHits());
   histograms.chi2_vs_phi[count].fill(phiRec,track.normalizedChi2());
+  histograms.chi2_vs_pt[count].fill(ptRec,track.normalizedChi2());
   histograms.ptmean_vs_eta_phi[count].fill(phiRec,getEta(track.eta()),ptRec);
   histograms.phimean_vs_eta_phi[count].fill(phiRec,getEta(track.eta()),phiRec);
 

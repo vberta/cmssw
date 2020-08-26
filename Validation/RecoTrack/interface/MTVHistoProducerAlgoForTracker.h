@@ -108,7 +108,7 @@ struct MTVHistoProducerAlgoForTrackerHistograms {
   //2D
   std::vector<ConcurrentMonitorElement> chi2_vs_nhits, etares_vs_eta;
   std::vector<ConcurrentMonitorElement> h_ptshifteta;
-  std::vector<ConcurrentMonitorElement> ptres_vs_phi, chi2_vs_phi, nhits_vs_phi, phires_vs_phi;
+  std::vector<ConcurrentMonitorElement> ptres_vs_phi, chi2_vs_phi, chi2_vs_pt, chi2_vs_drj, nhits_vs_phi, phires_vs_phi;
 
   //Profile2D
   std::vector<ConcurrentMonitorElement> ptmean_vs_eta_phi, phimean_vs_eta_phi;
@@ -125,6 +125,7 @@ struct MTVHistoProducerAlgoForTrackerHistograms {
 
   //pulls of track params vs eta: to be used with fitslicesytool
   std::vector<ConcurrentMonitorElement> dxypull_vs_eta, ptpull_vs_eta, dzpull_vs_eta, phipull_vs_eta, thetapull_vs_eta;
+  std::vector<ConcurrentMonitorElement> dxypull_vs_pt, ptpull_vs_pt, dzpull_vs_pt, phipull_vs_pt, thetapull_vs_pt;
   std::vector<ConcurrentMonitorElement> ptpull_vs_phi, phipull_vs_phi, thetapull_vs_phi;
 };
 
