@@ -251,6 +251,17 @@ protected:
   bool DoLorentz_;
   bool LoadTemplatesFromDB_;
 
+  //errors for template reco for edge hits, based on observed residuals from
+  //studies likely done in 2011...
+  const float xEdgeXError_ = 23.0f;
+  const float xEdgeYError_ = 39.0f;
+
+  const float yEdgeXError_ = 24.0f;
+  const float yEdgeYError_ = 96.0f;
+
+  const float bothEdgeXError_ = 31.0f;
+  const float bothEdgeYError_ = 90.0f;
+
   //---------------------------------------------------------------------------
   //  Geometrical services to subclasses.
   //---------------------------------------------------------------------------
