@@ -353,11 +353,6 @@ trackingParticlesElectron = _trackingParticleRefSelector.clone(
     ptMin = 0,
 )
 
-#ByChi2 association (for jetCore usage, not used by default)
-# MTVTrackAssociationByChi2 = trackingParticleRecoTrackAsssociation.clone(
-#      associator = cms.InputTag('trackAssociatorByChi2')
-# )
-
 # Select jets for JetCore tracking
 highPtJets = cms.EDFilter("CandPtrSelector", src = cms.InputTag("ak4CaloJets"), cut = cms.string("pt()>1000")) 
 # highPtJets = cms.EDFilter("CandPtrSelector", src = cms.InputTag("ak4CaloJets"), cut = cms.string("pt()>1000 && eta()<1.4 && eta()>-1.4"))
@@ -670,8 +665,7 @@ phase2_tracker.toModify(tracksValidationSelectors, lambda x: x.add(tracksEtaGrea
 tracksValidationTruth = cms.Task(
     tpClusterProducer,
     tpClusterProducerPreSplitting,
-    trackAssociatorByChi2, #uncomment for byChi2 assoc. for jetcore studies (4/5)
-    # MTVTrackAssociationByChi2, #uncomment for byChi2 assoc. for jetcore studies (5/5)
+    trackAssociatorByChi2, 
     quickTrackAssociatorByHits,
     quickTrackAssociatorByHitsPreSplitting,
     trackingParticleRecoTrackAsssociation,
@@ -902,7 +896,6 @@ trackValidatorsTrackingOnly += trackValidatorJetCore
 trackValidatorsTrackingOnly += trackValidatorJetCoreSeedingTrackingOnly
 trackValidatorsTrackingOnly += trackValidatorBuilding
 trackValidatorsTrackingOnly += trackValidatorBuildingPreSplitting
-# trackValidatorsTrackingOnly += trackValidatorJetCore
 trackValidatorsTrackingOnly.replace(trackValidatorConversionStandalone, trackValidatorConversionTrackingOnly)
 trackValidatorsTrackingOnly.remove(trackValidatorGsfTracksStandalone)
 trackValidatorsTrackingOnly.replace(trackValidatorBHadronStandalone, trackValidatorBHadronTrackingOnly)

@@ -2435,7 +2435,7 @@ void MTVHistoProducerAlgoForTracker::fill_ResoAndPull_recoTrack_histos(const His
   double phiPull = phiRes / phiErrorRec;
   double dxyPull = dxyRes / track.dxyError();
   double dzPull = dzRes / track.dzError();
-  
+
 #ifdef EDM_ML_DEBUG
   double contrib_Qoverp = ((qoverpRec - qoverpSim) / qoverpErrorRec) * ((qoverpRec - qoverpSim) / qoverpErrorRec) / 5;
   double contrib_dxy = ((dxyRec - dxySim) / track.dxyError()) * ((dxyRec - dxySim) / track.dxyError()) / 5;

@@ -1162,6 +1162,7 @@ void MultiTrackValidator::dqmAnalyze(const edm::Event& event,
           TrackingParticle::Vector momentumTP = parametersDefinerTP->momentum(event, setup, tpr);
           TrackingParticle::Point vertexTP = parametersDefinerTP->vertex(event, setup, tpr);
           int chargeTP = tpr->charge();
+
           histoProducerAlgo_->fill_ResoAndPull_recoTrack_histos(
               histograms.histoProducerAlgo, w, momentumTP, vertexTP, chargeTP, *track, bs.position());
         }

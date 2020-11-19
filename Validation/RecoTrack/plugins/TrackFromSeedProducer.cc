@@ -158,7 +158,7 @@ void TrackFromSeedProducer::produce(edm::StreamID, edm::Event& iEvent, const edm
       //GlobalPoint vSeed(vSeed1.x()-beamSpot->x0(),vSeed1.y()-beamSpot->y0(),vSeed1.z()-beamSpot->z0());
       PerigeeTrajectoryError seedPerigeeErrors =
           PerigeeConversions::ftsToPerigeeError(tsAtClosestApproachSeed.trackStateAtPCA());
-      tracks->emplace_back(0., 0., vSeed1, pSeed, state.charge(), seedPerigeeErrors.covarianceMatrix());      
+      tracks->emplace_back(0., 0., vSeed1, pSeed, state.charge(), seedPerigeeErrors.covarianceMatrix());
     } else {
       edm::LogVerbatim("SeedValidator") << "TrajectoryStateClosestToBeamLine not valid";
       // use magic values chi2<0, ndof<0, charge=0 to denote a case where the fit has failed
