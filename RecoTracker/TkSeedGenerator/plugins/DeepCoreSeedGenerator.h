@@ -62,9 +62,6 @@
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
-// #include "SimG4Core/Application/interface/G4SimTrack.h"
-// #include "SimDataFormats/Track/interface/SimTrack.h"
-
 #include "SimDataFormats/Vertex/interface/SimVertex.h"
 
 
@@ -111,13 +108,7 @@ class DeepCoreSeedGenerator : public edm::one::EDProducer<edm::one::SharedResour
 
   TFile* DeepCoreSeedGenerator_out;
   TTree* DeepCoreSeedGeneratorTree;
-  // static const int jetDimX =30;
-  // static const int jetDimY =30;
-  // static const int Nlayer =4;
-  // static const int Nover = 3;
-  // static const int Npar = 4;
 
-  // double clusterMeas[jetDimX][jetDimY][Nlayer];
   double jet_pt;
   double jet_eta;
   double pitchX = 0.01;
@@ -146,8 +137,6 @@ class DeepCoreSeedGenerator : public edm::one::EDProducer<edm::one::SharedResour
   edm::Handle<edmNew::DetSetVector<SiPixelCluster> > inputPixelClusters;
   edm::EDGetTokenT< edm::DetSetVector<PixelDigiSimLink> > pixeldigisimlinkToken;
   edm::EDGetTokenT<edm::View<reco::Candidate> > cores_;
-  // edm::EDGetTokenT<std::vector<SimTrack> > simtracksToken;
-  // edm::EDGetTokenT<std::vector<SimVertex> > simvertexToken;
 
   double ptMin_;
   double deltaR_;

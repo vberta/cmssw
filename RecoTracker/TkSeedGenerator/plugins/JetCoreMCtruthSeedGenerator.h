@@ -62,7 +62,6 @@
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
-// #include "SimG4Core/Application/interface/G4SimTrack.h"
 #include "SimDataFormats/Track/interface/SimTrack.h"
 
 #include "SimDataFormats/Vertex/interface/SimVertex.h"
@@ -112,11 +111,6 @@ class JetCoreMCtruthSeedGenerator : public edm::one::EDProducer<edm::one::Shared
 
   TFile* JetCoreMCtruthSeedGenerator_out;
   TTree* JetCoreMCtruthSeedGeneratorTree;
-  // static const int jetDimX =30;
-  // static const int jetDimY =30;
-  // static const int Nlayer =4;
-  // static const int Nover = 3;
-  // static const int Npar = 4;
 
   // double clusterMeas[jetDimX][jetDimY][Nlayer];
   double jet_pt;
