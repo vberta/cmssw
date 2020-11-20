@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    trackJet/JetCoreDirectSeedGenerator
-// Class:      JetCoreDirectSeedGenerator
+// Package:    trackJet/DeepCoreSeedGenerator
+// Class:      DeepCoreSeedGenerator
 //
-/**\class JetCoreDirectSeedGenerator JetCoreDirectSeedGenerator.cc trackJet/JetCoreDirectSeedGenerator/plugins/JetCoreDirectSeedGenerator.cc
+/**\class DeepCoreSeedGenerator DeepCoreSeedGenerator.cc trackJet/DeepCoreSeedGenerator/plugins/DeepCoreSeedGenerator.cc
 
  Description: [one line class summary]
 
@@ -25,7 +25,7 @@
 #define Nover 3
 #define Npar 5
 
-#include "JetCoreDirectSeedGenerator.h"
+#include "DeepCoreSeedGenerator.h"
 
 #include <memory>
 
@@ -109,7 +109,7 @@
 
 
 
-JetCoreDirectSeedGenerator::JetCoreDirectSeedGenerator(const edm::ParameterSet& iConfig) :
+DeepCoreSeedGenerator::DeepCoreSeedGenerator(const edm::ParameterSet& iConfig) :
 
       vertices_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
       pixelClusters_(consumes<edmNew::DetSetVector<SiPixelCluster> >(iConfig.getParameter<edm::InputTag>("pixelClusters"))),
@@ -135,10 +135,10 @@ JetCoreDirectSeedGenerator::JetCoreDirectSeedGenerator(const edm::ParameterSet& 
 
   //  edm::Service<TFileService> fileService;
    //
-  //  JetCoreDirectSeedGeneratorTree= fileService->make<TTree>("JetCoreDirectSeedGeneratorTree","JetCoreDirectSeedGeneratorTree");
-  //  JetCoreDirectSeedGeneratorTree->Branch("cluster_measured",clusterMeas,"cluster_measured[30][30][4]/D");
-  //  JetCoreDirectSeedGeneratorTree->Branch("jet_eta",&jet_eta);
-  //  JetCoreDirectSeedGeneratorTree->Branch("jet_pt",&jet_pt);
+  //  DeepCoreSeedGeneratorTree= fileService->make<TTree>("DeepCoreSeedGeneratorTree","DeepCoreSeedGeneratorTree");
+  //  DeepCoreSeedGeneratorTree->Branch("cluster_measured",clusterMeas,"cluster_measured[30][30][4]/D");
+  //  DeepCoreSeedGeneratorTree->Branch("jet_eta",&jet_eta);
+  //  DeepCoreSeedGeneratorTree->Branch("jet_pt",&jet_pt);
 
 
     //  for(int i=0; i<Nlayer; i++){ //NOFLAG
@@ -154,7 +154,7 @@ JetCoreDirectSeedGenerator::JetCoreDirectSeedGenerator(const edm::ParameterSet& 
 }
 
 
-JetCoreDirectSeedGenerator::~JetCoreDirectSeedGenerator()
+DeepCoreSeedGenerator::~DeepCoreSeedGenerator()
 {
 
 }
@@ -162,7 +162,7 @@ JetCoreDirectSeedGenerator::~JetCoreDirectSeedGenerator()
 #define foreach BOOST_FOREACH
 
 
-void JetCoreDirectSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
+void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   evt_counter++;
   // std::cout << "NEW EVENT, event number" << evt_counter  <<std::endl;
@@ -355,11 +355,11 @@ int jet_number = 0;
         } //cluster
       } //detset
 
-    // JetCoreDirectSeedGeneratorTree->Fill();
+    // DeepCoreSeedGeneratorTree->Fill();
 
     //HERE SOMEHOW THE NN PRODUCE THE SEED FROM THE FILLED INPUT
 // std::cout << "Filling complete" << std::endl;
-    std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]> seedParamNN = JetCoreDirectSeedGenerator::SeedEvaluation(input_tensors);
+    std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]> seedParamNN = DeepCoreSeedGenerator::SeedEvaluation(input_tensors);
 
     for(int i=0; i<jetDimX; i++){
       for(int j=0; j<jetDimY; j++){
@@ -472,7 +472,7 @@ iEvent.put(std::move(resultTracks));
 
 
 
-std::pair<bool, Basic3DVector<float>> JetCoreDirectSeedGenerator::findIntersection(const GlobalVector & dir,const  reco::Candidate::Point & vertex, const GeomDet* det){
+std::pair<bool, Basic3DVector<float>> DeepCoreSeedGenerator::findIntersection(const GlobalVector & dir,const  reco::Candidate::Point & vertex, const GeomDet* det){
      StraightLinePlaneCrossing vertexPlane(Basic3DVector<float>(vertex.x(),vertex.y(),vertex.z()), Basic3DVector<float>(dir.x(),dir.y(),dir.z()));
 
      std::pair<bool, Basic3DVector<float>> pos = vertexPlane.position(det->specificSurface());
@@ -481,7 +481,7 @@ std::pair<bool, Basic3DVector<float>> JetCoreDirectSeedGenerator::findIntersecti
 }
 
 
-std::pair<int,int> JetCoreDirectSeedGenerator::local2Pixel(double locX, double locY, const GeomDet* det){
+std::pair<int,int> DeepCoreSeedGenerator::local2Pixel(double locX, double locY, const GeomDet* det){
     LocalPoint locXY(locX,locY);
     float pixX=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().pixel(locXY).first;
     float pixY=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().pixel(locXY).second;
@@ -489,14 +489,14 @@ std::pair<int,int> JetCoreDirectSeedGenerator::local2Pixel(double locX, double l
     return out;
 }
 
-LocalPoint JetCoreDirectSeedGenerator::pixel2Local(int pixX, int pixY, const GeomDet* det){
+LocalPoint DeepCoreSeedGenerator::pixel2Local(int pixX, int pixY, const GeomDet* det){
     float locX=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().localX(pixX);
     float locY=(dynamic_cast<const PixelGeomDetUnit*>(det))->specificTopology().localY(pixY);
     LocalPoint locXY(locX,locY);
     return locXY;
 }
 
-  int JetCoreDirectSeedGenerator::pixelFlipper(const GeomDet* det){
+  int DeepCoreSeedGenerator::pixelFlipper(const GeomDet* det){
     int out =1;
     LocalVector locZdir(0,0,1);
     GlobalVector globZdir  = det->specificSurface().toGlobal(locZdir);
@@ -510,7 +510,7 @@ LocalPoint JetCoreDirectSeedGenerator::pixel2Local(int pixX, int pixY, const Geo
 
 
 
-void JetCoreDirectSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det, tensorflow::NamedTensorList input_tensors ){//tensorflow::NamedTensorList input_tensors){
+void DeepCoreSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det, tensorflow::NamedTensorList input_tensors ){//tensorflow::NamedTensorList input_tensors){
 
     int flip = pixelFlipper(det); // 1=not flip, -1=flip
 
@@ -544,7 +544,7 @@ void JetCoreDirectSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster,
 
 }
 
-std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]> JetCoreDirectSeedGenerator::SeedEvaluation(tensorflow::NamedTensorList input_tensors){
+std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]> DeepCoreSeedGenerator::SeedEvaluation(tensorflow::NamedTensorList input_tensors){
 
   // tensorflow::TensorShape input_size_cluster   {1,jetDimX,jetDimY,Nlayer} ;
   // tensorflow::TensorShape input_size_pt   {1} ;
@@ -618,7 +618,7 @@ std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]>
 }
 
 
-const GeomDet* JetCoreDirectSeedGenerator::DetectorSelector(int llay, const reco::Candidate& jet, GlobalVector jetDir, const reco::Vertex& jetVertex, const TrackerTopology* const tTopo){
+const GeomDet* DeepCoreSeedGenerator::DetectorSelector(int llay, const reco::Candidate& jet, GlobalVector jetDir, const reco::Vertex& jetVertex, const TrackerTopology* const tTopo){
 
   struct trkNumCompare {
   bool operator()(std::pair<int,const GeomDet*> x, std::pair<int,const GeomDet*> y) const
@@ -658,7 +658,7 @@ const GeomDet* JetCoreDirectSeedGenerator::DetectorSelector(int llay, const reco
   // std::cout << "OK DET= layer =" << llay << " selected det=" << output->gdetIndex() << std::endl;
   return output;
 }
-std::vector<GlobalVector> JetCoreDirectSeedGenerator::splittedClusterDirections(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex , int layer){
+std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirections(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex , int layer){
   std::vector<GlobalVector> clustDirs;
 
   edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt_int = inputPixelClusters->begin();
@@ -716,7 +716,7 @@ std::vector<GlobalVector> JetCoreDirectSeedGenerator::splittedClusterDirections(
 }
 
 
-std::vector<GlobalVector> JetCoreDirectSeedGenerator::splittedClusterDirectionsOld(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex ){
+std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirectionsOld(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex ){
   std::vector<GlobalVector> clustDirs;
 
   edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt_int = inputPixelClusters->begin();
@@ -768,19 +768,19 @@ std::vector<GlobalVector> JetCoreDirectSeedGenerator::splittedClusterDirectionsO
 
 // ------------ method called once each job just before starting event loop  ------------
 void
-JetCoreDirectSeedGenerator::beginJob()
+DeepCoreSeedGenerator::beginJob()
 {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void
-JetCoreDirectSeedGenerator::endJob()
+DeepCoreSeedGenerator::endJob()
 {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-JetCoreDirectSeedGenerator::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+DeepCoreSeedGenerator::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -789,4 +789,4 @@ JetCoreDirectSeedGenerator::fillDescriptions(edm::ConfigurationDescriptions& des
 }
 
 //define this as a plug-in
-// DEFINE_FWK_MODULE(JetCoreDirectSeedGenerator);
+// DEFINE_FWK_MODULE(DeepCoreSeedGenerator);

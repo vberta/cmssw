@@ -1,5 +1,5 @@
-#ifndef RecoTracker_TkSeedGenerator_JetCoreDirectSeedGenerator_H
-#define RecoTracker_TkSeedGenerator_JetCoreDirectSeedGenerator_H
+#ifndef RecoTracker_TkSeedGenerator_DeepCoreSeedGenerator_H
+#define RecoTracker_TkSeedGenerator_DeepCoreSeedGenerator_H
 
 #define jetDimX 30
 #define jetDimY 30
@@ -81,10 +81,10 @@
 namespace edm { class Event; class EventSetup; }
 
 
-class JetCoreDirectSeedGenerator : public edm::one::EDProducer<edm::one::SharedResources>  {
+class DeepCoreSeedGenerator : public edm::one::EDProducer<edm::one::SharedResources>  {
    public:
-      explicit JetCoreDirectSeedGenerator(const edm::ParameterSet&);
-      ~JetCoreDirectSeedGenerator();
+      explicit DeepCoreSeedGenerator(const edm::ParameterSet&);
+      ~DeepCoreSeedGenerator();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
   // A pointer to a cluster and a list of tracks on it
@@ -109,8 +109,8 @@ class JetCoreDirectSeedGenerator : public edm::one::EDProducer<edm::one::SharedR
 
   typedef boost::sub_range<std::vector<SiPixelClusterWithTracks> > SiPixelClustersWithTracks;
 
-  TFile* JetCoreDirectSeedGenerator_out;
-  TTree* JetCoreDirectSeedGeneratorTree;
+  TFile* DeepCoreSeedGenerator_out;
+  TTree* DeepCoreSeedGeneratorTree;
   // static const int jetDimX =30;
   // static const int jetDimY =30;
   // static const int Nlayer =4;

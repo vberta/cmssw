@@ -1,5 +1,5 @@
-#ifndef RecoTracker_TkSeedGenerator_JetCorePerfectSeedGenerator_H
-#define RecoTracker_TkSeedGenerator_JetCorePerfectSeedGenerator_H
+#ifndef RecoTracker_TkSeedGenerator_JetCoreMCtruthSeedGenerator_H
+#define RecoTracker_TkSeedGenerator_JetCoreMCtruthSeedGenerator_H
 
 #define jetDimX 30
 #define jetDimY 30
@@ -82,10 +82,10 @@
 namespace edm { class Event; class EventSetup; }
 
 
-class JetCorePerfectSeedGenerator : public edm::one::EDProducer<edm::one::SharedResources>  {
+class JetCoreMCtruthSeedGenerator : public edm::one::EDProducer<edm::one::SharedResources>  {
    public:
-      explicit JetCorePerfectSeedGenerator(const edm::ParameterSet&);
-      ~JetCorePerfectSeedGenerator();
+      explicit JetCoreMCtruthSeedGenerator(const edm::ParameterSet&);
+      ~JetCoreMCtruthSeedGenerator();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
   // A pointer to a cluster and a list of tracks on it
@@ -110,8 +110,8 @@ class JetCorePerfectSeedGenerator : public edm::one::EDProducer<edm::one::Shared
 
   typedef boost::sub_range<std::vector<SiPixelClusterWithTracks> > SiPixelClustersWithTracks;
 
-  TFile* JetCorePerfectSeedGenerator_out;
-  TTree* JetCorePerfectSeedGeneratorTree;
+  TFile* JetCoreMCtruthSeedGenerator_out;
+  TTree* JetCoreMCtruthSeedGeneratorTree;
   // static const int jetDimX =30;
   // static const int jetDimY =30;
   // static const int Nlayer =4;

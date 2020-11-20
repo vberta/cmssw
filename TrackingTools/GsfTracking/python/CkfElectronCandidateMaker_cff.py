@@ -40,7 +40,8 @@ TrajectoryBuilderForElectrons.alwaysUseInvalidHits = True
 TrajectoryBuilderForElectrons.TTRHBuilder = 'WithTrackAngle'
 TrajectoryBuilderForElectrons.updator = 'KFUpdator'
 
-
+from Configuration.ProcessModifiers.seedingDeepCore_cff import seedingDeepCore
+seedingDeepCore.toModify(TrajectoryBuilderForElectrons, maxPtForLooperReconstruction = cms.double(0) )
 
 
 # CKFTrackCandidateMaker

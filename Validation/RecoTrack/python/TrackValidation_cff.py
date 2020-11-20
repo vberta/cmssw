@@ -355,7 +355,6 @@ trackingParticlesElectron = _trackingParticleRefSelector.clone(
 
 # Select jets for JetCore tracking
 highPtJets = cms.EDFilter("CandPtrSelector", src = cms.InputTag("ak4CaloJets"), cut = cms.string("pt()>1000")) 
-# highPtJets = cms.EDFilter("CandPtrSelector", src = cms.InputTag("ak4CaloJets"), cut = cms.string("pt()>1000 && eta()<1.4 && eta()>-1.4"))
 highPtJetsForTrk = highPtJets.clone(src = "ak4CaloJetsForTrk")
 
 # Select B-hadron TPs
