@@ -161,7 +161,7 @@ class JetCoreMCtruthSeedGenerator : public edm::one::EDProducer<edm::one::Shared
 
   std::pair<bool, Basic3DVector<float>> findIntersection(const GlobalVector & , const reco::Candidate::Point & ,const GeomDet*);
 
-  void fillPixelMatrix(const SiPixelCluster &, int, auto, const GeomDet*, tensorflow::NamedTensorList);
+  void fillPixelMatrix(const SiPixelCluster &, int, Point3DBase<float, LocalTag>, const GeomDet*, tensorflow::NamedTensorList);//if not working,: args=2 auto
 
   std::pair<int,int> local2Pixel(double, double, const GeomDet*);
 
@@ -169,16 +169,16 @@ class JetCoreMCtruthSeedGenerator : public edm::one::EDProducer<edm::one::Shared
 
   int pixelFlipper(const GeomDet*);
 
-  const GeomDet* DetectorSelector(int ,const reco::Candidate& jet, GlobalVector,  const reco::Vertex& jetVertex, const TrackerTopology* const);
+  const GeomDet* DetectorSelector(int ,const reco::Candidate&, GlobalVector,  const reco::Vertex&, const TrackerTopology* const);
 
-  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex, int );
+  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, const PixelClusterParameterEstimator*, const reco::Vertex&, int ); //if not working,: args=2 auto
 
-  std::vector<PSimHit> coreHitsFilling(auto,const GeomDet*,GlobalVector,const reco::Vertex&);
-  std::pair<std::vector<SimTrack>,std::vector<SimVertex>> coreTracksFilling(std::vector<PSimHit>, const auto &, const auto &);
+  std::vector<PSimHit> coreHitsFilling(edm::Handle<std::vector<PSimHit> >,const GeomDet*,GlobalVector,const reco::Vertex&); //if not working,: args=0 auto
+  std::pair<std::vector<SimTrack>,std::vector<SimVertex>> coreTracksFilling(std::vector<PSimHit>, const std::vector<SimTrack>*, const std::vector<SimVertex>*); //if not working,: args=1,2 auto
 
   std::vector<std::array<double,5>> seedParFilling(std::pair<std::vector<SimTrack>,std::vector<SimVertex>>,const GeomDet*, const reco::Candidate&);
 
-  std::pair<std::vector<SimTrack>,std::vector<SimVertex>> coreTracksFillingDeltaR( const auto &, const auto &,const GeomDet* , const reco::Candidate&,auto );
+  std::pair<std::vector<SimTrack>,std::vector<SimVertex>> coreTracksFillingDeltaR( const std::vector<SimTrack>*, const std::vector<SimVertex>*,const GeomDet* , const reco::Candidate&,const reco::Vertex& );//if not working,: args=0,1 auto
 
 
 };

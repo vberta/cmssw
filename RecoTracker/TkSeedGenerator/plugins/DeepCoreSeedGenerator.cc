@@ -398,7 +398,7 @@ LocalPoint DeepCoreSeedGenerator::pixel2Local(int pixX, int pixY, const GeomDet*
 
 
 
-void DeepCoreSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det, tensorflow::NamedTensorList input_tensors ){//tensorflow::NamedTensorList input_tensors){
+void DeepCoreSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster, int layer, Point3DBase<float, LocalTag> inter, const GeomDet* det, tensorflow::NamedTensorList input_tensors ){//tensorflow::NamedTensorList input_tensors){
 
     int flip = pixelFlipper(det); // 1=not flip, -1=flip
 
@@ -482,7 +482,7 @@ const GeomDet* DeepCoreSeedGenerator::DetectorSelector(int llay, const reco::Can
   } //detset
   return output;
 }
-std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirections(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex , int layer){
+std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirections(const reco::Candidate& jet, const TrackerTopology* const tTopo, const PixelClusterParameterEstimator* pp, const reco::Vertex& jetVertex , int layer){
   std::vector<GlobalVector> clustDirs;
 
   edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt_int = inputPixelClusters->begin();
@@ -493,7 +493,7 @@ std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirections(const
     const edmNew::DetSet<SiPixelCluster>& detset_int = *detIt_int;
     const GeomDet* det_int = geometry_->idToDet(detset_int.id());
     int lay = tTopo->layer(det_int->geographicalId());
-    if(lay != layer) continue; //NB: saved bigclusetr on all the layers!!
+    if(lay != layer) continue; //NB: saved bigClusters on all the layers!!
 
     for (auto cluster = detset_int.begin(); cluster != detset_int.end(); cluster++) {
       const SiPixelCluster& aCluster = *cluster;
@@ -535,7 +535,7 @@ std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirections(const
 }
 
 
-std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirectionsOld(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex ){
+std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirectionsOld(const reco::Candidate& jet, const TrackerTopology* const tTopo, const PixelClusterParameterEstimator* pp, const reco::Vertex& jetVertex ){
   std::vector<GlobalVector> clustDirs;
 
   edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt_int = inputPixelClusters->begin();
@@ -545,7 +545,7 @@ std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirectionsOld(co
 
     const edmNew::DetSet<SiPixelCluster>& detset_int = *detIt_int;
     const GeomDet* det_int = geometry_->idToDet(detset_int.id());
-    int lay = tTopo->layer(det_int->geographicalId());
+    // int lay = tTopo->layer(det_int->geographicalId());
 
     for (auto cluster = detset_int.begin(); cluster != detset_int.end(); cluster++) {
       const SiPixelCluster& aCluster = *cluster;
