@@ -40,6 +40,8 @@
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateTransform.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
+#include "Geometry/CommonDetUnit/interface/GlobalTrackingGeometry.h"
+#include "Geometry/Records/interface/GlobalTrackingGeometryRecord.h"
 
 //
 // class declaration
@@ -126,15 +128,24 @@ void TrackFromSeedProducer::produce(edm::StreamID, edm::Event& iEvent, const edm
   edm::ESHandle<TrackerTopology> httopo;
   iSetup.get<TrackerTopologyRcd>().get(httopo);
   const TrackerTopology& ttopo = *httopo;
+  
+  edm::ESHandle<GlobalTrackingGeometry> geometry_;
+  iSetup.get<GlobalTrackingGeometryRecord>().get(geometry_);
 
   // create tracks from seeds
   int nfailed = 0;
   for (size_t iSeed = 0; iSeed < seeds.size(); ++iSeed) {
     auto const& seed = seeds[iSeed];
     // try to create a track
-    TransientTrackingRecHit::RecHitPointer lastRecHit = tTRHBuilder->build(&*(seed.recHits().end() - 1));
-    TrajectoryStateOnSurface state =
-        trajectoryStateTransform::transientState(seed.startingState(), lastRecHit->surface(), theMF.product());
+    TrajectoryStateOnSurface state;
+    if(seed.nHits()==0) { //this is for deepCore seeds only
+      const Surface *deepCore_sruface = &geometry_->idToDet(seed.startingState().detId())->specificSurface();
+      state = trajectoryStateTransform::transientState( seed.startingState(),  deepCore_sruface, theMF.product());
+    }
+    else {
+      TransientTrackingRecHit::RecHitPointer lastRecHit = tTRHBuilder->build(&*(seed.recHits().end() - 1));
+      state = trajectoryStateTransform::transientState( seed.startingState(), lastRecHit->surface(), theMF.product());
+    }
     TrajectoryStateClosestToBeamLine tsAtClosestApproachSeed =
         tscblBuilder(*state.freeState(), *beamSpot);  //as in TrackProducerAlgorithm
     if (tsAtClosestApproachSeed.isValid()) {
