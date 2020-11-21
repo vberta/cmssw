@@ -7,7 +7,6 @@
 #define Nover 3
 #define Npar 5
 
-
 #include <memory>
 
 // user include files
@@ -40,7 +39,6 @@
 #include "DataFormats/Math/interface/Vector3D.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 
-
 #include "RecoLocalTracker/ClusterParameterEstimator/interface/PixelClusterParameterEstimator.h"
 #include "RecoLocalTracker/Records/interface/TkPixelCPERecord.h"
 
@@ -53,8 +51,6 @@
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 
-
-
 #include <boost/range.hpp>
 #include <boost/foreach.hpp>
 #include "boost/multi_array.hpp"
@@ -66,48 +62,43 @@
 
 #include "SimDataFormats/Vertex/interface/SimVertex.h"
 
-
 #include "Geometry/CommonDetUnit/interface/PixelGeomDetUnit.h"
 
 #include "DataFormats/TrajectorySeed/interface/TrajectorySeedCollection.h"
 
 #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 
-
 #include "TTree.h"
 #include "PhysicsTools/TensorFlow/interface/TensorFlow.h"
 
+namespace edm {
+  class Event;
+  class EventSetup;
+}  // namespace edm
 
-namespace edm { class Event; class EventSetup; }
+class JetCoreMCtruthSeedGenerator : public edm::one::EDProducer<edm::one::SharedResources> {
+public:
+  explicit JetCoreMCtruthSeedGenerator(const edm::ParameterSet&);
+  ~JetCoreMCtruthSeedGenerator() override;
 
-
-class JetCoreMCtruthSeedGenerator : public edm::one::EDProducer<edm::one::SharedResources>  {
-   public:
-      explicit JetCoreMCtruthSeedGenerator(const edm::ParameterSet&);
-      ~JetCoreMCtruthSeedGenerator();
-
-      static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
+  static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
   // A pointer to a cluster and a list of tracks on it
-  struct TrackAndState
-  {
-    TrackAndState(const reco::Track *aTrack, TrajectoryStateOnSurface aState) :
-      track(aTrack), state(aState) {}
-    const reco::Track*      track;
+  struct TrackAndState {
+    TrackAndState(const reco::Track* aTrack, TrajectoryStateOnSurface aState) : track(aTrack), state(aState) {}
+    const reco::Track* track;
     TrajectoryStateOnSurface state;
   };
 
-
-  template<typename Cluster>
-  struct ClusterWithTracks
-  {
-    ClusterWithTracks(const Cluster &c) : cluster(&c) {}
+  template <typename Cluster>
+  struct ClusterWithTracks {
+    ClusterWithTracks(const Cluster& c) : cluster(&c) {}
     const Cluster* cluster;
     std::vector<TrackAndState> tracks;
   };
 
   typedef ClusterWithTracks<SiPixelCluster> SiPixelClusterWithTracks;
 
-  typedef boost::sub_range<std::vector<SiPixelClusterWithTracks> > SiPixelClustersWithTracks;
+  typedef boost::sub_range<std::vector<SiPixelClusterWithTracks>> SiPixelClustersWithTracks;
 
   TFile* JetCoreMCtruthSeedGenerator_out;
   TTree* JetCoreMCtruthSeedGeneratorTree;
@@ -118,34 +109,33 @@ class JetCoreMCtruthSeedGenerator : public edm::one::EDProducer<edm::one::Shared
   double pitchX = 0.01;
   double pitchY = 0.015;
   bool print = false;
-  int evt_counter =0;
-  bool inclusiveConeSeed = true; //true= fill tracks in a cone of deltaR_, false=fill tracks which produce SimHit on globDet
+  int evt_counter = 0;
+  bool inclusiveConeSeed =
+      true;  //true= fill tracks in a cone of deltaR_, false=fill tracks which produce SimHit on globDet
 
+private:
+  void beginJob() override;
+  void produce(edm::Event&, const edm::EventSetup&) override;
+  void endJob() override;
 
-   private:
-      virtual void beginJob() override;
-      virtual void produce( edm::Event&, const edm::EventSetup&) override;
-      virtual void endJob() override;
-
-
-      // ----------member data ---------------------------
+  // ----------member data ---------------------------
   std::string propagatorName_;
-  edm::ESHandle<MagneticField>          magfield_;
+  edm::ESHandle<MagneticField> magfield_;
   edm::ESHandle<GlobalTrackingGeometry> geometry_;
-  edm::ESHandle<Propagator>             propagator_;
+  edm::ESHandle<Propagator> propagator_;
 
-  edm::EDGetTokenT<std::vector<reco::Vertex> > vertices_;
-  edm::EDGetTokenT<edmNew::DetSetVector<SiPixelCluster> > pixelClusters_;
+  edm::EDGetTokenT<std::vector<reco::Vertex>> vertices_;
+  edm::EDGetTokenT<edmNew::DetSetVector<SiPixelCluster>> pixelClusters_;
   std::vector<SiPixelClusterWithTracks> allSiPixelClusters;
   std::map<uint32_t, SiPixelClustersWithTracks> siPixelDetsWithClusters;
-  edm::Handle< edm::DetSetVector<PixelDigiSimLink> > pixeldigisimlink;
-  edm::Handle<edmNew::DetSetVector<SiPixelCluster> > inputPixelClusters;
-  edm::EDGetTokenT< edm::DetSetVector<PixelDigiSimLink> > pixeldigisimlinkToken;
-  edm::EDGetTokenT<edm::View<reco::Candidate> > cores_;
-  edm::EDGetTokenT<std::vector<SimTrack> > simtracksToken;
-  edm::EDGetTokenT<std::vector<SimVertex> > simvertexToken;
-  edm::EDGetTokenT<std::vector<PSimHit> > PSimHitToken;
-  edm::Handle<std::vector<PSimHit> > simhits;
+  edm::Handle<edm::DetSetVector<PixelDigiSimLink>> pixeldigisimlink;
+  edm::Handle<edmNew::DetSetVector<SiPixelCluster>> inputPixelClusters;
+  edm::EDGetTokenT<edm::DetSetVector<PixelDigiSimLink>> pixeldigisimlinkToken;
+  edm::EDGetTokenT<edm::View<reco::Candidate>> cores_;
+  edm::EDGetTokenT<std::vector<SimTrack>> simtracksToken;
+  edm::EDGetTokenT<std::vector<SimVertex>> simvertexToken;
+  edm::EDGetTokenT<std::vector<PSimHit>> PSimHitToken;
+  edm::Handle<std::vector<PSimHit>> simhits;
 
   double ptMin_;
   double deltaR_;
@@ -157,29 +147,49 @@ class JetCoreMCtruthSeedGenerator : public edm::one::EDProducer<edm::one::Shared
   tensorflow::GraphDef* graph_;
   tensorflow::Session* session_;
 
+  std::pair<bool, Basic3DVector<float>> findIntersection(const GlobalVector&,
+                                                         const reco::Candidate::Point&,
+                                                         const GeomDet*);
 
+  void fillPixelMatrix(const SiPixelCluster&,
+                       int,
+                       Point3DBase<float, LocalTag>,
+                       const GeomDet*,
+                       tensorflow::NamedTensorList);  //if not working,: args=2 auto
 
-  std::pair<bool, Basic3DVector<float>> findIntersection(const GlobalVector & , const reco::Candidate::Point & ,const GeomDet*);
-
-  void fillPixelMatrix(const SiPixelCluster &, int, Point3DBase<float, LocalTag>, const GeomDet*, tensorflow::NamedTensorList);//if not working,: args=2 auto
-
-  std::pair<int,int> local2Pixel(double, double, const GeomDet*);
+  std::pair<int, int> local2Pixel(double, double, const GeomDet*);
 
   LocalPoint pixel2Local(int, int, const GeomDet*);
 
   int pixelFlipper(const GeomDet*);
 
-  const GeomDet* DetectorSelector(int ,const reco::Candidate&, GlobalVector,  const reco::Vertex&, const TrackerTopology* const);
+  const GeomDet* DetectorSelector(
+      int, const reco::Candidate&, GlobalVector, const reco::Vertex&, const TrackerTopology* const);
 
-  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, const PixelClusterParameterEstimator*, const reco::Vertex&, int ); //if not working,: args=2 auto
+  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&,
+                                                      const TrackerTopology* const,
+                                                      const PixelClusterParameterEstimator*,
+                                                      const reco::Vertex&,
+                                                      int);  //if not working,: args=2 auto
 
-  std::vector<PSimHit> coreHitsFilling(edm::Handle<std::vector<PSimHit> >,const GeomDet*,GlobalVector,const reco::Vertex&); //if not working,: args=0 auto
-  std::pair<std::vector<SimTrack>,std::vector<SimVertex>> coreTracksFilling(std::vector<PSimHit>, const std::vector<SimTrack>*, const std::vector<SimVertex>*); //if not working,: args=1,2 auto
+  std::vector<PSimHit> coreHitsFilling(edm::Handle<std::vector<PSimHit>>,
+                                       const GeomDet*,
+                                       GlobalVector,
+                                       const reco::Vertex&);  //if not working,: args=0 auto
+  std::pair<std::vector<SimTrack>, std::vector<SimVertex>> coreTracksFilling(
+      std::vector<PSimHit>,
+      const std::vector<SimTrack>*,
+      const std::vector<SimVertex>*);  //if not working,: args=1,2 auto
 
-  std::vector<std::array<double,5>> seedParFilling(std::pair<std::vector<SimTrack>,std::vector<SimVertex>>,const GeomDet*, const reco::Candidate&);
+  std::vector<std::array<double, 5>> seedParFilling(std::pair<std::vector<SimTrack>, std::vector<SimVertex>>,
+                                                    const GeomDet*,
+                                                    const reco::Candidate&);
 
-  std::pair<std::vector<SimTrack>,std::vector<SimVertex>> coreTracksFillingDeltaR( const std::vector<SimTrack>*, const std::vector<SimVertex>*,const GeomDet* , const reco::Candidate&,const reco::Vertex& );//if not working,: args=0,1 auto
-
-
+  std::pair<std::vector<SimTrack>, std::vector<SimVertex>> coreTracksFillingDeltaR(
+      const std::vector<SimTrack>*,
+      const std::vector<SimVertex>*,
+      const GeomDet*,
+      const reco::Candidate&,
+      const reco::Vertex&);  //if not working,: args=0,1 auto
 };
 #endif
