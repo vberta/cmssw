@@ -160,7 +160,7 @@ class DeepCoreSeedGenerator : public edm::one::EDProducer<edm::one::SharedResour
 
   std::pair<bool, Basic3DVector<float>> findIntersection(const GlobalVector & , const reco::Candidate::Point & ,const GeomDet*);
 
-  void fillPixelMatrix(const SiPixelCluster &, int, auto, const GeomDet*, tensorflow::NamedTensorList);
+  void fillPixelMatrix(const SiPixelCluster &, int, Point3DBase<float, LocalTag>, const GeomDet*, tensorflow::NamedTensorList);//if not working,: args=2 auto
 
   std::pair<int,int> local2Pixel(double, double, const GeomDet*);
 
@@ -168,10 +168,10 @@ class DeepCoreSeedGenerator : public edm::one::EDProducer<edm::one::SharedResour
 
   int pixelFlipper(const GeomDet*);
 
-  const GeomDet* DetectorSelector(int ,const reco::Candidate& jet, GlobalVector,  const reco::Vertex& jetVertex, const TrackerTopology* const);
+  const GeomDet* DetectorSelector(int ,const reco::Candidate&, GlobalVector,  const reco::Vertex&, const TrackerTopology* const);
 
-  std::vector<GlobalVector> splittedClusterDirectionsOld(const reco::Candidate&, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex );
-  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, auto pp, const reco::Vertex& jetVertex, int );
+  std::vector<GlobalVector> splittedClusterDirectionsOld(const reco::Candidate&, const TrackerTopology* const, const PixelClusterParameterEstimator*, const reco::Vertex& ); //if not working,: args=2 auto
+  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&, const TrackerTopology* const, const PixelClusterParameterEstimator*, const reco::Vertex&, int ); //if not working,: args=2 auto
   
   std::pair<double[jetDimX][jetDimY][Nover][Npar],double[jetDimX][jetDimY][Nover]> SeedEvaluation(tensorflow::NamedTensorList);
 

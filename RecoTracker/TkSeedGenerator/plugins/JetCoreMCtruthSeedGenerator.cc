@@ -327,7 +327,7 @@ LocalPoint JetCoreMCtruthSeedGenerator::pixel2Local(int pixX, int pixY, const Ge
 
 
 
-void JetCoreMCtruthSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster, int layer, auto inter, const GeomDet* det, tensorflow::NamedTensorList input_tensors ){//tensorflow::NamedTensorList input_tensors){
+void JetCoreMCtruthSeedGenerator::fillPixelMatrix(const SiPixelCluster & cluster, int layer, Point3DBase<float, LocalTag> inter, const GeomDet* det, tensorflow::NamedTensorList input_tensors ){
 
     int flip = pixelFlipper(det); // 1=not flip, -1=flip
 
@@ -392,7 +392,7 @@ const GeomDet* JetCoreMCtruthSeedGenerator::DetectorSelector(int llay, const rec
 
 
 
-std::vector<GlobalVector> JetCoreMCtruthSeedGenerator::splittedClusterDirections(const reco::Candidate& jet, const TrackerTopology* const tTopo, auto pp, const reco::Vertex& jetVertex , int layer){
+std::vector<GlobalVector> JetCoreMCtruthSeedGenerator::splittedClusterDirections(const reco::Candidate& jet, const TrackerTopology* const tTopo, const PixelClusterParameterEstimator* pp, const reco::Vertex& jetVertex , int layer){
   std::vector<GlobalVector> clustDirs;
 
   edmNew::DetSetVector<SiPixelCluster>::const_iterator detIt_int = inputPixelClusters->begin();
@@ -444,7 +444,7 @@ std::vector<GlobalVector> JetCoreMCtruthSeedGenerator::splittedClusterDirections
 }
 
 
-std::vector<PSimHit> JetCoreMCtruthSeedGenerator::coreHitsFilling(auto simhits,const GeomDet* globDet,GlobalVector bigClustDir,const reco::Vertex& jetVertex){
+std::vector<PSimHit> JetCoreMCtruthSeedGenerator::coreHitsFilling(edm::Handle<std::vector<PSimHit> > simhits,const GeomDet* globDet,GlobalVector bigClustDir,const reco::Vertex& jetVertex){
   std::vector<PSimHit> goodSimHit;
   std::vector<PSimHit>::const_iterator shIt = simhits->begin();
   for (; shIt != simhits->end(); shIt++) { //loop deset
@@ -462,7 +462,7 @@ std::vector<PSimHit> JetCoreMCtruthSeedGenerator::coreHitsFilling(auto simhits,c
   return goodSimHit;
 }
 
-std::pair<std::vector<SimTrack>,std::vector<SimVertex>> JetCoreMCtruthSeedGenerator::coreTracksFilling(std::vector<PSimHit> goodSimHit,  const auto & simtracksVector, const auto & simvertexVector){
+std::pair<std::vector<SimTrack>,std::vector<SimVertex>> JetCoreMCtruthSeedGenerator::coreTracksFilling(std::vector<PSimHit> goodSimHit,  const std::vector<SimTrack>* simtracksVector, const std::vector<SimVertex>* simvertexVector){
   std::vector<SimTrack> goodSimTrk;
   std::vector<SimVertex> goodSimVtx;
 
@@ -487,7 +487,7 @@ std::pair<std::vector<SimTrack>,std::vector<SimVertex>> JetCoreMCtruthSeedGenera
   return output;
 }
 
-std::pair<std::vector<SimTrack>,std::vector<SimVertex>> JetCoreMCtruthSeedGenerator::coreTracksFillingDeltaR( const auto & simtracksVector,  const auto &  simvertexVector,const GeomDet* globDet, const reco::Candidate& jet, auto jetVertex){
+std::pair<std::vector<SimTrack>,std::vector<SimVertex>> JetCoreMCtruthSeedGenerator::coreTracksFillingDeltaR( const std::vector<SimTrack>* simtracksVector, const std::vector<SimVertex>* simvertexVector,const GeomDet* globDet, const reco::Candidate& jet, const reco::Vertex& jetVertex){
   std::vector<SimTrack> goodSimTrk;
   std::vector<SimVertex> goodSimVtx;
 
@@ -525,12 +525,12 @@ std::vector<std::array<double,5>> JetCoreMCtruthSeedGenerator::seedParFilling(st
     GlobalPoint trkPos(sv.position().x(),sv.position().y(), sv.position().z());
     std::cout << "seed " << j<< ", very int pt" << st.momentum().Pt() << ", eta="<< st.momentum().Eta() << ", phi=" << st.momentum().Phi() << "------ internal point="<< trkMom.x() << "," << trkMom.y() << "," << trkMom.z() <<"," << trkPos.x() << "," << trkPos.y() << ","<< trkPos.z() << std::endl;
 
-    bool old_approach = true; // if true use the DeepCore like approahc to build the seed
+    // bool old_approach = true; // if true use the DeepCore like approahc to build the seed
     std::pair<bool, Basic3DVector<float>> trkInterPair;
     trkInterPair = findIntersection(trkMom,(reco::Candidate::Point)trkPos, globDet);
     if(trkInterPair.first==false) {
       GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
-      double deltar = Geom::deltaR(jetDir, trkMom);
+      // double deltar = Geom::deltaR(jetDir, trkMom);
       continue;
     }
     Basic3DVector<float> trkInter = trkInterPair.second;
