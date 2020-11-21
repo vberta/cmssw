@@ -90,9 +90,9 @@ jetCoreRegionalStepSeeds = _seedCreatorFromRegionConsecutiveHitsEDProducer.clone
 # QUALITY CUTS DURING TRACK BUILDING
 import TrackingTools.TrajectoryFiltering.TrajectoryFilter_cff
 jetCoreRegionalStepTrajectoryFilter = TrackingTools.TrajectoryFiltering.TrajectoryFilter_cff.CkfBaseTrajectoryFilter_block.clone(
-     minimumNumberOfHits = 4,
-     seedPairPenalty     = 0,
-     minPt               = 0.1
+    minimumNumberOfHits = 4,
+    seedPairPenalty     = 0,
+    minPt               = 0.1
 )
 
 from Configuration.ProcessModifiers.seedingDeepCore_cff import seedingDeepCore
@@ -127,6 +127,7 @@ CkfBaseTrajectoryFilter_block = RecoTracker.CkfPattern.GroupedCkfTrajectoryBuild
 jetCoreRegionalStepTrajectoryBuilder = RecoTracker.CkfPattern.GroupedCkfTrajectoryBuilder_cfi.GroupedCkfTrajectoryBuilder.clone(
     MeasurementTrackerName = '',
     trajectoryFilter = cms.PSet(refToPSet_ = cms.string('jetCoreRegionalStepTrajectoryFilter')),
+    #clustersToSkip = cms.InputTag('jetCoreRegionalStepClusters'),
     maxCand = 50,
     estimator = 'jetCoreRegionalStepChi2Est',
     maxDPhiForLooperReconstruction = cms.double(2.0),
@@ -278,8 +279,6 @@ trackdnn.toReplaceWith(jetCoreRegionalStep, TrackLwtnnClassifier.clone(
 
 fastSim.toModify(jetCoreRegionalStep,vertices = 'firstStepPrimaryVerticesBeforeMixing')
 
-
-
 # Final sequence
 JetCoreRegionalStepTask = cms.Task(jetsForCoreTracking,                 
                                    firstStepGoodPrimaryVertices,
@@ -288,7 +287,6 @@ JetCoreRegionalStepTask = cms.Task(jetsForCoreTracking,
                                    jetCoreRegionalStepTrackingRegions,
                                    jetCoreRegionalStepHitDoublets,
                                    jetCoreRegionalStepSeeds,
-                                #    jetCoreSeeds,
                                    jetCoreRegionalStepTrackCandidates,
                                    jetCoreRegionalStepTracks,
 #                                   jetCoreRegionalStepClassifier1,jetCoreRegionalStepClassifier2,
