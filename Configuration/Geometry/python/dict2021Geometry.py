@@ -314,7 +314,7 @@ trackerDict = {
             'Geometry/TrackerSimData/data/trackerProdCutsBEAM.xml',
         ],
         "sim" : [
-            'from Geometry.TrackerNumberingBuilder.trackerNumberingGeometry_cfi import *',
+            'from Geometry.TrackerNumberingBuilder.trackerNumberingGeometry_cff import *',
         ],
         "reco" : [
             'from Geometry.CommonTopologies.globalTrackingGeometry_cfi import *',
@@ -516,7 +516,7 @@ trackerDict = {
             'Geometry/TrackerSimData/data/trackerProdCutsBEAM.xml',
         ],
         "sim" : [
-            'from Geometry.TrackerNumberingBuilder.trackerNumberingGeometry_cfi import *',
+            'from Geometry.TrackerNumberingBuilder.trackerNumberingGeometry_cff import *',
         ],
         "reco" : [
             'from Geometry.CommonTopologies.globalTrackingGeometry_cfi import *',
@@ -719,7 +719,7 @@ trackerDict = {
             'Geometry/TrackerSimData/data/trackerProdCutsBEAM.xml',
         ],
         "sim" : [
-            'from Geometry.TrackerNumberingBuilder.trackerNumberingGeometry_cfi import *',
+            'from Geometry.TrackerNumberingBuilder.trackerNumberingGeometry_cff import *',
         ],
         "reco" : [
             'from Geometry.CommonTopologies.globalTrackingGeometry_cfi import *',
@@ -921,7 +921,7 @@ trackerDict = {
             'Geometry/TrackerSimData/data/trackerProdCutsBEAM.xml',
         ],
         "sim" : [
-            'from Geometry.TrackerNumberingBuilder.trackerNumberingGeometry_cfi import *',
+            'from Geometry.TrackerNumberingBuilder.trackerNumberingGeometry_cff import *',
         ],
         "reco" : [
             'from Geometry.CommonTopologies.globalTrackingGeometry_cfi import *',
@@ -1025,7 +1025,7 @@ muonDict = {
             'Geometry/MuonCommonData/data/rpcf/2015/v1/rpcf.xml',
             'Geometry/MuonCommonData/data/gemf/TDR_BaseLine/gemf.xml',
             'Geometry/MuonCommonData/data/gem11/TDR_BaseLine/gem11.xml',
-            'Geometry/MuonCommonData/data/csc/2021/v2/csc.xml',
+            'Geometry/MuonCommonData/data/csc/2021/v3/csc.xml',
             'Geometry/MuonCommonData/data/mfshield/2017/v2/mfshield.xml',
         ],
         2 : [
