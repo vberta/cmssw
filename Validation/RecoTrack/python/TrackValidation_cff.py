@@ -715,7 +715,9 @@ tracksPreValidationPhase2 = tracksPreValidation.copy()
 tracksPreValidationPhase2.add(trackingParticlesEtaGreater2p7)
 phase2_tracker.toReplaceWith(tracksPreValidation, tracksPreValidationPhase2)
 
-tracksValidationPhase2 = tracksValidation.copy()
+tracksValidationPhase2 = tracksValidation.copyAndExclude([
+    trackValidatorJetCore
+])
 tracksValidationPhase2+=trackValidatorTPEtaGreater2p7
 phase2_tracker.toReplaceWith(tracksValidation, tracksValidationPhase2)
 
@@ -914,7 +916,10 @@ fastSim.toReplaceWith(trackValidatorsTrackingOnly, trackValidatorsTrackingOnly.c
     trackValidatorConversionTrackingOnly,
     trackValidatorBHadronTrackingOnly
 ]))
-
+phase2_tracker.toReplaceWith(trackValidatorsTrackingOnly, trackValidatorsTrackingOnly.copyAndExclude([
+    trackValidatorJetCore,
+    trackValidatorJetCoreSeedingTrackingOnly
+])) 
 tracksValidationTrackingOnly = cms.Sequence(
     trackValidatorsTrackingOnly,
     tracksPreValidationTrackingOnly,
