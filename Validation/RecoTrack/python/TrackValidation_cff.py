@@ -606,13 +606,17 @@ trackValidatorJetCore = trackValidator.clone(#equivalent to trackBuilding case
     associators= ["trackAssociatorByChi2"],#cms.untracked.VInputTag('MTVTrackAssociationByChi2'),
     UseAssociators = True,
     doPVAssociationPlots = True,
-    label = ["generalTracks", "jetCoreRegionalStepTracks", 
-        "cutsRecoTracksJetCoreRegionalStepByOriginalAlgo","cutsRecoTracksJetCoreRegionalStepByOriginalAlgoHp",
-        "cutsRecoTracksJetCoreRegionalStep", "cutsRecoTracksJetCoreRegionalStepHp"],
-    doResolutionPlotsForLabels =["generalTracks", "jetCoreRegionalStepTracks", 
-        "cutsRecoTracksJetCoreRegionalStepByOriginalAlgo","cutsRecoTracksJetCoreRegionalStepByOriginalAlgoHp",
-        "cutsRecoTracksJetCoreRegionalStep", "cutsRecoTracksJetCoreRegionalStepHp"],    
 )
+for _eraName, _postfix, _era in _relevantEras:
+    if 'jetCoreRegionalStep' in _cfg.iterationAlgos(_postfix) :
+        _setForEra(trackValidatorJetCore, _eraName, _era,
+            label = ["generalTracks", "jetCoreRegionalStepTracks", 
+                    "cutsRecoTracksJetCoreRegionalStepByOriginalAlgo","cutsRecoTracksJetCoreRegionalStepByOriginalAlgoHp",
+                    "cutsRecoTracksJetCoreRegionalStep", "cutsRecoTracksJetCoreRegionalStepHp"],
+            doResolutionPlotsForLabels =["generalTracks", "jetCoreRegionalStepTracks", 
+                    "cutsRecoTracksJetCoreRegionalStepByOriginalAlgo","cutsRecoTracksJetCoreRegionalStepByOriginalAlgoHp",
+                    "cutsRecoTracksJetCoreRegionalStep", "cutsRecoTracksJetCoreRegionalStepHp"], 
+        )
 
 # for B-hadrons
 trackValidatorBHadron = trackValidator.clone(
@@ -860,10 +864,16 @@ trackValidatorJetCoreSeedingTrackingOnly = trackValidatorSeedingTrackingOnly.clo
     dirName = "Tracking/JetCore/TrackSeeding/",
     associators = ["trackAssociatorByChi2"],
     UseAssociators = True,
-    label = [ "seedTracksjetCoreRegionalStepSeeds",],
     doSeedPlots = True,
-    doResolutionPlotsForLabels = [ "seedTracksjetCoreRegionalStepSeeds",]
 )
+
+for _eraName, _postfix, _era in _relevantEras:
+    if 'jetCoreRegionalStep' in _cfg.iterationAlgos(_postfix) :
+      _setForEra(trackValidatorJetCoreSeedingTrackingOnly, _eraName, _era,
+            label = [ "seedTracksjetCoreRegionalStepSeeds",],
+            doResolutionPlotsForLabels = [ "seedTracksjetCoreRegionalStepSeeds",]
+      )
+    
 for _eraName, _postfix, _era in _relevantErasAndFastSim:
     _setForEra(trackValidatorSeedingTrackingOnly, _eraName, _era, label = locals()["_seedSelectors"+_postfix])
 for _eraName, _postfix, _era in _relevantEras:

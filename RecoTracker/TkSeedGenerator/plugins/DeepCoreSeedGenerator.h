@@ -1,11 +1,11 @@
 #ifndef RecoTracker_TkSeedGenerator_DeepCoreSeedGenerator_H
 #define RecoTracker_TkSeedGenerator_DeepCoreSeedGenerator_H
 
-#define jetDimX 30
-#define jetDimY 30
-#define Nlayer 4
-#define Nover 3
-#define Npar 5
+#define jetDimX 30  //pixel dimension of NN window on layer2
+#define jetDimY 30  //pixel dimension of NN window on layer2
+#define Nlayer 4    //Number of layer used in DeepCore
+#define Nover 3     //Max number of tracks recorded per pixel
+#define Npar 5      //Number of track parameter
 
 #include <memory>
 
@@ -101,10 +101,9 @@ public:
 
   double jet_pt;
   double jet_eta;
-  double pitchX = 0.01;
-  double pitchY = 0.015;
+  double pitchX = 0.01;   //100 um (pixel pitch in X)
+  double pitchY = 0.015;  //150 um (pixel pitch in Y)
   bool print = false;
-  int evt_counter = 0;
 
 private:
   void beginJob() override;

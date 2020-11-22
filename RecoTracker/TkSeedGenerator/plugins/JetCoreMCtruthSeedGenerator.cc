@@ -16,11 +16,11 @@
 
 // system include files
 
-#define jetDimX 30
-#define jetDimY 30
-#define Nlayer 4
-#define Nover 3
-#define Npar 5
+#define jetDimX 30  //pixel dimension of NN window on layer2
+#define jetDimY 30  //pixel dimension of NN window on layer2
+#define Nlayer 4    //Number of layer used in DeepCore
+#define Nover 3     //Max number of tracks recorded per pixel
+#define Npar 5      //Number of track parameter
 
 #include "JetCoreMCtruthSeedGenerator.h"
 

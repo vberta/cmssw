@@ -199,9 +199,7 @@ jetCoreRegionalStepTrackCandidates = RecoTracker.CkfPattern.CkfTrackCandidates_c
 )
 seedingDeepCore.toModify(jetCoreRegionalStepTrackCandidates,
     TrajectoryCleaner         = 'jetCoreTrajectoryCleanerBySharedHits',
-    doSeedingRegionRebuilding = True,
-    # src                       = 'jetCoreSeeds',
-    
+    doSeedingRegionRebuilding = True,    
 )
 
 
