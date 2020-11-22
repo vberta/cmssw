@@ -1,11 +1,11 @@
 #ifndef RecoTracker_TkSeedGenerator_JetCoreMCtruthSeedGenerator_H
 #define RecoTracker_TkSeedGenerator_JetCoreMCtruthSeedGenerator_H
 
-#define jetDimX 30
-#define jetDimY 30
-#define Nlayer 4
-#define Nover 3
-#define Npar 5
+#define jetDimX 30  //pixel dimension of NN window on layer2
+#define jetDimY 30  //pixel dimension of NN window on layer2
+#define Nlayer 4    //Number of layer used in DeepCore
+#define Nover 3     //Max number of tracks recorded per pixel
+#define Npar 5      //Number of track parameter
 
 #include <memory>
 
@@ -103,15 +103,13 @@ public:
   TFile* JetCoreMCtruthSeedGenerator_out;
   TTree* JetCoreMCtruthSeedGeneratorTree;
 
-  // double clusterMeas[jetDimX][jetDimY][Nlayer];
   double jet_pt;
   double jet_eta;
-  double pitchX = 0.01;
-  double pitchY = 0.015;
+  double pitchX = 0.01;   //100 um (pixel pitch in X)
+  double pitchY = 0.015;  //150 um (pixel pitch in Y)
   bool print = false;
-  int evt_counter = 0;
   bool inclusiveConeSeed =
-      true;  //true= fill tracks in a cone of deltaR_, false=fill tracks which produce SimHit on globDet
+      true;  //true= fill tracks in a cone of deltaR_, false=fill tracks which have SimHit on globDet
 
 private:
   void beginJob() override;
