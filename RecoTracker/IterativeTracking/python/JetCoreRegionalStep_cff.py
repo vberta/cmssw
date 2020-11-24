@@ -138,43 +138,43 @@ seedingDeepCore.toModify(jetCoreRegionalStepTrajectoryBuilder,
     keepOriginalIfRebuildFails = True,
     lockHits = False,
     requireSeedHitsInRebuild = False,
-    trajectoryFilter = cms.PSet(refToPSet_ = cms.string('CkfBaseTrajectoryFilter_blockLoose'))
+    trajectoryFilter = cms.PSet(refToPSet_ = cms.string('jetCoreRegionalStepDeepCoreTrajectoryFilter'))
 )
 
 #customized cleaner for DeepCore
-trajectoryCleanerBySharedHits_JetCore = cms.ESProducer("TrajectoryCleanerESProducer",
-    ComponentName = cms.string('jetCoreTrajectoryCleanerBySharedHits'),
-    ComponentType = cms.string('TrajectoryCleanerBySharedHits'),
-    MissingHitPenalty = cms.double(20.0),
-    ValidHitBonus = cms.double(5.0),
-    allowSharedFirstHit = cms.bool(True),
+from TrackingTools.TrajectoryCleaning.TrajectoryCleanerBySharedHits_cfi import trajectoryCleanerBySharedHits
+jetCoreRegionalStepDeepCoreTrajectoryCleaner = trajectoryCleanerBySharedHits.clone(
+    ComponentName = cms.string('jetCoreRegionalStepDeepCoreTrajectoryCleaner'),
     fractionShared = cms.double(0.45)
+    # MissingHitPenalty = cms.double(20.0),
+    # ValidHitBonus = cms.double(5.0),
+    # allowSharedFirstHit = cms.bool(True),
 )
 
 #DeepCore filter
-CkfBaseTrajectoryFilter_blockLoose = cms.PSet(
-    ComponentType = cms.string('CkfBaseTrajectoryFilter'),
-    chargeSignificance = cms.double(-1.0),
-    constantValueForLostHitsFractionFilter = cms.double(2.0),
-    extraNumberOfHitsBeforeTheFirstLoop = cms.int32(4),
-    maxCCCLostHits = cms.int32(9999),
+jetCoreRegionalStepDeepCoreTrajectoryFilter = TrackingTools.TrajectoryFiltering.TrajectoryFilter_cff.CkfBaseTrajectoryFilter_block.clone( #blockloose
     maxConsecLostHits = cms.int32(2),
-    maxLostHits = cms.int32(999),
     maxLostHitsFraction = cms.double(1.1),
-    maxNumberOfHits = cms.int32(100),
-    minGoodStripCharge = cms.PSet(
-        refToPSet_ = cms.string('SiStripClusterChargeCutNone')
-    ),
-    minHitsMinPt = cms.int32(3),
-    minNumberOfHitsForLoopers = cms.int32(13),
-    minNumberOfHitsPerLoop = cms.int32(4),
-    minPt = cms.double(0.9),
-    minimumNumberOfHits = cms.int32(2),
-    nSigmaMinPt = cms.double(5.0),
-    pixelSeedExtension = cms.bool(False),
-    seedExtension = cms.int32(0),
-    seedPairPenalty = cms.int32(0),
-    strictSeedExtension = cms.bool(False)
+    minimumNumberOfHits = cms.int32(2)
+    # ComponentType = cms.string('CkfBaseTrajectoryFilter'),
+    # chargeSignificance = cms.double(-1.0),
+    # seedPairPenalty = cms.int32(0),
+    # minPt = cms.double(0.9),
+    # nSigmaMinPt = cms.double(5.0),
+    # minHitsMinPt = cms.int32(3),
+    # maxLostHits = cms.int32(999),
+    # maxNumberOfHits = cms.int32(100),
+    # constantValueForLostHitsFractionFilter = cms.double(2.0),
+    # seedExtension = cms.int32(0),
+    # pixelSeedExtension = cms.bool(False),
+    # strictSeedExtension = cms.bool(False),
+    # minNumberOfHitsForLoopers = cms.int32(13),
+    # minNumberOfHitsPerLoop = cms.int32(4),
+    # extraNumberOfHitsBeforeTheFirstLoop = cms.int32(4),
+    # maxCCCLostHits = cms.int32(9999),
+    # minGoodStripCharge = cms.PSet(
+        # refToPSet_ = cms.string('SiStripClusterChargeCutNone')
+    # ),
 )
 
 
@@ -199,7 +199,7 @@ jetCoreRegionalStepTrackCandidates = RecoTracker.CkfPattern.CkfTrackCandidates_c
     #onlyPixelHitsForSeedCleaner = cms.bool(True),
 )
 seedingDeepCore.toModify(jetCoreRegionalStepTrackCandidates,
-    TrajectoryCleaner         = 'jetCoreTrajectoryCleanerBySharedHits',
+    TrajectoryCleaner         = 'jetCoreRegionalStepDeepCoreTrajectoryCleaner',
     doSeedingRegionRebuilding = True,    
 )
 
