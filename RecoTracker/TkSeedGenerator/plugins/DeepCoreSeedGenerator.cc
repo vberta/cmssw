@@ -18,19 +18,13 @@
 
 // system include files
 
-#define jetDimX 30  //pixel dimension of NN window on layer2
-#define jetDimY 30  //pixel dimension of NN window on layer2
-#define Nlayer 4    //Number of layer used in DeepCore
-#define Nover 3     //Max number of tracks recorded per pixel
-#define Npar 5      //Number of track parameter
-
 #include "DeepCoreSeedGenerator.h"
 
 #include <memory>
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/one/EDProducer.h"
+#include "FWCore/Framework/interface/stream/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -123,8 +117,6 @@ DeepCoreSeedGenerator::DeepCoreSeedGenerator(const edm::ParameterSet& iConfig)
 
 DeepCoreSeedGenerator::~DeepCoreSeedGenerator() {}
 
-#define foreach BOOST_FOREACH
-
 void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   auto result = std::make_unique<TrajectorySeedCollection>();
   auto resultTracks = std::make_unique<reco::TrackCollection>();
@@ -172,7 +164,6 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
 
   auto output = std::make_unique<edmNew::DetSetVector<SiPixelCluster>>();
 
-  print = false;
   int jet_number = 0;
   for (unsigned int ji = 0; ji < cores->size(); ji++) {  //loop jet
     jet_number++;
@@ -259,7 +250,7 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
 
             if (std::abs(cPos_local.x() - localInter.x()) / pitchX <= jetDimX / 2 &&
                 std::abs(cPos_local.y() - localInter.y()) / pitchY <=
-                    jetDimY / 2) {  // per ora preso baricentro, da migliorare
+                    jetDimY / 2) {  //used the baricenter, better description maybe useful
 
               if (det == goodDet1 || det == goodDet3 || det == goodDet4 || det == globDet) {
                 fillPixelMatrix(aCluster, lay, localInter, det, input_tensors);
@@ -434,8 +425,11 @@ void DeepCoreSeedGenerator::fillPixelMatrix(
   }
 }
 
-std::pair<double[jetDimX][jetDimY][Nover][Npar], double[jetDimX][jetDimY][Nover]> DeepCoreSeedGenerator::SeedEvaluation(
-    tensorflow::NamedTensorList input_tensors) {
+// std::pair<double[jetDimX][jetDimY][Nover][Npar], double[jetDimX][jetDimY][Nover]> DeepCoreSeedGenerator::SeedEvaluation(
+std::pair<double[DeepCoreSeedGenerator::jetDimX][DeepCoreSeedGenerator::jetDimY][DeepCoreSeedGenerator::Nover]
+                [DeepCoreSeedGenerator::Npar],
+          double[DeepCoreSeedGenerator::jetDimX][DeepCoreSeedGenerator::jetDimY][DeepCoreSeedGenerator::Nover]>
+DeepCoreSeedGenerator::SeedEvaluation(tensorflow::NamedTensorList input_tensors) {
   std::vector<tensorflow::Tensor> outputs;
   std::vector<std::string> output_names;
   output_names.push_back(outputTensorName_[0]);
@@ -619,10 +613,24 @@ void DeepCoreSeedGenerator::endJob() {}
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void DeepCoreSeedGenerator::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
-  //The following says we do not know what parameters are allowed so do no validation
-  // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
-  desc.setUnknown();
+  // desc.setUnknown();
+
+  desc.add<edm::InputTag>("vertices", edm::InputTag("offlinePrimaryVertices"));
+  desc.add<edm::InputTag>("pixelClusters", edm::InputTag("siPixelClustersPreSplitting"));
+  desc.add<edm::InputTag>("cores", edm::InputTag("jetsForCoreTracking"));
+  desc.add<double>("ptMin", 300);
+  desc.add<double>("deltaR", 0.1);
+  desc.add<double>("chargeFractionMin", 18000.0);
+  desc.add<double>("centralMIPCharge", 2);
+  desc.add<std::string>("pixelCPE", "PixelCPEGeneric");
+  desc.add<edm::FileInPath>("weightFile",
+                            edm::FileInPath("RecoTracker/TkSeedGenerator/data/DeepCoreSeedGenerator_TrainedModel.pb"));
+  desc.add<std::vector<std::string>>("inputTensorName", {"input_1", "input_2", "input_3"});
+  desc.add<std::vector<std::string>>("outputTensorName", {"output_node0", "output_node1"});
+  desc.add<unsigned>("nThreads", 1);
+  desc.add<std::string>("singleThreadPool", "no_threads");
+  desc.add<double>("probThr", 0.99);
   descriptions.addDefault(desc);
 }
 

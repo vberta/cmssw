@@ -704,10 +704,12 @@ tracksValidation = cms.Sequence(
     trackValidatorBuilding +
     trackValidatorBuildingPreSplitting +
     trackValidatorConversion +
-    trackValidatorGsfTracks+
-    trackValidatorJetCore,
+    trackValidatorGsfTracks,
     tracksPreValidation
 )
+
+from Configuration.Eras.Modifier_run3_common_cff import run3_common
+run3_common.toReplaceWith(tracksValidation, cms.Sequence(tracksValidation.copy()+trackValidatorJetCore))
 
 from Configuration.Eras.Modifier_phase2_tracker_cff import phase2_tracker
 #tracksValidationPhase2 = cms.Sequence(tracksValidation+trackValidatorTPEtaGreater2p7) # it does not work
@@ -903,23 +905,28 @@ trackValidatorsTrackingOnly.replace(trackValidatorFromPVAllTPStandalone,trackVal
 trackValidatorsTrackingOnly.replace(trackValidatorAllTPEfficStandalone,trackValidatorAllTPEfficTrackingOnly)
 trackValidatorsTrackingOnly += trackValidatorSeedingTrackingOnly
 trackValidatorsTrackingOnly += trackValidatorSeedingPreSplittingTrackingOnly
-trackValidatorsTrackingOnly += trackValidatorJetCore
-trackValidatorsTrackingOnly += trackValidatorJetCoreSeedingTrackingOnly
 trackValidatorsTrackingOnly += trackValidatorBuilding
 trackValidatorsTrackingOnly += trackValidatorBuildingPreSplitting
 trackValidatorsTrackingOnly.replace(trackValidatorConversionStandalone, trackValidatorConversionTrackingOnly)
 trackValidatorsTrackingOnly.remove(trackValidatorGsfTracksStandalone)
 trackValidatorsTrackingOnly.replace(trackValidatorBHadronStandalone, trackValidatorBHadronTrackingOnly)
+
+run3_common.toReplaceWith(trackValidatorsTrackingOnly, cms.Sequence(
+            trackValidatorsTrackingOnly.copy()+
+            trackValidatorJetCore+
+            trackValidatorJetCoreSeedingTrackingOnly
+            ) 
+        )
+phase2_tracker.toReplaceWith(trackValidatorsTrackingOnly, trackValidatorsTrackingOnly.copyAndExclude([ #must be done for each era which does not have jetcore in the iteration
+    trackValidatorJetCore,
+    trackValidatorJetCoreSeedingTrackingOnly
+])) 
 fastSim.toReplaceWith(trackValidatorsTrackingOnly, trackValidatorsTrackingOnly.copyAndExclude([
     trackValidatorBuildingPreSplitting,
     trackValidatorSeedingPreSplittingTrackingOnly,
     trackValidatorConversionTrackingOnly,
     trackValidatorBHadronTrackingOnly
 ]))
-phase2_tracker.toReplaceWith(trackValidatorsTrackingOnly, trackValidatorsTrackingOnly.copyAndExclude([
-    trackValidatorJetCore,
-    trackValidatorJetCoreSeedingTrackingOnly
-])) 
 tracksValidationTrackingOnly = cms.Sequence(
     trackValidatorsTrackingOnly,
     tracksPreValidationTrackingOnly,

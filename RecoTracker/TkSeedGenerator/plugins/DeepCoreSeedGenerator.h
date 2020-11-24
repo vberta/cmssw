@@ -1,17 +1,11 @@
 #ifndef RecoTracker_TkSeedGenerator_DeepCoreSeedGenerator_H
 #define RecoTracker_TkSeedGenerator_DeepCoreSeedGenerator_H
 
-#define jetDimX 30  //pixel dimension of NN window on layer2
-#define jetDimY 30  //pixel dimension of NN window on layer2
-#define Nlayer 4    //Number of layer used in DeepCore
-#define Nover 3     //Max number of tracks recorded per pixel
-#define Npar 5      //Number of track parameter
-
 #include <memory>
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/one/EDProducer.h"
+#include "FWCore/Framework/interface/stream/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -72,7 +66,7 @@ namespace edm {
   class EventSetup;
 }  // namespace edm
 
-class DeepCoreSeedGenerator : public edm::one::EDProducer<edm::one::SharedResources> {
+class DeepCoreSeedGenerator : public edm::stream::EDProducer<> {
 public:
   explicit DeepCoreSeedGenerator(const edm::ParameterSet&);
   ~DeepCoreSeedGenerator() override;
@@ -96,19 +90,20 @@ public:
 
   typedef boost::sub_range<std::vector<SiPixelClusterWithTracks>> SiPixelClustersWithTracks;
 
-  TFile* DeepCoreSeedGenerator_out;
-  TTree* DeepCoreSeedGeneratorTree;
-
   double jet_pt;
   double jet_eta;
-  double pitchX = 0.01;   //100 um (pixel pitch in X)
-  double pitchY = 0.015;  //150 um (pixel pitch in Y)
-  bool print = false;
+  double pitchX = 0.01;           //100 um (pixel pitch in X)
+  double pitchY = 0.015;          //150 um (pixel pitch in Y)
+  static const int jetDimX = 30;  //pixel dimension of NN window on layer2
+  static const int jetDimY = 30;  //pixel dimension of NN window on layer2
+  static const int Nlayer = 4;    //Number of layer used in DeepCore
+  static const int Nover = 3;     //Max number of tracks recorded per pixel
+  static const int Npar = 5;      //Number of track parameter
 
 private:
-  void beginJob() override;
+  void beginJob();
   void produce(edm::Event&, const edm::EventSetup&) override;
-  void endJob() override;
+  void endJob();
 
   // ----------member data ---------------------------
   std::string propagatorName_;
