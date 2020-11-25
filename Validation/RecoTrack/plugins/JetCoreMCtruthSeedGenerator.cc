@@ -340,10 +340,10 @@ const GeomDet* JetCoreMCtruthSeedGenerator::DetectorSelector(int llay,
   double minDist = 0.0;
   GeomDet* output = (GeomDet*)nullptr;
   for (const auto& detset : clusters) {
-    const GeomDet* det = geometry_->idToDet(detset.id());
     auto aClusterID = detset.id();
     if (DetId(aClusterID).subdetId() != 1)
       continue;
+    const GeomDet* det = geometry_->idToDet(aClusterID);
     int lay = tTopo->layer(det->geographicalId());
     if (lay != llay)
       continue;
@@ -374,9 +374,9 @@ std::vector<GlobalVector> JetCoreMCtruthSeedGenerator::splittedClusterDirections
     int lay = tTopo->layer(det_int->geographicalId());
     if (lay != layer)
       continue;  //NB: saved bigclusetr on all the layers!!
+    auto detUnit = *geometry_->idToDetUnit(detset_int.id());
     for (const auto& aCluster : detset_int) {
-      GlobalPoint clustPos = det_int->surface().toGlobal(
-          pixelCPE->localParametersV(aCluster, (*geometry_->idToDetUnit(detset_int.id())))[0].first);
+      GlobalPoint clustPos = det_int->surface().toGlobal(pixelCPE->localParametersV(aCluster, detUnit)[0].first);
       GlobalPoint vertexPos(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
       GlobalVector clusterDir = clustPos - vertexPos;
       GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
@@ -522,7 +522,7 @@ void JetCoreMCtruthSeedGenerator::fillDescriptions(edm::ConfigurationDescription
   desc.add<edm::InputTag>("simHit", edm::InputTag("g4SimHits", "TrackerHitsPixelBarrelLowTof"));
   desc.add<double>("centralMIPCharge", 2.);
   desc.add<std::string>("pixelCPE", "PixelCPEGeneric");
-  descriptions.addDefault(desc);
+  descriptions.add("JetCoreMCtruthSeedGenerator", desc);
 }
 
 DEFINE_FWK_MODULE(JetCoreMCtruthSeedGenerator);

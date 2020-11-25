@@ -143,10 +143,10 @@ jetCoreRegionalStepDeepCoreTrajectoryCleaner = trajectoryCleanerBySharedHits.clo
     fractionShared = 0.45
 )
 
-import RecoTracker.TkSeedGenerator.DeepCoreSeedGenerator_cfi
+import RecoTracker.TkSeedGenerator.deepCoreSeedGenerator_cfi
 import RecoTracker.TkSeedGenerator.JetCoreMCtruthSeedGenerator_cfi
 seedingDeepCore.toReplaceWith(jetCoreRegionalStepSeeds,
-    RecoTracker.TkSeedGenerator.DeepCoreSeedGenerator_cfi.DeepCoreSeedGenerator.clone(#to run MCtruthSeedGenerator clone here from Validation.RecoTrack
+    RecoTracker.TkSeedGenerator.deepCoreSeedGenerator_cfi.deepCoreSeedGenerator.clone(#to run MCtruthSeedGenerator clone here from Validation.RecoTrack
        vertices="firstStepPrimaryVertices" 
     )
 )
