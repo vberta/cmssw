@@ -31,7 +31,6 @@
 #include "DataFormats/JetReco/interface/Jet.h"
 #include "DataFormats/SiPixelDigi/interface/PixelDigi.h"
 #include "DataFormats/GeometryVector/interface/VectorUtil.h"
-#include "DataFormats/SiPixelDetId/interface/PXBDetId.h"
 #include "DataFormats/Math/interface/Point3D.h"
 #include "DataFormats/Math/interface/Vector3D.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
@@ -49,7 +48,6 @@
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 #include "SimDataFormats/Vertex/interface/SimVertex.h"
 
@@ -125,7 +123,6 @@ private:
   edm::EDGetTokenT<std::vector<reco::Vertex>> vertices_;
   edm::EDGetTokenT<edmNew::DetSetVector<SiPixelCluster>> pixelClusters_;
   std::vector<SiPixelClusterWithTracks> allSiPixelClusters;
-  // std::map<uint32_t, SiPixelClustersWithTracks> siPixelDetsWithClusters;
   edm::Handle<edmNew::DetSetVector<SiPixelCluster>> inputPixelClusters;
   edm::EDGetTokenT<edm::View<reco::Candidate>> cores_;
   const edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> topoToken_;
@@ -140,12 +137,9 @@ private:
   std::string weightfilename_;
   std::vector<std::string> inputTensorName_;
   std::vector<std::string> outputTensorName_;
-  // size_t nThreads;
-  // std::string singleThreadPool;
 
   double probThr;
 
-  // tensorflow::GraphDef* graph_;
   tensorflow::Session* session_;
 
   std::pair<bool, Basic3DVector<float>> findIntersection(const GlobalVector&,

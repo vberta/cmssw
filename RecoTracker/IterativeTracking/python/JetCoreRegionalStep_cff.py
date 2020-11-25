@@ -134,7 +134,6 @@ seedingDeepCore.toModify(jetCoreRegionalStepTrajectoryBuilder,
     keepOriginalIfRebuildFails = True,
     lockHits = False,
     requireSeedHitsInRebuild = False,
-    # trajectoryFilter = cms.PSet(refToPSet_ = cms.string('jetCoreRegionalStepDeepCoreTrajectoryFilter'))
 )
 
 #customized cleaner for DeepCore
@@ -144,19 +143,11 @@ jetCoreRegionalStepDeepCoreTrajectoryCleaner = trajectoryCleanerBySharedHits.clo
     fractionShared = 0.45
 )
 
-#DeepCore filter
-# jetCoreRegionalStepDeepCoreTrajectoryFilter = TrackingTools.TrajectoryFiltering.TrajectoryFilter_cff.CkfBaseTrajectoryFilter_block.clone( #blockloose
-#     maxConsecLostHits = cms.int32(2),
-#     maxLostHitsFraction = cms.double(1.1),
-#     minimumNumberOfHits = cms.int32(2)
-# )
-
-
 import RecoTracker.TkSeedGenerator.DeepCoreSeedGenerator_cfi
 import RecoTracker.TkSeedGenerator.JetCoreMCtruthSeedGenerator_cfi
 seedingDeepCore.toReplaceWith(jetCoreRegionalStepSeeds,
     RecoTracker.TkSeedGenerator.DeepCoreSeedGenerator_cfi.DeepCoreSeedGenerator.clone(
-    # RecoTracker.TkSeedGenerator.JetCoreMCtruthSeedGenerator_cfi.JetCoreMCtruthSeedGenerator.clone( #MCtruthSeedGenerator
+    # Validation.RecoTrack.JetCoreMCtruthSeedGenerator_cfi.JetCoreMCtruthSeedGenerator.clone( #MCtruthSeedGenerator
        vertices="firstStepPrimaryVertices" 
     )
 )

@@ -28,15 +28,12 @@
 #include "DataFormats/JetReco/interface/Jet.h"
 #include "DataFormats/SiPixelDigi/interface/PixelDigi.h"
 #include "DataFormats/GeometryVector/interface/VectorUtil.h"
-#include "DataFormats/SiPixelDetId/interface/PXBDetId.h"
 #include "DataFormats/Math/interface/Point3D.h"
 #include "DataFormats/Math/interface/Vector3D.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 
 #include "RecoLocalTracker/ClusterParameterEstimator/interface/PixelClusterParameterEstimator.h"
 #include "RecoLocalTracker/Records/interface/TkPixelCPERecord.h"
-
-#include "SimDataFormats/TrackerDigiSimLink/interface/PixelDigiSimLink.h"
 
 #include "TrackingTools/GeomPropagators/interface/StraightLinePlaneCrossing.h"
 #include "TrackingTools/GeomPropagators/interface/Propagator.h"
@@ -58,10 +55,6 @@
 
 #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 
-// namespace edm {
-//   class Event;
-//   class EventSetup;
-// }  // namespace edm
 
 class JetCoreMCtruthSeedGenerator : public edm::one::EDProducer<edm::one::SharedResources> {
 public:
@@ -84,8 +77,6 @@ public:
   };
 
   typedef ClusterWithTracks<SiPixelCluster> SiPixelClusterWithTracks;
-  // typedef std::vector<SiPixelClusterWithTracks> SiPixelClustersWithTracks;
-
 
   double jet_pt;
   double jet_eta;
@@ -93,9 +84,6 @@ public:
   double pitchY = 0.015;              //150 um (pixel pitch in Y)
   static constexpr int jetDimX = 30;  //pixel dimension of NN window on layer2
   static constexpr int jetDimY = 30;  //pixel dimension of NN window on layer2
-  static constexpr int Nlayer = 4;    //Number of layer used in DeepCore
-  static constexpr int Nover = 3;     //Max number of tracks recorded per pixel
-  static constexpr int Npar = 5;      //Number of track parameter
   bool inclusiveConeSeed =
       true;  //true= fill tracks in a cone of deltaR_, false=fill tracks which have SimHit on globDet
 
@@ -113,10 +101,7 @@ private:
   edm::EDGetTokenT<std::vector<reco::Vertex>> vertices_;
   edm::EDGetTokenT<edmNew::DetSetVector<SiPixelCluster>> pixelClusters_;
   std::vector<SiPixelClusterWithTracks> allSiPixelClusters;
-  // std::map<uint32_t, SiPixelClustersWithTracks> siPixelDetsWithClusters;
-  edm::Handle<edm::DetSetVector<PixelDigiSimLink>> pixeldigisimlink;
   edm::Handle<edmNew::DetSetVector<SiPixelCluster>> inputPixelClusters;
-  edm::EDGetTokenT<edm::DetSetVector<PixelDigiSimLink>> pixeldigisimlinkToken;
   edm::EDGetTokenT<edm::View<reco::Candidate>> cores_;
   edm::EDGetTokenT<std::vector<SimTrack>> simtracksToken;
   edm::EDGetTokenT<std::vector<SimVertex>> simvertexToken;

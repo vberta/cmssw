@@ -133,8 +133,6 @@ void TrackFromSeedProducer::produce(edm::StreamID, edm::Event& iEvent, const edm
   iSetup.get<TrackerTopologyRcd>().get(httopo);
   const TrackerTopology& ttopo = *httopo;
 
-  // edm::ESHandle<GlobalTrackingGeometry> geometry_;
-  // iSetup.get<GlobalTrackingGeometryRecord>().get(geometry_);
   const GlobalTrackingGeometry* const geometry_ = &iSetup.getData(geoToken_);
 
   // create tracks from seeds
