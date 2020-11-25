@@ -80,21 +80,6 @@ public:
   ~JetCoreMCtruthSeedGenerator() override;
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-  // A pointer to a cluster and a list of tracks on it
-  struct TrackAndState {
-    TrackAndState(const reco::Track* aTrack, TrajectoryStateOnSurface aState) : track(aTrack), state(aState) {}
-    const reco::Track* track;
-    TrajectoryStateOnSurface state;
-  };
-
-  template <typename Cluster>
-  struct ClusterWithTracks {
-    ClusterWithTracks(const Cluster& c) : cluster(&c) {}
-    const Cluster* cluster;
-    std::vector<TrackAndState> tracks;
-  };
-
-  typedef ClusterWithTracks<SiPixelCluster> SiPixelClusterWithTracks;
 
   double jetPt_;
   double jetEta_;
@@ -102,7 +87,7 @@ public:
   double pitchY_ = 0.015;             //150 um (pixel pitch in Y)
   static constexpr int jetDimX = 30;  //pixel dimension of NN window on layer2
   static constexpr int jetDimY = 30;  //pixel dimension of NN window on layer2
-  bool inclusiveConeSeed =
+  bool inclusiveConeSeed_ =
       true;  //true= fill tracks in a cone of deltaR_, false=fill tracks which have SimHit on globDet
 
 private:
@@ -118,7 +103,6 @@ private:
 
   edm::EDGetTokenT<std::vector<reco::Vertex>> vertices_;
   edm::EDGetTokenT<edmNew::DetSetVector<SiPixelCluster>> pixelClusters_;
-  std::vector<SiPixelClusterWithTracks> allSiPixelClusters;
   edm::Handle<edmNew::DetSetVector<SiPixelCluster>> inputPixelClusters_;
   edm::EDGetTokenT<edm::View<reco::Candidate>> cores_;
   edm::EDGetTokenT<std::vector<SimTrack>> simtracksToken_;
@@ -208,10 +192,6 @@ void JetCoreMCtruthSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
   iSetup.get<TrackingComponentsRecord>().get("AnalyticalPropagator", propagator_);
 
   const auto& inputPixelClusters_ = iEvent.get(pixelClusters_);
-  allSiPixelClusters.clear();
-  allSiPixelClusters.reserve(
-      inputPixelClusters_.dataSize());  // this is important, otherwise push_back invalidates the iterators
-
   const auto& simtracksVector = iEvent.get(simtracksToken_);
   const auto& simvertexVector = iEvent.get(simvertexToken_);
   const auto& simhits_ = iEvent.get(PSimHitToken_);
@@ -240,7 +220,7 @@ void JetCoreMCtruthSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
       if (splitClustDirSet.empty()) {  //if layer 1 is broken find direcitons on layer 2
         splitClustDirSet = splittedClusterDirections(jet, tTopo, pixelCPE, jetVertex, 2, inputPixelClusters_);
       }
-      if (inclusiveConeSeed)
+      if (inclusiveConeSeed_)
         splitClustDirSet.clear();
       splitClustDirSet.emplace_back(GlobalVector(jet.px(), jet.py(), jet.pz()));
 
@@ -262,7 +242,7 @@ void JetCoreMCtruthSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
 
         std::pair<std::vector<SimTrack>, std::vector<SimVertex>> goodSimTkVx;
 
-        if (inclusiveConeSeed) {
+        if (inclusiveConeSeed_) {
           goodSimTkVx = JetCoreMCtruthSeedGenerator::coreTracksFillingDeltaR(
               simtracksVector, simvertexVector, globDet, jet, jetVert);
         } else {
@@ -361,25 +341,23 @@ const GeomDet* JetCoreMCtruthSeedGenerator::DetectorSelector(int llay,
   GeomDet* output = (GeomDet*)nullptr;
   for (const auto& detset : clusters) {
     const GeomDet* det = geometry_->idToDet(detset.id());
-    for (const auto& cluster : detset) {
-      auto aClusterID = detset.id();
-      if (DetId(aClusterID).subdetId() != 1)
-        continue;
-      int lay = tTopo->layer(det->geographicalId());
-      if (lay != llay)
-        continue;
-      std::pair<bool, Basic3DVector<float>> interPair =
-          findIntersection(jetDir, (reco::Candidate::Point)jetVertex.position(), det);
-      if (interPair.first == false)
-        continue;
-      Basic3DVector<float> inter = interPair.second;
-      auto localInter = det->specificSurface().toLocal((GlobalPoint)inter);
-      if ((minDist == 0.0 || std::abs(localInter.x()) < minDist) && std::abs(localInter.y()) < 3.35) {
-        minDist = std::abs(localInter.x());
-        output = (GeomDet*)det;
-      }
-    }  //cluster
-  }    //detset
+    auto aClusterID = detset.id();
+    if (DetId(aClusterID).subdetId() != 1)
+      continue;
+    int lay = tTopo->layer(det->geographicalId());
+    if (lay != llay)
+      continue;
+    std::pair<bool, Basic3DVector<float>> interPair =
+        findIntersection(jetDir, (reco::Candidate::Point)jetVertex.position(), det);
+    if (interPair.first == false)
+      continue;
+    Basic3DVector<float> inter = interPair.second;
+    auto localInter = det->specificSurface().toLocal((GlobalPoint)inter);
+    if ((minDist == 0.0 || std::abs(localInter.x()) < minDist) && std::abs(localInter.y()) < 3.35) {
+      minDist = std::abs(localInter.x());
+      output = (GeomDet*)det;
+    }
+  }  //detset
   return output;
 }
 
