@@ -571,8 +571,9 @@ void DeepCoreSeedGenerator::fillDescriptions(edm::ConfigurationDescriptions& des
   desc.add<double>("chargeFractionMin", 18000.0);
   desc.add<double>("centralMIPCharge", 2);
   desc.add<std::string>("pixelCPE", "PixelCPEGeneric");
-  desc.add<edm::FileInPath>("weightFile",
-                            edm::FileInPath("RecoTracker/TkSeedGenerator/data/DeepCoreSeedGenerator_TrainedModel_barrel_2017.pb"));
+  desc.add<edm::FileInPath>(
+      "weightFile",
+      edm::FileInPath("RecoTracker/TkSeedGenerator/data/DeepCoreSeedGenerator_TrainedModel_barrel_2017.pb"));
   desc.add<std::vector<std::string>>("inputTensorName", {"input_1", "input_2", "input_3"});
   desc.add<std::vector<std::string>>("outputTensorName", {"output_node0", "output_node1"});
   desc.add<double>("probThr", 0.85);
