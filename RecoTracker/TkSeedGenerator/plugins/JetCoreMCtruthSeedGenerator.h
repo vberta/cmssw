@@ -1,12 +1,6 @@
 #ifndef RecoTracker_TkSeedGenerator_JetCoreMCtruthSeedGenerator_H
 #define RecoTracker_TkSeedGenerator_JetCoreMCtruthSeedGenerator_H
 
-#define jetDimX 30  //pixel dimension of NN window on layer2
-#define jetDimY 30  //pixel dimension of NN window on layer2
-#define Nlayer 4    //Number of layer used in DeepCore
-#define Nover 3     //Max number of tracks recorded per pixel
-#define Npar 5      //Number of track parameter
-
 #include <memory>
 
 // user include files
@@ -51,10 +45,6 @@
 #include "MagneticField/Engine/interface/MagneticField.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 
-#include <boost/range.hpp>
-#include <boost/foreach.hpp>
-#include "boost/multi_array.hpp"
-
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
@@ -68,13 +58,10 @@
 
 #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 
-#include "TTree.h"
-#include "PhysicsTools/TensorFlow/interface/TensorFlow.h"
-
-namespace edm {
-  class Event;
-  class EventSetup;
-}  // namespace edm
+// namespace edm {
+//   class Event;
+//   class EventSetup;
+// }  // namespace edm
 
 class JetCoreMCtruthSeedGenerator : public edm::one::EDProducer<edm::one::SharedResources> {
 public:
@@ -97,17 +84,18 @@ public:
   };
 
   typedef ClusterWithTracks<SiPixelCluster> SiPixelClusterWithTracks;
+  // typedef std::vector<SiPixelClusterWithTracks> SiPixelClustersWithTracks;
 
-  typedef boost::sub_range<std::vector<SiPixelClusterWithTracks>> SiPixelClustersWithTracks;
-
-  TFile* JetCoreMCtruthSeedGenerator_out;
-  TTree* JetCoreMCtruthSeedGeneratorTree;
 
   double jet_pt;
   double jet_eta;
-  double pitchX = 0.01;   //100 um (pixel pitch in X)
-  double pitchY = 0.015;  //150 um (pixel pitch in Y)
-  bool print = false;
+  double pitchX = 0.01;               //100 um (pixel pitch in X)
+  double pitchY = 0.015;              //150 um (pixel pitch in Y)
+  static constexpr int jetDimX = 30;  //pixel dimension of NN window on layer2
+  static constexpr int jetDimY = 30;  //pixel dimension of NN window on layer2
+  static constexpr int Nlayer = 4;    //Number of layer used in DeepCore
+  static constexpr int Nover = 3;     //Max number of tracks recorded per pixel
+  static constexpr int Npar = 5;      //Number of track parameter
   bool inclusiveConeSeed =
       true;  //true= fill tracks in a cone of deltaR_, false=fill tracks which have SimHit on globDet
 
@@ -125,7 +113,7 @@ private:
   edm::EDGetTokenT<std::vector<reco::Vertex>> vertices_;
   edm::EDGetTokenT<edmNew::DetSetVector<SiPixelCluster>> pixelClusters_;
   std::vector<SiPixelClusterWithTracks> allSiPixelClusters;
-  std::map<uint32_t, SiPixelClustersWithTracks> siPixelDetsWithClusters;
+  // std::map<uint32_t, SiPixelClustersWithTracks> siPixelDetsWithClusters;
   edm::Handle<edm::DetSetVector<PixelDigiSimLink>> pixeldigisimlink;
   edm::Handle<edmNew::DetSetVector<SiPixelCluster>> inputPixelClusters;
   edm::EDGetTokenT<edm::DetSetVector<PixelDigiSimLink>> pixeldigisimlinkToken;
@@ -139,21 +127,11 @@ private:
   double deltaR_;
   double chargeFracMin_;
   double centralMIPCharge_;
-
   std::string pixelCPE_;
-
-  tensorflow::GraphDef* graph_;
-  tensorflow::Session* session_;
 
   std::pair<bool, Basic3DVector<float>> findIntersection(const GlobalVector&,
                                                          const reco::Candidate::Point&,
                                                          const GeomDet*);
-
-  void fillPixelMatrix(const SiPixelCluster&,
-                       int,
-                       Point3DBase<float, LocalTag>,
-                       const GeomDet*,
-                       tensorflow::NamedTensorList);  //if not working,: args=2 auto
 
   std::pair<int, int> local2Pixel(double, double, const GeomDet*);
 
@@ -162,30 +140,31 @@ private:
   int pixelFlipper(const GeomDet*);
 
   const GeomDet* DetectorSelector(
-      int, const reco::Candidate&, GlobalVector, const reco::Vertex&, const TrackerTopology* const);
+      int, const reco::Candidate&, GlobalVector, const reco::Vertex&, const TrackerTopology* const, const edmNew::DetSetVector<SiPixelCluster>&);
 
   std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&,
                                                       const TrackerTopology* const,
                                                       const PixelClusterParameterEstimator*,
                                                       const reco::Vertex&,
-                                                      int);  //if not working,: args=2 auto
+                                                      int,
+                                                      const edmNew::DetSetVector<SiPixelCluster>&);  //if not working,: args=2 auto
 
-  std::vector<PSimHit> coreHitsFilling(edm::Handle<std::vector<PSimHit>>,
+  std::vector<PSimHit> coreHitsFilling(std::vector<PSimHit>,
                                        const GeomDet*,
                                        GlobalVector,
                                        const reco::Vertex&);  //if not working,: args=0 auto
   std::pair<std::vector<SimTrack>, std::vector<SimVertex>> coreTracksFilling(
       std::vector<PSimHit>,
-      const std::vector<SimTrack>*,
-      const std::vector<SimVertex>*);  //if not working,: args=1,2 auto
+      const std::vector<SimTrack>,
+      const std::vector<SimVertex>);  //if not working,: args=1,2 auto
 
   std::vector<std::array<double, 5>> seedParFilling(std::pair<std::vector<SimTrack>, std::vector<SimVertex>>,
                                                     const GeomDet*,
                                                     const reco::Candidate&);
 
   std::pair<std::vector<SimTrack>, std::vector<SimVertex>> coreTracksFillingDeltaR(
-      const std::vector<SimTrack>*,
-      const std::vector<SimVertex>*,
+      const std::vector<SimTrack>,
+      const std::vector<SimVertex>,
       const GeomDet*,
       const reco::Candidate&,
       const reco::Vertex&);  //if not working,: args=0,1 auto

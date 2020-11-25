@@ -12,7 +12,7 @@ DeepCoreSeedGenerator = cms.EDProducer("DeepCoreSeedGenerator",
     weightFile= cms.FileInPath("RecoTracker/TkSeedGenerator/data/DeepCoreSeedGenerator_TrainedModel.pb"),
     inputTensorName= cms.vstring(["input_1","input_2","input_3"]),
     outputTensorName= cms.vstring(["output_node0","output_node1"]),
-    nThreads= cms.uint32(1),
-    singleThreadPool=  cms.string("no_threads"),
-    probThr = cms.double(0.99),
+    # nThreads= cms.uint32(1),
+    # singleThreadPool=  cms.string("no_threads"),
+    probThr = cms.double(0.85)
 )
