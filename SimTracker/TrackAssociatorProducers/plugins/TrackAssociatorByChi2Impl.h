@@ -16,12 +16,15 @@
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
-#include "DataFormats/Common/interface/EDProductGetter.h"
 
 #include <map>
 
 //Note that the Association Map is filled with -ch2 and not chi2 because it is ordered using std::greater:
 //the track with the lowest association chi2 will be the first in the output map.
+
+namespace edm {
+  class EDProductGetter;
+}
 
 namespace reco {
   typedef edm::AssociationMap<

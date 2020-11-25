@@ -303,11 +303,19 @@ upgradeWFs['trackingMkFit'].step3 = {
 }
 
 #DeepCore seeding for JetCore iteration workflow
-class UpgradeWorkflow_seedingDeepCore(UpgradeWorkflowTracking):
+class UpgradeWorkflow_seedingDeepCore(UpgradeWorkflow):
     def setup_(self, step, stepName, stepDict, k, properties):
         if 'Reco' in step: stepDict[stepName][k] = merge([self.step3, stepDict[step][k]])
+    def condition(self, fragment, stepList, key, hasHarvest):
+        result = (fragment=="QCD_Pt_1800_2400_14") and ('2021' in key or '2024' in key) and hasHarvest and self.condition_(fragment, stepList, key, hasHarvest)
+        if result:
+            # skip ALCA and Nano
+            skipList = [s for s in stepList if (("ALCA" in s) or ("Nano" in s))]
+            for skip in skipList:
+                stepList.remove(skip)
+        return result
     def condition_(self, fragment, stepList, key, hasHarvest):
-        return '2021' in key or '2024' in key
+        return True
 upgradeWFs['seedingDeepCore'] = UpgradeWorkflow_seedingDeepCore(
     steps = [
         'Reco',
@@ -362,7 +370,7 @@ class UpgradeWorkflowPatatrack_PixelOnlyCPU(UpgradeWorkflowPatatrack):
         elif 'HARVEST' in step:
             stepDict[stepName][k] = merge([{'-s': 'HARVESTING:@trackingOnlyValidation+@pixelTrackingOnlyDQM'}, stepDict[step][k]])
 
-    def condition_(self, fragment, stepList, key, hasHarvest):
+    def condition_(self, fragment, stepList, slkey, hasHarvest):
         return '2018' in key or '2021' in key
 
 upgradeWFs['PatatrackPixelOnlyCPU'] = UpgradeWorkflowPatatrack_PixelOnlyCPU(

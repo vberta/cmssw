@@ -188,7 +188,6 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
   auto result = std::make_unique<TrajectorySeedCollection>();
   auto resultTracks = std::make_unique<reco::TrackCollection>();
 
-  tensorflow::setLogging("3");
   const tensorflow::TensorShape input_size_eta({1, 1});
   const tensorflow::TensorShape input_size_pt({1, 1});
   const tensorflow::TensorShape input_size_cluster({1, jetDimX, jetDimY, Nlayer});
@@ -498,10 +497,10 @@ const GeomDet* DeepCoreSeedGenerator::DetectorSelector(int llay,
   double minDist = 0.0;
   GeomDet* output = (GeomDet*)nullptr;
   for (const auto& detset : clusters) {
-    const GeomDet* det = geometry_->idToDet(detset.id());
     auto aClusterID = detset.id();
     if (DetId(aClusterID).subdetId() != 1)
       continue;
+    const GeomDet* det = geometry_->idToDet(aClusterID);
     int lay = tTopo->layer(det->geographicalId());
     if (lay != llay)
       continue;
@@ -531,9 +530,9 @@ std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirections(
     int lay = tTopo->layer(det_int->geographicalId());
     if (lay != layer)
       continue;  //NB: saved bigClusters on all the layers!!
+    auto detUnit = *geometry_->idToDetUnit(detset_int.id());
     for (const auto& aCluster : detset_int) {
-      GlobalPoint clustPos = det_int->surface().toGlobal(
-          pixelCPE->localParametersV(aCluster, (*geometry_->idToDetUnit(detset_int.id())))[0].first);
+      GlobalPoint clustPos = det_int->surface().toGlobal(pixelCPE->localParametersV(aCluster, detUnit)[0].first);
       GlobalPoint vertexPos(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
       GlobalVector clusterDir = clustPos - vertexPos;
       GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
@@ -577,7 +576,7 @@ void DeepCoreSeedGenerator::fillDescriptions(edm::ConfigurationDescriptions& des
   desc.add<std::vector<std::string>>("inputTensorName", {"input_1", "input_2", "input_3"});
   desc.add<std::vector<std::string>>("outputTensorName", {"output_node0", "output_node1"});
   desc.add<double>("probThr", 0.85);
-  descriptions.addDefault(desc);
+  descriptions.add("deepCoreSeedGenerator", desc);
 }
 
 DEFINE_FWK_MODULE(DeepCoreSeedGenerator);
