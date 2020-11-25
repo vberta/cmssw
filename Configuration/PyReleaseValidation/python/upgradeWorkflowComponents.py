@@ -315,7 +315,7 @@ upgradeWFs['seedingDeepCore'] = UpgradeWorkflow_seedingDeepCore(
     ],
     PU = [],
     suffix = '_seedingDeepCore',
-    offset = 0.13,
+    offset = 0.17,
 )
 upgradeWFs['seedingDeepCore'].step3 = {
     '--procModifiers': 'seedingDeepCore'
