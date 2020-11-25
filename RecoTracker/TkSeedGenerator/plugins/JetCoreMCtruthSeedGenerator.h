@@ -55,7 +55,6 @@
 
 #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 
-
 class JetCoreMCtruthSeedGenerator : public edm::one::EDProducer<edm::one::SharedResources> {
 public:
   explicit JetCoreMCtruthSeedGenerator(const edm::ParameterSet&);
@@ -124,15 +123,20 @@ private:
 
   int pixelFlipper(const GeomDet*);
 
-  const GeomDet* DetectorSelector(
-      int, const reco::Candidate&, GlobalVector, const reco::Vertex&, const TrackerTopology* const, const edmNew::DetSetVector<SiPixelCluster>&);
+  const GeomDet* DetectorSelector(int,
+                                  const reco::Candidate&,
+                                  GlobalVector,
+                                  const reco::Vertex&,
+                                  const TrackerTopology* const,
+                                  const edmNew::DetSetVector<SiPixelCluster>&);
 
-  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&,
-                                                      const TrackerTopology* const,
-                                                      const PixelClusterParameterEstimator*,
-                                                      const reco::Vertex&,
-                                                      int,
-                                                      const edmNew::DetSetVector<SiPixelCluster>&);  //if not working,: args=2 auto
+  std::vector<GlobalVector> splittedClusterDirections(
+      const reco::Candidate&,
+      const TrackerTopology* const,
+      const PixelClusterParameterEstimator*,
+      const reco::Vertex&,
+      int,
+      const edmNew::DetSetVector<SiPixelCluster>&);  //if not working,: args=2 auto
 
   std::vector<PSimHit> coreHitsFilling(std::vector<PSimHit>,
                                        const GeomDet*,

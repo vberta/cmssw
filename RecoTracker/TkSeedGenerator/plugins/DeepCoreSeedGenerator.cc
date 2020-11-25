@@ -84,12 +84,11 @@ public:
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
   // A pointer to a cluster and a list of tracks on it
-  
+
   // static methods for handling the global cache
   static std::unique_ptr<DeepCoreCache> initializeGlobalCache(const edm::ParameterSet&);
   static void globalEndJob(DeepCoreCache*);
-  
-  
+
   struct TrackAndState {
     TrackAndState(const reco::Track* aTrack, TrajectoryStateOnSurface aState) : track(aTrack), state(aState) {}
     const reco::Track* track;
@@ -109,15 +108,13 @@ public:
 
   double jetPt_;
   double jetEta_;
-  double pitchX_ = 0.01;               //100 um (pixel pitch in X)
-  double pitchY_ = 0.015;              //150 um (pixel pitch in Y)
+  double pitchX_ = 0.01;              //100 um (pixel pitch in X)
+  double pitchY_ = 0.015;             //150 um (pixel pitch in Y)
   static constexpr int jetDimX = 30;  //pixel dimension of NN window on layer2
   static constexpr int jetDimY = 30;  //pixel dimension of NN window on layer2
   static constexpr int Nlayer = 4;    //Number of layer used in DeepCore
   static constexpr int Nover = 3;     //Max number of tracks recorded per pixel
   static constexpr int Npar = 5;      //Number of track parameter
-  
-  
 
 private:
   void beginJob();
@@ -136,7 +133,6 @@ private:
   edm::Handle<edmNew::DetSetVector<SiPixelCluster>> inputPixelClusters_;
   edm::EDGetTokenT<edm::View<reco::Candidate>> cores_;
   const edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> topoToken_;
-
 
   double ptMin_;
   double deltaR_;
@@ -165,25 +161,27 @@ private:
 
   int pixelFlipper(const GeomDet*);
 
-  const GeomDet* DetectorSelector(
-      int, const reco::Candidate&, GlobalVector, const reco::Vertex&, const TrackerTopology* const, const edmNew::DetSetVector<SiPixelCluster>&);
+  const GeomDet* DetectorSelector(int,
+                                  const reco::Candidate&,
+                                  GlobalVector,
+                                  const reco::Vertex&,
+                                  const TrackerTopology* const,
+                                  const edmNew::DetSetVector<SiPixelCluster>&);
 
-  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&,
-                                                      const TrackerTopology* const,
-                                                      const PixelClusterParameterEstimator*,
-                                                      const reco::Vertex&,
-                                                      int,
-                                                      const edmNew::DetSetVector<SiPixelCluster>&);  //if not working,: args=2 auto
+  std::vector<GlobalVector> splittedClusterDirections(
+      const reco::Candidate&,
+      const TrackerTopology* const,
+      const PixelClusterParameterEstimator*,
+      const reco::Vertex&,
+      int,
+      const edmNew::DetSetVector<SiPixelCluster>&);  //if not working,: args=2 auto
 
-  std::pair<double[jetDimX][jetDimY][Nover][Npar], double[jetDimX][jetDimY][Nover]> SeedEvaluation(tensorflow::NamedTensorList, std::vector<std::string>);
-
+  std::pair<double[jetDimX][jetDimY][Nover][Npar], double[jetDimX][jetDimY][Nover]> SeedEvaluation(
+      tensorflow::NamedTensorList, std::vector<std::string>);
 };
 
-
-
 DeepCoreSeedGenerator::DeepCoreSeedGenerator(const edm::ParameterSet& iConfig, const DeepCoreCache* cache)
-    :
-      vertices_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
+    : vertices_(consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
       pixelClusters_(
           consumes<edmNew::DetSetVector<SiPixelCluster>>(iConfig.getParameter<edm::InputTag>("pixelClusters"))),
       cores_(consumes<edm::View<reco::Candidate>>(iConfig.getParameter<edm::InputTag>("cores"))),
@@ -205,7 +203,6 @@ DeepCoreSeedGenerator::DeepCoreSeedGenerator(const edm::ParameterSet& iConfig, c
 }
 
 DeepCoreSeedGenerator::~DeepCoreSeedGenerator() {}
-
 
 void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   auto result = std::make_unique<TrajectorySeedCollection>();
@@ -242,21 +239,21 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
   const TrackerTopology* const tTopo = &iSetup.getData(topoToken_);
   auto output = std::make_unique<edmNew::DetSetVector<SiPixelCluster>>();
 
-  for (const auto& jet : cores) { // jet loop
+  for (const auto& jet : cores) {  // jet loop
 
     if (jet.pt() > ptMin_) {
       std::set<long long int> ids;
       const reco::Vertex& jetVertex = vertices[0];
 
-      std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pixelCPE, jetVertex, 1,inputPixelClusters_);
+      std::vector<GlobalVector> splitClustDirSet =
+          splittedClusterDirections(jet, tTopo, pixelCPE, jetVertex, 1, inputPixelClusters_);
       bool l2off = (splitClustDirSet.empty());
       if (splitClustDirSet.empty()) {  //if layer 1 is broken find direcitons on layer 2
-        splitClustDirSet = splittedClusterDirections(jet, tTopo, pixelCPE, jetVertex, 2,inputPixelClusters_);
+        splitClustDirSet = splittedClusterDirections(jet, tTopo, pixelCPE, jetVertex, 2, inputPixelClusters_);
       }
       splitClustDirSet.emplace_back(GlobalVector(jet.px(), jet.py(), jet.pz()));
       for (int cc = 0; cc < (int)splitClustDirSet.size(); cc++) {
-
-        tensorflow::NamedTensorList input_tensors;//TensorFlow tensors init
+        tensorflow::NamedTensorList input_tensors;  //TensorFlow tensors init
         input_tensors.resize(3);
         input_tensors[0] =
             tensorflow::NamedTensor(inputTensorName_[0], tensorflow::Tensor(tensorflow::DT_FLOAT, input_size_eta));
@@ -274,7 +271,7 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
               input_tensors[2].second.tensor<float, 4>()(0, x, y, l) = 0.0;
             }
           }
-        } //end of TensorFlow tensors init
+        }  //end of TensorFlow tensors init
 
         GlobalVector bigClustDir = splitClustDirSet[cc];
 
@@ -283,20 +280,20 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
         input_tensors[0].second.matrix<float>()(0, 0) = jet.eta();
         input_tensors[1].second.matrix<float>()(0, 0) = jet.pt();
 
-        const GeomDet* globDet =
-            DetectorSelector(2, jet, bigClustDir, jetVertex, tTopo, inputPixelClusters_);  //select detector mostly hitten by the jet
+        const GeomDet* globDet = DetectorSelector(
+            2, jet, bigClustDir, jetVertex, tTopo, inputPixelClusters_);  //select detector mostly hitten by the jet
 
-        if (globDet == nullptr) //no intersection between bigClustDir and pixel detector modules found
+        if (globDet == nullptr)  //no intersection between bigClustDir and pixel detector modules found
           continue;
 
         const GeomDet* goodDet1 = DetectorSelector(1, jet, bigClustDir, jetVertex, tTopo, inputPixelClusters_);
         const GeomDet* goodDet3 = DetectorSelector(3, jet, bigClustDir, jetVertex, tTopo, inputPixelClusters_);
         const GeomDet* goodDet4 = DetectorSelector(4, jet, bigClustDir, jetVertex, tTopo, inputPixelClusters_);
 
-        for (const auto& detset : inputPixelClusters_){
-          const GeomDet* det = geometry_->idToDet(detset.id()); 
+        for (const auto& detset : inputPixelClusters_) {
+          const GeomDet* det = geometry_->idToDet(detset.id());
 
-          for (const auto& aCluster : detset){
+          for (const auto& aCluster : detset) {
             det_id_type aClusterID = detset.id();
             if (DetId(aClusterID).subdetId() != 1)
               continue;
@@ -312,7 +309,8 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
 
             GlobalPoint pointVertex(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
 
-            LocalPoint clustPos_local = pixelCPE->localParametersV(aCluster, (*geometry_->idToDetUnit(detset.id())))[0].first;
+            LocalPoint clustPos_local =
+                pixelCPE->localParametersV(aCluster, (*geometry_->idToDetUnit(detset.id())))[0].first;
 
             if (std::abs(clustPos_local.x() - localInter.x()) / pitchX_ <= jetDimX / 2 &&
                 std::abs(clustPos_local.y() - localInter.y()) / pitchY_ <=
@@ -327,7 +325,7 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
 
         //here the NN produce the seed from the filled input
         std::pair<double[jetDimX][jetDimY][Nover][Npar], double[jetDimX][jetDimY][Nover]> seedParamNN =
-            DeepCoreSeedGenerator::SeedEvaluation(input_tensors,output_names);
+            DeepCoreSeedGenerator::SeedEvaluation(input_tensors, output_names);
 
         for (int i = 0; i < jetDimX; i++) {
           for (int j = 0; j < jetDimY; j++) {
@@ -346,8 +344,8 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
                 ny = ny + pixInter.second;
                 LocalPoint xyLocal = pixel2Local(nx, ny, globDet);
 
-                double xx = xyLocal.x() + seedParamNN.first[i][j][o][0] * 0.01; //0.01=internal normalization of NN
-                double yy = xyLocal.y() + seedParamNN.first[i][j][o][1] * 0.01; //0.01=internal normalization of NN
+                double xx = xyLocal.x() + seedParamNN.first[i][j][o][0] * 0.01;  //0.01=internal normalization of NN
+                double yy = xyLocal.y() + seedParamNN.first[i][j][o][1] * 0.01;  //0.01=internal normalization of NN
                 LocalPoint localSeedPoint = LocalPoint(xx, yy, 0);
 
                 double track_eta =
@@ -371,7 +369,21 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
                   ids.insert(seedid);
 
                   //Covariance matrix, the hadrcoded variances = NN residuals width (see documentation of DeepCore)
-                  float em[15] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};// (see LocalTrajectoryError for details), order as follow:
+                  float em[15] = {0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0};   // (see LocalTrajectoryError for details), order as follow:
                   em[0] = 0.15 * 0.15;  // q/pt
                   em[2] = 0.5e-5;       // dxdz
                   em[5] = 0.5e-5;       // dydz
@@ -379,9 +391,10 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
                   em[14] = 2e-5;        // y
                   long int detId = globDet->geographicalId();
                   LocalTrajectoryParameters localParam(localSeedPoint, localSeedDir, TrackCharge(1));
-                  result->emplace_back(TrajectorySeed(PTrajectoryStateOnDet(localParam, pt, em, detId, /*surfaceSide*/ 0),
-                                                   edm::OwnVector<TrackingRecHit>(),
-                                                   PropagationDirection::alongMomentum));
+                  result->emplace_back(
+                      TrajectorySeed(PTrajectoryStateOnDet(localParam, pt, em, detId, /*surfaceSide*/ 0),
+                                     edm::OwnVector<TrackingRecHit>(),
+                                     PropagationDirection::alongMomentum));
 
                   GlobalPoint globalSeedPoint = globDet->surface().toGlobal(localSeedPoint);
                   reco::Track::CovarianceMatrix mm;
@@ -442,13 +455,11 @@ int DeepCoreSeedGenerator::pixelFlipper(const GeomDet* det) {
   return out;
 }
 
-void DeepCoreSeedGenerator::fillPixelMatrix(
-    const SiPixelCluster& cluster,
-    int layer,
-    Point3DBase<float, LocalTag> inter,
-    const GeomDet* det,
-    tensorflow::NamedTensorList input_tensors) {
-
+void DeepCoreSeedGenerator::fillPixelMatrix(const SiPixelCluster& cluster,
+                                            int layer,
+                                            Point3DBase<float, LocalTag> inter,
+                                            const GeomDet* det,
+                                            tensorflow::NamedTensorList input_tensors) {
   int flip = pixelFlipper(det);  // 1=not flip, -1=flip
 
   for (int i = 0; i < cluster.size(); i++) {
@@ -470,7 +481,8 @@ void DeepCoreSeedGenerator::fillPixelMatrix(
 std::pair<double[DeepCoreSeedGenerator::jetDimX][DeepCoreSeedGenerator::jetDimY][DeepCoreSeedGenerator::Nover]
                 [DeepCoreSeedGenerator::Npar],
           double[DeepCoreSeedGenerator::jetDimX][DeepCoreSeedGenerator::jetDimY][DeepCoreSeedGenerator::Nover]>
-DeepCoreSeedGenerator::SeedEvaluation(tensorflow::NamedTensorList input_tensors, std::vector<std::string> output_names) {
+DeepCoreSeedGenerator::SeedEvaluation(tensorflow::NamedTensorList input_tensors,
+                                      std::vector<std::string> output_names) {
   std::vector<tensorflow::Tensor> outputs;
   tensorflow::run(session_, input_tensors, output_names, &outputs);
   auto matrix_output_par = outputs.at(0).tensor<float, 5>();
@@ -509,9 +521,9 @@ const GeomDet* DeepCoreSeedGenerator::DetectorSelector(int llay,
 
   double minDist = 0.0;
   GeomDet* output = (GeomDet*)nullptr;
-  for (const auto& detset : clusters){
+  for (const auto& detset : clusters) {
     const GeomDet* det = geometry_->idToDet(detset.id());
-     for (const auto& cluster : detset){
+    for (const auto& cluster : detset) {
       auto aClusterID = detset.id();
       if (DetId(aClusterID).subdetId() != 1)
         continue;
@@ -532,20 +544,20 @@ const GeomDet* DeepCoreSeedGenerator::DetectorSelector(int llay,
   }    //detset
   return output;
 }
-std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirections(const reco::Candidate& jet,
-                                                                           const TrackerTopology* const tTopo,
-                                                                           const PixelClusterParameterEstimator* pixelCPE,
-                                                                           const reco::Vertex& jetVertex,
-                                                                           int layer,
-                                                                           const edmNew::DetSetVector<SiPixelCluster>& clusters) {
-  
+std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirections(
+    const reco::Candidate& jet,
+    const TrackerTopology* const tTopo,
+    const PixelClusterParameterEstimator* pixelCPE,
+    const reco::Vertex& jetVertex,
+    int layer,
+    const edmNew::DetSetVector<SiPixelCluster>& clusters) {
   std::vector<GlobalVector> clustDirs;
-  for (const auto& detset_int : clusters){
+  for (const auto& detset_int : clusters) {
     const GeomDet* det_int = geometry_->idToDet(detset_int.id());
     int lay = tTopo->layer(det_int->geographicalId());
     if (lay != layer)
       continue;  //NB: saved bigClusters on all the layers!!
-    for (const auto& aCluster : detset_int){
+    for (const auto& aCluster : detset_int) {
       GlobalPoint clustPos = det_int->surface().toGlobal(
           pixelCPE->localParametersV(aCluster, (*geometry_->idToDetUnit(detset_int.id())))[0].first);
       GlobalPoint vertexPos(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());

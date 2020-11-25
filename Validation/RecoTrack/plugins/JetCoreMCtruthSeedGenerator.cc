@@ -70,7 +70,6 @@
 #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
-
 //
 // class declaration
 //
@@ -99,8 +98,8 @@ public:
 
   double jetPt_;
   double jetEta_;
-  double pitchX_ = 0.01;               //100 um (pixel pitch in X)
-  double pitchY_ = 0.015;              //150 um (pixel pitch in Y)
+  double pitchX_ = 0.01;              //100 um (pixel pitch in X)
+  double pitchY_ = 0.015;             //150 um (pixel pitch in Y)
   static constexpr int jetDimX = 30;  //pixel dimension of NN window on layer2
   static constexpr int jetDimY = 30;  //pixel dimension of NN window on layer2
   bool inclusiveConeSeed =
@@ -137,21 +136,26 @@ private:
                                                          const reco::Candidate::Point&,
                                                          const GeomDet*);
 
-  const GeomDet* DetectorSelector(
-      int, const reco::Candidate&, GlobalVector, const reco::Vertex&, const TrackerTopology* const, const edmNew::DetSetVector<SiPixelCluster>&);
+  const GeomDet* DetectorSelector(int,
+                                  const reco::Candidate&,
+                                  GlobalVector,
+                                  const reco::Vertex&,
+                                  const TrackerTopology* const,
+                                  const edmNew::DetSetVector<SiPixelCluster>&);
 
-  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&,
-                                                      const TrackerTopology* const,
-                                                      const PixelClusterParameterEstimator*,
-                                                      const reco::Vertex&,
-                                                      int,
-                                                      const edmNew::DetSetVector<SiPixelCluster>&);  //if not working,: args=2 auto
+  std::vector<GlobalVector> splittedClusterDirections(
+      const reco::Candidate&,
+      const TrackerTopology* const,
+      const PixelClusterParameterEstimator*,
+      const reco::Vertex&,
+      int,
+      const edmNew::DetSetVector<SiPixelCluster>&);  //if not working,: args=2 auto
 
   std::vector<PSimHit> coreHitsFilling(std::vector<PSimHit>,
                                        const GeomDet*,
                                        GlobalVector,
                                        const reco::Vertex&);  //if not working,: args=0 auto
-                                       
+
   std::pair<std::vector<SimTrack>, std::vector<SimVertex>> coreTracksFilling(
       std::vector<PSimHit>,
       const std::vector<SimTrack>,
@@ -168,7 +172,6 @@ private:
       const reco::Candidate&,
       const reco::Vertex&);  //if not working,: args=0,1 auto
 };
-
 
 JetCoreMCtruthSeedGenerator::JetCoreMCtruthSeedGenerator(const edm::ParameterSet& iConfig)
     :
@@ -214,7 +217,6 @@ void JetCoreMCtruthSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
   const auto& simhits_ = iEvent.get(PSimHitToken_);
   const auto& vertices = iEvent.get(vertices_);
   const auto& cores = iEvent.get(cores_);
-  
 
   edm::ESHandle<PixelClusterParameterEstimator> pixelCPEhandle;
   const PixelClusterParameterEstimator* pixelCPE;
@@ -227,13 +229,14 @@ void JetCoreMCtruthSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
 
   auto output = std::make_unique<edmNew::DetSetVector<SiPixelCluster>>();
 
-  for (const auto& jet : cores) { //jet loop
+  for (const auto& jet : cores) {  //jet loop
 
     if (jet.pt() > ptMin_) {
       std::set<long long int> ids;
       const reco::Vertex& jetVertex = vertices[0];
 
-      std::vector<GlobalVector> splitClustDirSet = splittedClusterDirections(jet, tTopo, pixelCPE, jetVertex, 1, inputPixelClusters_);
+      std::vector<GlobalVector> splitClustDirSet =
+          splittedClusterDirections(jet, tTopo, pixelCPE, jetVertex, 1, inputPixelClusters_);
       if (splitClustDirSet.empty()) {  //if layer 1 is broken find direcitons on layer 2
         splitClustDirSet = splittedClusterDirections(jet, tTopo, pixelCPE, jetVertex, 2, inputPixelClusters_);
       }
@@ -251,8 +254,8 @@ void JetCoreMCtruthSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
 
         std::vector<PSimHit> goodSimHit;
 
-        const GeomDet* globDet =
-            DetectorSelector(2, jet, bigClustDir, jetVertex, tTopo,inputPixelClusters_);  //select detector mostly hitten by the jet
+        const GeomDet* globDet = DetectorSelector(
+            2, jet, bigClustDir, jetVertex, tTopo, inputPixelClusters_);  //select detector mostly hitten by the jet
 
         if (globDet == nullptr)
           continue;
@@ -267,7 +270,7 @@ void JetCoreMCtruthSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
               JetCoreMCtruthSeedGenerator::coreHitsFilling(simhits_, globDet, bigClustDir, jetVertex);
           goodSimTkVx = JetCoreMCtruthSeedGenerator::coreTracksFilling(goodSimHit, simtracksVector, simvertexVector);
         }
-        edm::LogInfo("PerfectSeeder") <<  "seed number in deltaR cone =" << goodSimTkVx.first.size();
+        edm::LogInfo("PerfectSeeder") << "seed number in deltaR cone =" << goodSimTkVx.first.size();
 
         std::vector<std::array<double, 5>> seedVector =
             JetCoreMCtruthSeedGenerator::seedParFilling(goodSimTkVx, globDet, jet);
@@ -275,7 +278,8 @@ void JetCoreMCtruthSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
 
         for (uint tk = 0; tk < seedVector.size(); tk++) {
           for (int pp = 0; pp < 5; pp++) {
-            edm::LogInfo("PerfectSeeder") << "seed " << tk << ", int par " << pp << "=" << seedVector[tk][pp] << std::endl;
+            edm::LogInfo("PerfectSeeder")
+                << "seed " << tk << ", int par " << pp << "=" << seedVector[tk][pp] << std::endl;
           }
           LocalPoint localSeedPoint = LocalPoint(seedVector[tk][0], seedVector[tk][1], 0);
           double track_theta = 2 * std::atan(std::exp(-seedVector[tk][2]));
@@ -297,17 +301,18 @@ void JetCoreMCtruthSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
           //Covariance matrix, currently the hadrcoded variances = NN residuals width (see documentation of DeepCore)
           //in general: if are not compared with DeepCore but another algo-->to state-of-the art errors
           //The "perfect seeds" has no intrinsic error, but the CTF needs errors to propagate...
-          float em[15] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};// (see LocalTrajectoryError for details), order as follow:
-          em[0] = 0.15 * 0.15;  // q/pt
-          em[2] = 0.5e-5;       // dxdz
-          em[5] = 0.5e-5;       // dydz
-          em[9] = 2e-5;         // x
-          em[14] = 2e-5;        // y
+          float em[15] = {
+              0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};  // (see LocalTrajectoryError for details), order as follow:
+          em[0] = 0.15 * 0.15;                               // q/pt
+          em[2] = 0.5e-5;                                    // dxdz
+          em[5] = 0.5e-5;                                    // dydz
+          em[9] = 2e-5;                                      // x
+          em[14] = 2e-5;                                     // y
           long int detId = globDet->geographicalId();
           LocalTrajectoryParameters localParam(localSeedPoint, localSeedDir, TrackCharge(1));
           result->emplace_back(TrajectorySeed(PTrajectoryStateOnDet(localParam, pt, em, detId, /*surfaceSide*/ 0),
-                                           edm::OwnVector<TrackingRecHit>(),
-                                           PropagationDirection::alongMomentum));
+                                              edm::OwnVector<TrackingRecHit>(),
+                                              PropagationDirection::alongMomentum));
 
           GlobalPoint globalSeedPoint = globDet->surface().toGlobal(localSeedPoint);
           reco::Track::CovarianceMatrix mm;
@@ -319,7 +324,7 @@ void JetCoreMCtruthSeedGenerator::produce(edm::Event& iEvent, const edm::EventSe
                           1,
                           mm));
           edm::LogInfo("PerfectSeeder") << "seed " << tk << ", out,  pt=" << pt << ", eta=" << globSeedDir.eta()
-                    << ", phi=" << globSeedDir.phi() << std::endl;
+                                        << ", phi=" << globSeedDir.phi() << std::endl;
         }
 
       }  //bigcluster
@@ -354,9 +359,9 @@ const GeomDet* JetCoreMCtruthSeedGenerator::DetectorSelector(int llay,
 
   double minDist = 0.0;
   GeomDet* output = (GeomDet*)nullptr;
-  for (const auto& detset : clusters){
-    const GeomDet* det =geometry_->idToDet(detset.id());
-    for (const auto& cluster : detset){
+  for (const auto& detset : clusters) {
+    const GeomDet* det = geometry_->idToDet(detset.id());
+    for (const auto& cluster : detset) {
       auto aClusterID = detset.id();
       if (DetId(aClusterID).subdetId() != 1)
         continue;
@@ -385,21 +390,20 @@ std::vector<GlobalVector> JetCoreMCtruthSeedGenerator::splittedClusterDirections
     const reco::Vertex& jetVertex,
     int layer,
     const edmNew::DetSetVector<SiPixelCluster>& clusters) {
-      
   std::vector<GlobalVector> clustDirs;
-  for (const auto& detset_int : clusters){
+  for (const auto& detset_int : clusters) {
     const GeomDet* det_int = geometry_->idToDet(detset_int.id());
     int lay = tTopo->layer(det_int->geographicalId());
     if (lay != layer)
       continue;  //NB: saved bigclusetr on all the layers!!
-    for (const auto& aCluster : detset_int){
+    for (const auto& aCluster : detset_int) {
       GlobalPoint clustPos = det_int->surface().toGlobal(
           pixelCPE->localParametersV(aCluster, (*geometry_->idToDetUnit(detset_int.id())))[0].first);
       GlobalPoint vertexPos(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
       GlobalVector clusterDir = clustPos - vertexPos;
       GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
       if (Geom::deltaR(jetDir, clusterDir) < deltaR_) {
-          clustDirs.emplace_back(clusterDir);
+        clustDirs.emplace_back(clusterDir);
       }
     }
   }
@@ -411,7 +415,7 @@ std::vector<PSimHit> JetCoreMCtruthSeedGenerator::coreHitsFilling(std::vector<PS
                                                                   GlobalVector bigClustDir,
                                                                   const reco::Vertex& jetVertex) {
   std::vector<PSimHit> goodSimHit;
-  for(const auto& sh: simhits) { 
+  for (const auto& sh : simhits) {
     const GeomDet* det = geometry_->idToDet(sh.detUnitId());
     if (det != globDet)
       continue;
@@ -470,7 +474,7 @@ std::pair<std::vector<SimTrack>, std::vector<SimVertex>> JetCoreMCtruthSeedGener
     SimTrack st = simtracksVector[j];
     GlobalVector trkDir(st.momentum().Px(), st.momentum().Py(), st.momentum().Pz());
     if (st.charge() == 0)
-        continue;
+      continue;
     if (Geom::deltaR(jetDir, trkDir) < deltaR_) {
       for (uint v = 0; v < simvertexVector.size(); v++) {
         SimVertex sv = simvertexVector[v];
@@ -499,9 +503,10 @@ std::vector<std::array<double, 5>> JetCoreMCtruthSeedGenerator::seedParFilling(
     SimVertex sv = goodSimVtx[j];
     GlobalVector trkMom(st.momentum().x(), st.momentum().y(), st.momentum().z());
     GlobalPoint trkPos(sv.position().x(), sv.position().y(), sv.position().z());
-    edm::LogInfo("PerfectSeeder") << "seed " << j << ", very int pt" << st.momentum().Pt() << ", eta=" << st.momentum().Eta()
-              << ", phi=" << st.momentum().Phi() << "------ internal point=" << trkMom.x() << "," << trkMom.y() << ","
-              << trkMom.z() << "," << trkPos.x() << "," << trkPos.y() << "," << trkPos.z() << std::endl;
+    edm::LogInfo("PerfectSeeder") << "seed " << j << ", very int pt" << st.momentum().Pt()
+                                  << ", eta=" << st.momentum().Eta() << ", phi=" << st.momentum().Phi()
+                                  << "------ internal point=" << trkMom.x() << "," << trkMom.y() << "," << trkMom.z()
+                                  << "," << trkPos.x() << "," << trkPos.y() << "," << trkPos.z() << std::endl;
 
     std::pair<bool, Basic3DVector<float>> trkInterPair;
     trkInterPair = findIntersection(trkMom, (reco::Candidate::Point)trkPos, globDet);
@@ -511,7 +516,7 @@ std::vector<std::array<double, 5>> JetCoreMCtruthSeedGenerator::seedParFilling(
     }
     Basic3DVector<float> trkInter = trkInterPair.second;
 
-    auto localTrkInter = globDet->specificSurface().toLocal((GlobalPoint)trkInter);//trkInter->trkPos if par at vertex
+    auto localTrkInter = globDet->specificSurface().toLocal((GlobalPoint)trkInter);  //trkInter->trkPos if par at vertex
     std::array<double, 5> tkPar{
         {localTrkInter.x(), localTrkInter.y(), st.momentum().Eta(), st.momentum().Phi(), 1 / st.momentum().Pt()}};
     output.emplace_back(tkPar);
@@ -527,18 +532,18 @@ void JetCoreMCtruthSeedGenerator::endJob() {}
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void JetCoreMCtruthSeedGenerator::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
-    edm::ParameterSetDescription desc;
-    desc.add<edm::InputTag>("vertices", edm::InputTag("offlinePrimaryVertices"));
-    desc.add<edm::InputTag>("pixelClusters", edm::InputTag("siPixelClustersPreSplitting"));
-    desc.add<edm::InputTag>("cores", edm::InputTag("jetsForCoreTracking"));
-    desc.add<double>("ptMin", 300);
-    desc.add<double>("deltaR", 0.3);
-    desc.add<double>( "chargeFractionMin", 18000.0);
-    desc.add<edm::InputTag>("simTracks",edm::InputTag("g4SimHits"));
-    desc.add<edm::InputTag>("simVertex",edm::InputTag("g4SimHits"));
-    desc.add<edm::InputTag>("simHit", edm::InputTag("g4SimHits","TrackerHitsPixelBarrelLowTof"));
-    desc.add<double>( "centralMIPCharge",2.);
-    desc.add<std::string>("pixelCPE", "PixelCPEGeneric");
+  edm::ParameterSetDescription desc;
+  desc.add<edm::InputTag>("vertices", edm::InputTag("offlinePrimaryVertices"));
+  desc.add<edm::InputTag>("pixelClusters", edm::InputTag("siPixelClustersPreSplitting"));
+  desc.add<edm::InputTag>("cores", edm::InputTag("jetsForCoreTracking"));
+  desc.add<double>("ptMin", 300);
+  desc.add<double>("deltaR", 0.3);
+  desc.add<double>("chargeFractionMin", 18000.0);
+  desc.add<edm::InputTag>("simTracks", edm::InputTag("g4SimHits"));
+  desc.add<edm::InputTag>("simVertex", edm::InputTag("g4SimHits"));
+  desc.add<edm::InputTag>("simHit", edm::InputTag("g4SimHits", "TrackerHitsPixelBarrelLowTof"));
+  desc.add<double>("centralMIPCharge", 2.);
+  desc.add<std::string>("pixelCPE", "PixelCPEGeneric");
   descriptions.addDefault(desc);
 }
 

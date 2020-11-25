@@ -5,8 +5,6 @@
 
 // user include files
 
-
-
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/stream/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
@@ -66,7 +64,6 @@ struct DeepCoreCache {
   mutable tensorflow::GraphDef* graph_def;
 };
 
-
 class DeepCoreSeedGenerator : public edm::stream::EDProducer<edm::GlobalCache<DeepCoreCache>> {
 public:
   explicit DeepCoreSeedGenerator(const edm::ParameterSet&, const DeepCoreCache*);
@@ -74,12 +71,11 @@ public:
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
   // A pointer to a cluster and a list of tracks on it
-  
+
   // static methods for handling the global cache
   static std::unique_ptr<DeepCoreCache> initializeGlobalCache(const edm::ParameterSet&);
   static void globalEndJob(DeepCoreCache*);
-  
-  
+
   struct TrackAndState {
     TrackAndState(const reco::Track* aTrack, TrajectoryStateOnSurface aState) : track(aTrack), state(aState) {}
     const reco::Track* track;
@@ -106,8 +102,6 @@ public:
   static constexpr int Nlayer = 4;    //Number of layer used in DeepCore
   static constexpr int Nover = 3;     //Max number of tracks recorded per pixel
   static constexpr int Npar = 5;      //Number of track parameter
-  
-  
 
 private:
   void beginJob();
@@ -126,7 +120,6 @@ private:
   edm::Handle<edmNew::DetSetVector<SiPixelCluster>> inputPixelClusters;
   edm::EDGetTokenT<edm::View<reco::Candidate>> cores_;
   const edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> topoToken_;
-
 
   double ptMin_;
   double deltaR_;
@@ -158,17 +151,22 @@ private:
 
   int pixelFlipper(const GeomDet*);
 
-  const GeomDet* DetectorSelector(
-      int, const reco::Candidate&, GlobalVector, const reco::Vertex&, const TrackerTopology* const, const edmNew::DetSetVector<SiPixelCluster>&);
+  const GeomDet* DetectorSelector(int,
+                                  const reco::Candidate&,
+                                  GlobalVector,
+                                  const reco::Vertex&,
+                                  const TrackerTopology* const,
+                                  const edmNew::DetSetVector<SiPixelCluster>&);
 
-  std::vector<GlobalVector> splittedClusterDirections(const reco::Candidate&,
-                                                      const TrackerTopology* const,
-                                                      const PixelClusterParameterEstimator*,
-                                                      const reco::Vertex&,
-                                                      int,
-                                                      const edmNew::DetSetVector<SiPixelCluster>&);  //if not working,: args=2 auto
+  std::vector<GlobalVector> splittedClusterDirections(
+      const reco::Candidate&,
+      const TrackerTopology* const,
+      const PixelClusterParameterEstimator*,
+      const reco::Vertex&,
+      int,
+      const edmNew::DetSetVector<SiPixelCluster>&);  //if not working,: args=2 auto
 
-  std::pair<double[jetDimX][jetDimY][Nover][Npar], double[jetDimX][jetDimY][Nover]> SeedEvaluation(tensorflow::NamedTensorList, std::vector<std::string>);
-
+  std::pair<double[jetDimX][jetDimY][Nover][Npar], double[jetDimX][jetDimY][Nover]> SeedEvaluation(
+      tensorflow::NamedTensorList, std::vector<std::string>);
 };
 #endif

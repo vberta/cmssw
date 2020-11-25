@@ -76,9 +76,7 @@ private:
 // constructors and destructor
 //
 TrackFromSeedProducer::TrackFromSeedProducer(const edm::ParameterSet& iConfig)
-  :
-    geoToken_(esConsumes<GlobalTrackingGeometry, GlobalTrackingGeometryRecord>())
- {
+    : geoToken_(esConsumes<GlobalTrackingGeometry, GlobalTrackingGeometryRecord>()) {
   //register your products
   produces<reco::TrackCollection>();
   produces<TrackingRecHitCollection>();
