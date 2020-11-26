@@ -370,7 +370,7 @@ class UpgradeWorkflowPatatrack_PixelOnlyCPU(UpgradeWorkflowPatatrack):
         elif 'HARVEST' in step:
             stepDict[stepName][k] = merge([{'-s': 'HARVESTING:@trackingOnlyValidation+@pixelTrackingOnlyDQM'}, stepDict[step][k]])
 
-    def condition_(self, fragment, stepList, slkey, hasHarvest):
+    def condition_(self, fragment, stepList, key, hasHarvest):
         return '2018' in key or '2021' in key
 
 upgradeWFs['PatatrackPixelOnlyCPU'] = UpgradeWorkflowPatatrack_PixelOnlyCPU(
