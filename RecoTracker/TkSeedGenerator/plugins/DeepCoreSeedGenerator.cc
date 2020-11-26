@@ -530,9 +530,9 @@ std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirections(
     int lay = tTopo->layer(det_int->geographicalId());
     if (lay != layer)
       continue;  //NB: saved bigClusters on all the layers!!
-    auto detUnit = *geometry_->idToDetUnit(detset_int.id());
+    auto detUnit = geometry_->idToDetUnit(detset_int.id());
     for (const auto& aCluster : detset_int) {
-      GlobalPoint clustPos = det_int->surface().toGlobal(pixelCPE->localParametersV(aCluster, detUnit)[0].first);
+      GlobalPoint clustPos = det_int->surface().toGlobal(pixelCPE->localParametersV(aCluster, (*detUnit))[0].first);
       GlobalPoint vertexPos(jetVertex.position().x(), jetVertex.position().y(), jetVertex.position().z());
       GlobalVector clusterDir = clustPos - vertexPos;
       GlobalVector jetDir(jet.px(), jet.py(), jet.pz());
