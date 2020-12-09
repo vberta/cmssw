@@ -256,7 +256,7 @@ void DeepCoreSeedGenerator::produce(edm::Event& iEvent, const edm::EventSetup& i
         input_tensors[1].second.matrix<float>()(0, 0) = jet.pt();
 
         const GeomDet* globDet = DetectorSelector(
-            2, jet, bigClustDir, jetVertex, tTopo, inputPixelClusters_);  //select detector mostly hitten by the jet
+            2, jet, bigClustDir, jetVertex, tTopo, inputPixelClusters_);  //det. aligned to bigClustDir on L2
 
         if (globDet == nullptr)  //no intersection between bigClustDir and pixel detector modules found
           continue;
@@ -487,13 +487,6 @@ const GeomDet* DeepCoreSeedGenerator::DetectorSelector(int llay,
                                                        const reco::Vertex& jetVertex,
                                                        const TrackerTopology* const tTopo,
                                                        const edmNew::DetSetVector<SiPixelCluster>& clusters) {
-  struct trkNumCompare {
-    bool operator()(std::pair<int, const GeomDet*> x, std::pair<int, const GeomDet*> y) const {
-      return x.first > y.first;
-    }
-  };
-  std::set<std::pair<int, const GeomDet*>, trkNumCompare> track4detSet;
-
   double minDist = 0.0;
   GeomDet* output = (GeomDet*)nullptr;
   for (const auto& detset : clusters) {
@@ -517,6 +510,7 @@ const GeomDet* DeepCoreSeedGenerator::DetectorSelector(int llay,
   }  //detset
   return output;
 }
+
 std::vector<GlobalVector> DeepCoreSeedGenerator::splittedClusterDirections(
     const reco::Candidate& jet,
     const TrackerTopology* const tTopo,
