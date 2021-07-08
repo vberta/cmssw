@@ -29,13 +29,14 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 
 process.GlobalTag.globaltag="94X_mc2017_realistic_v10"
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) #-1 = tutti (numero edi eventi)
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(20) ) #-1 = tutti (numero edi eventi)
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root',' with the source file you want to use
     fileNames = cms.untracked.vstring(
         # 'root://cms-xrd-global.cern.ch//store/user/vbertacc/TrainJetCore/QCD_Pt_1000to1400_TuneCP5_13TeV_pythia8/TrainJetCoreAll/190808_093923/0005/step3_5820.root' #EC standard sample
-        'file:/afs/cern.ch/work/v/vbertacc/CMSSW_10_2_5/src/trackJet/PrepareNtupleInputs/twoFileSol_bug_1000-7000_100ev_FlatP.root' #my produced sample
+        # 'file:/afs/cern.ch/work/v/vbertacc/CMSSW_10_2_5/src/trackJet/PrepareNtupleInputs/twoFileSol_bug_1000-7000_100ev_FlatP.root' #my produced sample
+        'file:./sample_Egun_test.root' #centrally produced test
 
         # 'file:../../NNClustSeedInput/test/909C1D76-3FE4-E711-84C0-EC0D9A0B30E0.root'
         # 'file:/scratch/arizzi/jetCoreNN/slc6/clean/CMSSW_10_2_5/src/RecoTracker/TkSeedGenerator/test/3000/step3_1800_debug.root'
@@ -143,12 +144,19 @@ process.source = cms.Source("PoolSource",
 # )
 
 
+process.options = cms.untracked.PSet(
+   allowUnscheduled = cms.untracked.bool(True),
+   numberOfThreads = cms.untracked.uint32(8),
+   numberOfStreams = cms.untracked.uint32(8),
+   wantSummary = cms.untracked.bool(True)
+)
+
 process.demo = cms.EDProducer('NNClustSeedInputSimHit' ,#demo = nome libero
  pixelClusters=cms.InputTag("siPixelClustersPreSplitting"),
  vertices = cms.InputTag("offlinePrimaryVertices"),
  cores = cms.InputTag("ak4CaloJets"),
  #cores =cms.InputTag("ak4PFJetsCHS"),
- ptMin = cms.double(1000), #500 is the goodone (for barel training) #1000#800
+ ptMin = cms.double(500), #500 is the goodone (for barel training) #1000 is the tested one, with p cut insted of pt
  deltaR = cms.double(0.1),
  centralMIPCharge = cms.double(18000.0),
  chargeFractionMin = cms.double(2), #a caso
@@ -165,7 +173,8 @@ process.SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",
 )
 
 process.TFileService = cms.Service("TFileService",
-      fileName = cms.string("ntuple_EC_bug_1000-7000_100ev.root"),
+    #   fileName = cms.string("ntuple_EC_bug_1000-7000_100ev.root"),
+    fileName = cms.string("ntuple_EC_centralEgun_pt500cut.root"),
       closeFileFast = cms.untracked.bool(True)
   )
 

@@ -40,11 +40,17 @@ process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring([
 	# '/store/mc/RunIISummer17DRPremix/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/AODSIM/92X_upgrade2017_realistic_v10-v5/90000/AA3AFFA9-149C-E711-BBBD-0CC47AF9B32A.root'
 	#'/store/mc/RunIISummer17DRPremix/QCD_Pt_1800to2400_TuneCUETP8M1_13TeV_pythia8/AODSIM/92X_upgrade2017_realistic_v10-v5/90000/4633A554-2A9C-E711-8E16-0025905C543A.root'
-    'file:/afs/cern.ch/user/v/vbertacc/workdir/CMSSW_10_2_5/src/test_generator/step3_RAW2DIGI_L1Reco_RECO_RECOSIM_EI.root'
     # '/store/mc/RunIISpring18DRPremix/QCD_Pt_1000to1400_TuneCP5_13TeV_pythia8/AODSIM/100X_upgrade2018_realistic_v10-v1/90000/FCEE5CD3-5B2B-E811-AC21-20CF305B05AE.root' #THISONE
+    
+    #test_generator test
+    # 'file:/afs/cern.ch/user/v/vbertacc/workdir/CMSSW_10_2_5/src/test_generator/step3_RAW2DIGI_L1Reco_RECO_RECOSIM_EI.root'
+    '/store/mc/RunIIFall17DRStdmix/UBGGun_E-1000to7000_Eta-1p2to2p1_13TeV_pythia8/AODSIM/NoPU_94X_mc2017_realistic_v11-v2/50000/C0E97459-647D-EA11-9816-0090FAA573D0.root'
   ]),
     secondaryFileNames = cms.untracked.vstring([
-        'file:/afs/cern.ch/user/v/vbertacc/workdir/CMSSW_10_2_5/src/test_generator/HighPtJets_GEN_SIM_bug_1000-7000_100ev.root'])
+        
+        #test_generstor test
+        # 'file:/afs/cern.ch/user/v/vbertacc/workdir/CMSSW_10_2_5/src/test_generator/HighPtJets_GEN_SIM_bug_1000-7000_100ev.root'])
+        '/store/mc/RunIIFall17DRStdmix/UBGGun_E-1000to7000_Eta-1p2to2p1_13TeV_pythia8/GEN-SIM-DIGI-RAW/NoPU_94X_mc2017_realistic_v11-v2/50003/FE276CBD-647D-EA11-9DC5-F02FA768D2B2.root'])
 
     # '/store/mc/RunIISpring18GS/QCD_Pt_1000to1400_TuneCP5_13TeV_pythia8/GEN-SIM/100X_upgrade2018_realistic_v10-v1/90002/9E33B836-3624-E811-B047-0CC47A1DF806.root',  #AND THISONE
     # '/store/mc/RunIISpring18GS/QCD_Pt_1000to1400_TuneCP5_13TeV_pythia8/GEN-SIM/100X_upgrade2018_realistic_v10-v1/90000/DCEE8A53-1B24-E811-B016-002590E7E010.root']) #AND THISONE
@@ -61,8 +67,8 @@ process.source = cms.Source("PoolSource",
 
 process.options = cms.untracked.PSet(
    allowUnscheduled = cms.untracked.bool(True),
-#   numberOfThreads = cms.untracked.uint32(40),
-#   numberOfStreams = cms.untracked.uint32(40),
+   numberOfThreads = cms.untracked.uint32(8),
+   numberOfStreams = cms.untracked.uint32(8),
    wantSummary = cms.untracked.bool(True)
 )
 

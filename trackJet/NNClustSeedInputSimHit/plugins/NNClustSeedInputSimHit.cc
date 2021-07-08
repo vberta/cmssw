@@ -125,8 +125,8 @@ class NNClustSeedInputSimHit : public edm::one::EDProducer<edm::one::SharedResou
 
   TFile* NNClustSeedInputSimHit_out;
   TTree* NNClustSeedInputSimHitTree;
-  static const int jetDimX =30;//30
-  static const int jetDimY =30;//30
+  static const int jetDimX =30;//200
+  static const int jetDimY =30;//200
   static const int Nlayer =7;//4;
   static const int Ntrack = 100;
   static const int Npar = 5; //added 1/pt
@@ -435,7 +435,7 @@ void NNClustSeedInputSimHit::produce(edm::Event& iEvent, const edm::EventSetup& 
   print = false;
   int jet_number = 0;
   std::cout << " ---------------------NEW EVENT: N of jets in the event =" << cores->size() << std::endl;
-  std::cout << "THIS IS A ENDCAP-ONLY TRAINING NTUPLE!!!!"<< std::endl;
+  // std::cout << "THIS IS A ENDCAP-ONLY TRAINING NTUPLE!!!!"< < std::endl;
 
 
 
@@ -449,18 +449,21 @@ void NNClustSeedInputSimHit::produce(edm::Event& iEvent, const edm::EventSetup& 
     // if(iEvent.id().event()!=4807889) continue;
 
 
-    if(std::abs((*cores)[ji].eta())<1.4 || std::abs((*cores)[ji].eta())>2.1) continue; //TRAINING ON ENDCAP ONLY;//DEBUGGGG
-    std:: cout << "good eta!" << (*cores)[ji].eta()<< ", p="<< (*cores)[ji].p()  << std::endl;
-    if ((*cores)[ji].p() > ptMin_ ) { //NB: the cut is on PT!!!, if you want p-->(*cores)[ji].p()
+    // if(std::abs((*cores)[ji].eta())<1.4 || std::abs((*cores)[ji].eta())>2.1) continue; //TRAINING ON ENDCAP ONLY;//DEBUGGGG
+    // std:: cout << "good eta!" << (*cores)[ji].eta()<< ", p="<< (*cores)[ji].p()  << std::endl;
+    if ((*cores)[ji].pt() > ptMin_ ) { //NB: the cut is on PT!!!, if you want p-->(*cores)[ji].p(). The test has been done with p cut, p>1 TeV
       // std::cout << " __________________________________________________________" <<std::endl;
-       std::cout << "|____________________NEW JET_______________________________| jet number=" << jet_number  << ", pt= "<< (*cores)[ji].pt() << ", eta=" << (*cores)[ji].eta() << std::endl;
+       std::cout << "|____________________NEW JET_______________________________| jet number=" << jet_number  << ", pt= "<< (*cores)[ji].pt() << ", eta=" << (*cores)[ji].eta() << ", p=" <<(*cores)[ji].p()<<std::endl; 
+       if(std::abs((*cores)[ji].eta())<1.4 || std::abs((*cores)[ji].eta())>2.1){
+         std::cout << "out of EC acceptance jet!" << std::endl;
+       }
 
       //
       // std::cout << "jet number " << jetnum << std::endl;
       //if(ji==1) print = true;
       //  if(print2)std::cout << "|____________________NEW JET_______________________________|" <<std::endl;
-      if(std::abs((*cores)[ji].eta())>1.4) std::cout << "ENDCAP JET, eta="<<(*cores)[ji].eta() << std::endl;
-      else std::cout << "BARREL JET, eta="<<(*cores)[ji].eta() << std::endl;
+      // if(std::abs((*cores)[ji].eta())>1.4) std::cout << "ENDCAP JET, eta="<<(*cores)[ji].eta() << std::endl;
+      // else std::cout << "BARREL JET, eta="<<(*cores)[ji].eta() << std::endl;
 
       const reco::Candidate& jet = (*cores)[ji];
       const reco::Vertex& jetVertex = (*vertices)[0];
