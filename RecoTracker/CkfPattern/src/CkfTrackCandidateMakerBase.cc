@@ -488,6 +488,21 @@ namespace cms {
 
             // Get inner state
             const bool doBackFit = (!doSeedingRegionRebuilding) & (!reverseTrajectories);
+            // if(doBackFit) std::cout << "theTrajectoryCleanerName" << theTrajectoryCleanerName << std::endl;
+            if(theTrajectoryCleanerName=="jetCoreRegionalStepDeepCoreTrajectoryCleaner" && doBackFit){ //temporary to identify jetcore FIXME
+              #include "RecoTracker/TransientTrackingRecHit/interface/TRecHit5DParamConstraint.h"
+              PTrajectoryStateOnDet pState(trialTrajectory.seed().startingState()); //build the seed state
+              const GeomDet* gdet = data->geomTracker()->idToDet(pState.detId());              
+              TrajectoryStateOnSurface outerState = trajectoryStateTransform::transientState(pState, &(gdet->surface()), theMagField.product());
+             
+              TrackingRecHit::RecHitPointer deepCoreHit(new TRecHit5DParamConstraint(*gdet, outerState)); //build the 5Dhit
+              TrajectoryStateOnSurface invalidState(gdet->surface());
+              
+              auto deepCoreTrajectoryMeasurement = TrajectoryMeasurement(invalidState,deepCoreHit);
+              // std::cout << "size before (l3):" << trialTrajectory.measurements().size();
+              trialTrajectory.measurements().insert(trialTrajectory.measurements().begin(), deepCoreTrajectoryMeasurement); //add the DeepCore Traj.Meas. to the trajectory
+              // std::cout << ", size after (l2):" << trialTrajectory.measurements().size() << std::endl;
+            }
             initState = theInitialState->innerState(trialTrajectory, doBackFit);
 
             // Check if that was successful
